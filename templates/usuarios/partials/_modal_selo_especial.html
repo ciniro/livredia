@@ -1,0 +1,175 @@
+{% load static %}
+
+<!-- ETAPA 7 - Sistema de Selos: Modal de Parabéns com Fogos de Artifício -->
+<!-- Este modal é exibido após o login quando o usuário ganhou um ou mais selos de leitor especial -->
+
+<div
+    id="modal-selos-container"
+    class="hidden"
+    x-data="{
+        selosIds: {{ selos_pendentes_ids|default:'[]' }},
+        seloAtual: null,
+        indiceSelo: 0,
+        totalSelos: 0,
+
+        iniciar() {
+            this.totalSelos = this.selosIds.length;
+            if (this.totalSelos > 0) {
+                this.carregarSelo(0);
+            }
+        },
+
+        async carregarSelo(indice) {
+            if (indice >= this.totalSelos) {
+                // Todos os selos foram exibidos, limpar sessão e fechar tudo
+                await fetch('/contas/limpar-selos-sessao/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                this.$el.classList.add('hidden');
+                return;
+            }
+
+            this.indiceSelo = indice;
+            const seloId = this.selosIds[indice];
+
+            // Buscar dados do selo via AJAX
+            const response = await fetch(`/contas/selo-detalhes/${seloId}/`);
+            if (response.ok) {
+                this.seloAtual = await response.json();
+                this.$el.classList.remove('hidden');
+            } else {
+                // Erro ao buscar, pular para próximo
+                this.carregarSelo(indice + 1);
+            }
+        },
+
+        async fecharEProximo() {
+            if (!this.seloAtual) return;
+
+            // Marcar selo como exibido
+            await fetch(`/contas/marcar-selo-exibido/${this.seloAtual.id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            // Carregar próximo selo ou fechar
+            this.seloAtual = null;
+            this.carregarSelo(this.indiceSelo + 1);
+        }
+    }"
+    x-init="setTimeout(() => iniciar(), 500)"
+>
+    <!-- GIF de Fogos de Artifício (Por cima de tudo) -->
+    <img
+        src="{% static 'img/fireworks.gif' %}"
+        alt="Fogos de artifício"
+        class="fixed top-0 left-1/2 -translate-x-1/2 w-[400px] h-[400px] object-contain pointer-events-none z-[60] opacity-60"
+        :style="seloAtual !== null ? 'display: block;' : 'display: none;'"
+    >
+
+    <!-- Overlay com blur -->
+    <div
+        x-show="seloAtual !== null"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click.self="fecharEProximo()"
+    >
+        <!-- Modal Card -->
+        <div
+            x-show="seloAtual !== null"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-90"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-90"
+            class="bg-background-light dark:bg-background-dark rounded-2xl shadow-2xl max-w-md w-full p-6 relative overflow-hidden z-[55]"
+            @click.stop
+        >
+            <!-- Conteúdo do Modal -->
+            <div class="relative">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <div class="inline-block p-2 bg-primary/10 rounded-full mb-3">
+                        <img
+                            src="{% static 'img/selo_ouro.png' %}"
+                            alt="Selo de Leitor Especial"
+                            class="w-14 h-14"
+                        >
+                    </div>
+
+                    <h2 class="text-2xl font-bold text-text-light dark:text-text-dark mb-2">
+                        🎉 Parabéns!
+                    </h2>
+
+                    <p class="text-base text-text-light/80 dark:text-text-dark/80">
+                        Você ganhou um Selo de Leitor Especial!
+                    </p>
+                </div>
+
+                <!-- Foto e Nome do Autor (template será preenchido via JavaScript) -->
+                <template x-if="seloAtual">
+                    <div class="bg-background-light/50 dark:bg-background-dark/50 rounded-xl p-4 mb-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img
+                                :src="seloAtual.autor_avatar"
+                                :alt="seloAtual.autor_nome"
+                                class="w-12 h-12 rounded-full object-cover border-2 border-primary"
+                            >
+                            <div>
+                                <p class="text-xs text-text-light/70 dark:text-text-dark/70 mb-0.5">
+                                    O autor
+                                </p>
+                                <p class="text-lg font-semibold text-text-light dark:text-text-dark" x-text="seloAtual.autor_nome"></p>
+                            </div>
+                        </div>
+
+                        <p class="text-sm text-text-light/90 dark:text-text-dark/90 leading-relaxed">
+                            reconheceu você como um <strong>leitor especial</strong> por suas contribuições e engajamento em seu trabalho! 🌟
+                        </p>
+                    </div>
+                </template>
+
+                <!-- Explicação sobre o Selo -->
+                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-3">
+                    <h3 class="text-xs font-semibold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                        </svg>
+                        O que isso significa?
+                    </h3>
+                    <ul class="text-xs text-green-800 dark:text-green-200 space-y-1">
+                        <li class="flex items-start gap-1.5">
+                            <span class="text-green-600 dark:text-green-400 mt-0.5">✓</span>
+                            <span>Seu selo aparecerá ao lado do seu nome nos <strong>comentários dos textos deste autor</strong></span>
+                        </li>
+                        <li class="flex items-start gap-1.5">
+                            <span class="text-green-600 dark:text-green-400 mt-0.5">✓</span>
+                            <span>É um reconhecimento especial do autor pelo seu engajamento</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Botão Fechar -->
+                <button
+                    @click="fecharEProximo()"
+                    type="button"
+                    class="w-full px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-semibold rounded-lg transition-colors shadow-lg hover:shadow-xl text-sm"
+                >
+                    <template x-if="indiceSelo + 1 < totalSelos">
+                        <span>Próximo (<span x-text="indiceSelo + 1"></span>/<span x-text="totalSelos"></span>)</span>
+                    </template>
+                    <template x-if="indiceSelo + 1 >= totalSelos">
+                        <span>Que legal! Continuar!</span>
+                    </template>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

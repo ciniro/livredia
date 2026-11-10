@@ -1,0 +1,109 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Editar Contato - Painel Admin{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col h-full">
+    <!-- Header -->
+    <div class="flex items-center gap-4 px-6 py-4 border-b border-border-light dark:border-border-dark">
+        <a href="{% url 'painel_admin:contatos_administrativos' %}"
+           class="flex h-10 w-10 items-center justify-center rounded-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-text-light dark:text-text-dark">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            </svg>
+        </a>
+        <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-bold leading-tight text-text-light dark:text-text-dark font-display">
+                Editar Contato
+            </h1>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Atualizar dados de {{ object.nome }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Formulário -->
+    <div class="flex-1 overflow-auto px-6 py-6">
+        <form method="post" class="max-w-2xl mx-auto">
+            {% csrf_token %}
+
+            <!-- Mensagens de Erro Global -->
+            {% if form.non_field_errors %}
+            <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                    </svg>
+                    <div class="flex-1">
+                        {% for error in form.non_field_errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Nome do Contato -->
+            <div class="mb-5">
+                <label for="{{ form.nome.id_for_label }}" class="flex gap-1 pb-2 text-sm font-medium leading-normal text-text-light dark:text-text-dark">
+                    {{ form.nome.label }}
+                    <span class="text-red-600">*</span>
+                </label>
+                {{ form.nome }}
+                {% if form.nome.errors %}
+                <p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.nome.errors.0 }}</p>
+                {% elif form.nome.help_text %}
+                <p class="mt-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">{{ form.nome.help_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- E-mail -->
+            <div class="mb-5">
+                <label for="{{ form.email.id_for_label }}" class="flex gap-1 pb-2 text-sm font-medium leading-normal text-text-light dark:text-text-dark">
+                    {{ form.email.label }}
+                    <span class="text-red-600">*</span>
+                </label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                <p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.email.errors.0 }}</p>
+                {% elif form.email.help_text %}
+                <p class="mt-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">{{ form.email.help_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Checkbox Ativo -->
+            <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div class="flex items-start gap-3">
+                    {{ form.ativo }}
+                    <label for="{{ form.ativo.id_for_label }}" class="flex-1 cursor-pointer">
+                        <span class="block text-sm font-medium text-text-light dark:text-text-dark">
+                            {{ form.ativo.label }}
+                        </span>
+                        {% if form.ativo.help_text %}
+                        <span class="block mt-1 text-xs text-placeholder-light dark:text-placeholder-dark">
+                            {{ form.ativo.help_text }}
+                        </span>
+                        {% endif %}
+                    </label>
+                </div>
+                {% if form.ativo.errors %}
+                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ form.ativo.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Botões -->
+            <div class="flex gap-3 pt-4">
+                <a href="{% url 'painel_admin:contatos_administrativos' %}"
+                   class="flex-1 flex items-center justify-center h-12 px-5 rounded-lg bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark text-base font-bold leading-normal border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="flex-1 flex items-center justify-center h-12 px-5 rounded-lg bg-primary text-white text-base font-bold leading-normal hover:bg-primary/90 transition-colors">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

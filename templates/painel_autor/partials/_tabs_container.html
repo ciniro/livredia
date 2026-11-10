@@ -1,0 +1,153 @@
+<!-- Container para Tabs + Conteúdo (atualizado via HTMX) -->
+<div id="tabs-container">
+    <!-- Sistema de Tabs -->
+    <div class="border-b border-border-light dark:border-border-dark mb-6" x-data="{ statusAtiva: '{{ status_ativa }}' }">
+        <!-- Dropdown para Mobile -->
+        <div class="md:hidden pb-3">
+            <label class="block text-xs font-medium text-placeholder-light dark:text-placeholder-dark mb-1.5">
+                Filtrar por status
+            </label>
+            <select
+                onchange="window.location.href = this.value"
+                class="w-full h-12 px-4 rounded-lg text-text-light dark:text-text-dark font-bold text-sm border-2 border-primary bg-background-light dark:bg-background-dark focus:outline-0 focus:ring-2 focus:ring-primary/50"
+            >
+                <option value="{% url 'painel_autor:moderacao_autor' %}?status=PENDENTE" {% if status_ativa == 'PENDENTE' %}selected{% endif %}>
+                    Pendentes ({{ total_pendentes }})
+                </option>
+                <option value="{% url 'painel_autor:moderacao_autor' %}?status=APROVADO" {% if status_ativa == 'APROVADO' %}selected{% endif %}>
+                    Aprovados ({{ total_aprovados }})
+                </option>
+                <option value="{% url 'painel_autor:moderacao_autor' %}?status=REJEITADO" {% if status_ativa == 'REJEITADO' %}selected{% endif %}>
+                    Rejeitados ({{ total_rejeitados }})
+                </option>
+            </select>
+        </div>
+
+        <!-- Tabs para Desktop -->
+        <nav class="hidden md:flex gap-2 -mb-px">
+            <!-- Tab PENDENTES -->
+            <button type="button"
+               class="px-6 py-3 font-bold text-sm transition-colors border-b-2 whitespace-nowrap"
+               :class="statusAtiva === 'PENDENTE' ? 'border-yellow-500 text-yellow-600 dark:text-yellow-400' : 'border-transparent text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark'"
+               hx-get="{% url 'painel_autor:moderacao_autor' %}?status=PENDENTE"
+               hx-target="#tabs-container"
+               hx-push-url="true"
+               @click="statusAtiva = 'PENDENTE'; document.querySelector('input[name=status]').value = 'PENDENTE'">
+                <span class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    Pendentes ({{ total_pendentes }})
+                </span>
+            </button>
+
+            <!-- Tab APROVADOS -->
+            <button type="button"
+               class="px-6 py-3 font-bold text-sm transition-colors border-b-2 whitespace-nowrap"
+               :class="statusAtiva === 'APROVADO' ? 'border-green-500 text-green-600 dark:text-green-400' : 'border-transparent text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark'"
+               hx-get="{% url 'painel_autor:moderacao_autor' %}?status=APROVADO"
+               hx-target="#tabs-container"
+               hx-push-url="true"
+               @click="statusAtiva = 'APROVADO'; document.querySelector('input[name=status]').value = 'APROVADO'">
+                <span class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    Aprovados ({{ total_aprovados }})
+                </span>
+            </button>
+
+            <!-- Tab REJEITADOS -->
+            <button type="button"
+               class="px-6 py-3 font-bold text-sm transition-colors border-b-2 whitespace-nowrap"
+               :class="statusAtiva === 'REJEITADO' ? 'border-red-500 text-red-600 dark:text-red-400' : 'border-transparent text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark'"
+               hx-get="{% url 'painel_autor:moderacao_autor' %}?status=REJEITADO"
+               hx-target="#tabs-container"
+               hx-push-url="true"
+               @click="statusAtiva = 'REJEITADO'; document.querySelector('input[name=status]').value = 'REJEITADO'">
+                <span class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    Rejeitados ({{ total_rejeitados }})
+                </span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Filtros (fixos, não atualizados via HTMX) -->
+    <form method="get" action="{% url 'painel_autor:moderacao_autor' %}" class="flex flex-wrap gap-4 items-end mb-6" x-data>
+        <!-- Campo hidden para status -->
+        <input type="hidden" name="status" value="{{ status_ativa }}" x-ref="statusInput">
+
+        <!-- Busca por Comentador (autor do comentário) -->
+        <label class="flex flex-col flex-1 min-w-[200px]">
+            <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Buscar por Comentador</span>
+            <input
+                type="text"
+                name="busca_leitor"
+                value="{{ busca_leitor }}"
+                placeholder="Nome do leitor..."
+                class="form-input w-full rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-10 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark px-3 text-sm font-normal">
+        </label>
+
+        <!-- Busca por Conteúdo -->
+        <label class="flex flex-col flex-1 min-w-[200px]">
+            <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Buscar por Conteúdo</span>
+            <input
+                type="text"
+                name="busca"
+                value="{{ busca }}"
+                placeholder="Palavras do comentário..."
+                class="form-input w-full rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-10 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark px-3 text-sm font-normal">
+        </label>
+
+        <!-- Busca por Obra -->
+        <label class="flex flex-col flex-1 min-w-[200px]">
+            <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Buscar por Obra</span>
+            <input
+                type="text"
+                name="busca_titulo"
+                value="{{ busca_titulo }}"
+                placeholder="Título da obra..."
+                class="form-input w-full rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-10 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark px-3 text-sm font-normal">
+        </label>
+
+        <!-- Comentários por página -->
+        <label class="flex flex-col">
+            <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Comentários por página</span>
+            <select
+                name="per_page"
+                class="form-select w-full rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-10 px-3 text-sm font-normal">
+                <option value="30" {% if per_page == '30' %}selected{% endif %}>30</option>
+                <option value="50" {% if per_page == '50' %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == '100' %}selected{% endif %}>100</option>
+            </select>
+        </label>
+
+        <!-- Botão Filtrar -->
+        <button
+            type="submit"
+            class="flex items-center justify-center h-10 px-4 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors gap-2 text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+            Filtrar
+        </button>
+
+        <!-- Botão Limpar -->
+        <a
+            :href="`{% url 'painel_autor:moderacao_autor' %}?status=${$refs.statusInput.value}`"
+            class="flex items-center justify-center h-10 px-4 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors gap-2 text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+            Limpar
+        </a>
+    </form>
+
+    <!-- Listagem de Comentários -->
+    <div id="comentarios-section">
+        {% include 'painel_autor/partials/_lista_comentarios.html' %}
+    </div>
+</div> <!-- Fecha #tabs-container -->

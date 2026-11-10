@@ -1,0 +1,607 @@
+{% load humanize %}
+{% load comentario_extras %}
+
+<!-- Container Alpine.js - Envolve TUDO -->
+<div x-data="{
+    showModal: false,
+    modalTitle: '',
+    modalMessage: '',
+    modalAction: '',
+    modalColor: 'red',
+    comentarioId: null,
+    openModal(title, message, action, color, id) {
+        this.modalTitle = title;
+        this.modalMessage = message;
+        this.modalAction = action;
+        this.modalColor = color;
+        this.comentarioId = id;
+        this.showModal = true;
+    },
+    executeAction() {
+        const element = document.querySelector(`[data-action='${this.modalAction}'][data-id='${this.comentarioId}']`);
+        if (element) {
+            htmx.trigger(element, 'click');
+        }
+        this.showModal = false;
+    }
+}">
+    <!-- Modal de Confirmação -->
+    <div x-show="showModal"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+         style="display: none;"
+         @click.self="showModal = false">
+
+        <!-- Modal Content -->
+        <div x-show="showModal"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-md w-full border border-border-light dark:border-border-dark"
+             @click.away="showModal = false">
+
+            <!-- Header -->
+            <div class="p-6 border-b border-border-light dark:border-border-dark">
+                <h3 class="text-xl font-bold text-text-light dark:text-text-dark font-display" x-text="modalTitle"></h3>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6">
+                <p class="text-text-light dark:text-text-dark" x-text="modalMessage"></p>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-6 border-t border-border-light dark:border-border-dark flex items-center justify-end gap-3">
+                <button @click="showModal = false"
+                        class="px-4 py-2 text-sm font-bold text-text-light dark:text-text-dark bg-secondary-light dark:bg-secondary-dark hover:bg-border-light dark:hover:bg-border-dark rounded-lg transition-colors">
+                    Cancelar
+                </button>
+                <button @click="executeAction()"
+                        :class="{
+                            'bg-red-600 hover:bg-red-700': modalColor === 'red',
+                            'bg-green-600 hover:bg-green-700': modalColor === 'green',
+                            'bg-yellow-600 hover:bg-yellow-700': modalColor === 'yellow'
+                        }"
+                        class="px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginação (acima da tabela) -->
+    {% if is_paginated %}
+    <div class="flex justify-end mb-6">
+        <div class="flex items-center gap-2">
+            <!-- Botão Primeira -->
+            {% if page_obj.has_previous %}
+                <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page=1"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Primeira
+                </a>
+                <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_obj.previous_page_number }}"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Anterior
+                </a>
+            {% else %}
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Primeira
+                </span>
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Anterior
+                </span>
+            {% endif %}
+
+            <!-- Números de Página -->
+            {% with current_page=page_obj.number total_pages=page_obj.paginator.num_pages %}
+                {% if total_pages <= 7 %}
+                    <!-- Mostrar todas as páginas se forem 7 ou menos -->
+                    {% for page_num in page_obj.paginator.page_range %}
+                        {% if page_num == current_page %}
+                            <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                {{ page_num }}
+                            </span>
+                        {% else %}
+                            <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_num }}"
+                               class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ page_num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Lógica inteligente para muitas páginas -->
+                    {% if current_page <= 4 %}
+                        <!-- Início: mostrar 1 2 3 4 5 ... última -->
+                        {% for i in "12345" %}
+                            {% if forloop.counter == current_page %}
+                                <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                    {{ forloop.counter }}
+                                </span>
+                            {% else %}
+                                <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ forloop.counter }}"
+                                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ forloop.counter }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ total_pages }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% elif current_page >= total_pages|add:"-3" %}
+                        <!-- Final: mostrar primeira ... n-4 n-3 n-2 n-1 n -->
+                        <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page=1"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        {% for i in "54321" %}
+                            {% with page_num=total_pages|add:forloop.counter|add:"-6" %}
+                                {% if page_num == current_page %}
+                                    <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                        {{ page_num }}
+                                    </span>
+                                {% else %}
+                                    <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_num }}"
+                                       class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                        {{ page_num }}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Meio: mostrar 1 ... atual-1 atual atual+1 ... última -->
+                        <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page=1"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ current_page|add:"-1" }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"-1" }}
+                        </a>
+                        <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                            {{ current_page }}
+                        </span>
+                        <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ current_page|add:"1" }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"1" }}
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ total_pages }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% endif %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Botão Próxima e Última -->
+            {% if page_obj.has_next %}
+                <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_obj.next_page_number }}"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Próxima
+                </a>
+                <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_obj.paginator.num_pages }}"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Última
+                </a>
+            {% else %}
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Próxima
+                </span>
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Última
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Lista de Comentários -->
+<div class="overflow-hidden rounded-xl border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark shadow-sm">
+    {% if comentarios %}
+        <!-- Versão Mobile: Cards empilhados (visível em telas < lg) -->
+        <div class="lg:hidden divide-y divide-border-light dark:divide-border-dark">
+            {% for comentario in comentarios %}
+                <div id="comentario-{{ comentario.id }}" class="p-4 space-y-4" x-data="{ expanded: false, isTruncated: false }">
+                    <!-- Cabeçalho: Avatar + Nome + Data -->
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <!-- Avatar -->
+                            {% if comentario.publicado_anonimamente %}
+                                <img src="https://ui-avatars.com/api/?name=Anonimo&background=9ca3af&color=fff&size=40"
+                                     alt="Avatar"
+                                     class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                            {% else %}
+                                <a href="/@{{ comentario.autor.username }}/" target="_blank" title="Ver perfil">
+                                    <img src="{{ comentario.autor.get_avatar_url }}"
+                                         alt="Avatar"
+                                         class="w-10 h-10 rounded-full object-cover hover:opacity-80 transition-opacity flex-shrink-0">
+                                </a>
+                            {% endif %}
+                            <div class="min-w-0">
+                                <p class="font-medium text-text-light dark:text-text-dark text-sm truncate">
+                                    {% if comentario.publicado_anonimamente %}Anônimo{% else %}{{ comentario.autor.get_full_name }}{% endif %}
+                                </p>
+                                <p class="text-xs text-placeholder-light dark:text-placeholder-dark">
+                                    {{ comentario.data_publicacao|naturaltime }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Obra Comentada -->
+                    <div class="text-xs">
+                        <span class="text-placeholder-light dark:text-placeholder-dark">Em: </span>
+                        <a href="{% url 'textos:leitura_texto' comentario.texto.pk %}" target="_blank" class="text-primary hover:underline font-medium">
+                            {{ comentario.texto.titulo|truncatewords:8 }}
+                        </a>
+                    </div>
+
+                    <!-- Tipo de comentário -->
+                    {% if comentario.pai %}
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                            </svg>
+                            Resposta
+                        </span>
+                    {% else %}
+                        {% with total_respostas=comentario.respostas.count %}
+                        {% if total_respostas > 0 %}
+                            <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+                                </svg>
+                                {{ total_respostas }} resposta{{ total_respostas|pluralize }}
+                            </span>
+                        {% endif %}
+                        {% endwith %}
+                    {% endif %}
+
+                    <!-- Conteúdo do Comentário -->
+                    <div class="bg-secondary-light/30 dark:bg-secondary-dark/30 rounded-lg p-3">
+                        <p class="text-sm text-text-light dark:text-text-dark"
+                           :class="expanded ? '' : 'line-clamp-4'"
+                           x-init="$nextTick(() => { isTruncated = $el.scrollHeight > $el.clientHeight })">
+                            {{ comentario.conteudo|renderizar_mencoes|safe }}
+                        </p>
+                        <button @click="expanded = !expanded"
+                                x-show="isTruncated"
+                                class="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                 class="w-3 h-3 transition-transform" :class="expanded ? 'rotate-180' : ''">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                            <span x-text="expanded ? 'Mostrar menos' : 'Mostrar mais'"></span>
+                        </button>
+                    </div>
+
+                    <!-- Ações -->
+                    <div class="flex flex-wrap items-center gap-2 pt-2">
+                        {% if comentario.status == 'PENDENTE' %}
+                            <button
+                                @click="openModal('Aprovar Comentário', 'Tem certeza que deseja aprovar este comentário? Ele será exibido publicamente na página de leitura.', 'aprovar', 'green', {{ comentario.id }})"
+                                class="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                                Aprovar
+                            </button>
+                            <button data-action="aprovar" data-id="{{ comentario.id }}" hx-post="{% url 'painel_autor:aprovar_comentario_autor' comentario.id %}" hx-target="#comentario-{{ comentario.id }}" hx-swap="outerHTML swap:1s" style="display: none;"></button>
+
+                            <button
+                                @click="openModal('Rejeitar Comentário', 'Tem certeza que deseja rejeitar este comentário? Ele será ocultado e não aparecerá publicamente.', 'rejeitar', 'yellow', {{ comentario.id }})"
+                                class="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                </svg>
+                                Rejeitar
+                            </button>
+                            <button data-action="rejeitar" data-id="{{ comentario.id }}" hx-post="{% url 'painel_autor:rejeitar_comentario_autor' comentario.id %}" hx-target="#comentario-{{ comentario.id }}" hx-swap="outerHTML swap:1s" style="display: none;"></button>
+                        {% endif %}
+
+                        <button
+                            @click="openModal('⚠️ Excluir Permanentemente', 'ATENÇÃO: Esta ação é IRREVERSÍVEL e excluirá permanentemente este comentário e todas as suas respostas. Tem certeza absoluta?', 'excluir', 'red', {{ comentario.id }})"
+                            class="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-2 text-xs font-bold text-white bg-red-900 hover:bg-red-950 rounded-lg transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            </svg>
+                            Excluir
+                        </button>
+                        <button data-action="excluir" data-id="{{ comentario.id }}" hx-post="{% url 'painel_autor:excluir_comentario_autor' comentario.id %}" hx-target="#comentario-{{ comentario.id }}" hx-swap="outerHTML swap:1s" style="display: none;"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Versão Desktop: Tabela (visível em telas >= lg) -->
+        <div class="hidden lg:block overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-secondary-light/30 dark:bg-secondary-dark/20">
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Comentador</th>
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Comentário</th>
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Obra Comentada</th>
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Data</th>
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border-light dark:divide-border-dark">
+                    {% for comentario in comentarios %}
+                        <tr id="comentario-desktop-{{ comentario.id }}" class="hover:bg-secondary-light/10 dark:hover:bg-secondary-dark/10 transition-colors" x-data="{ expanded: false, isTruncated: false }">
+                            <!-- Comentador (autor do comentário) -->
+                            <td class="p-2.5">
+                                <div class="flex items-center gap-3">
+                                    {% if comentario.publicado_anonimamente %}
+                                        <img src="https://ui-avatars.com/api/?name=Anonimo&background=9ca3af&color=fff&size=40"
+                                             alt="Avatar"
+                                             class="w-10 h-10 rounded-full object-cover">
+                                    {% else %}
+                                        <a href="/@{{ comentario.autor.username }}/" target="_blank" title="Ver perfil de {{ comentario.autor.get_full_name }}">
+                                            <img src="{{ comentario.autor.get_avatar_url }}"
+                                                 alt="Avatar de {{ comentario.autor.get_full_name }}"
+                                                 class="w-10 h-10 rounded-full object-cover hover:opacity-80 transition-opacity">
+                                        </a>
+                                    {% endif %}
+                                    <div>
+                                        <p class="font-medium text-text-light dark:text-text-dark text-sm">
+                                            {% if comentario.publicado_anonimamente %}Anônimo{% else %}{{ comentario.autor.get_full_name }}{% endif %}
+                                        </p>
+                                        {% if not comentario.publicado_anonimamente %}
+                                            <p class="text-xs text-placeholder-light dark:text-placeholder-dark">{{ comentario.autor.email }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Conteúdo do Comentário -->
+                            <td class="p-2.5">
+                                <div class="max-w-md">
+                                    {% if comentario.pai %}
+                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-primary mb-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                                            </svg>
+                                            Resposta
+                                        </span>
+                                    {% else %}
+                                        {% with total_respostas=comentario.respostas.count %}
+                                        {% if total_respostas > 0 %}
+                                            <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400 mb-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+                                                </svg>
+                                                Comentário-pai com {{ total_respostas }} resposta{{ total_respostas|pluralize }}
+                                            </span>
+                                        {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                    <p class="text-sm text-text-light dark:text-text-dark"
+                                       :class="expanded ? '' : 'line-clamp-3'"
+                                       x-init="$nextTick(() => { isTruncated = $el.scrollHeight > $el.clientHeight })">
+                                        {{ comentario.conteudo|renderizar_mencoes|safe }}
+                                    </p>
+                                    <button @click="expanded = !expanded" x-show="isTruncated" class="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 transition-transform" :class="expanded ? 'rotate-180' : ''">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                        </svg>
+                                        <span x-text="expanded ? 'Mostrar menos' : 'Mostrar mais'"></span>
+                                    </button>
+                                </div>
+                            </td>
+
+                            <!-- Obra Comentada -->
+                            <td class="p-2.5">
+                                <div class="max-w-xs">
+                                    <a href="{% url 'textos:leitura_texto' comentario.texto.pk %}" target="_blank" class="text-sm font-medium text-primary hover:underline">
+                                        {{ comentario.texto.titulo|truncatewords:6 }}
+                                    </a>
+                                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">por {{ comentario.texto.autor.get_display_name }}</p>
+                                </div>
+                            </td>
+
+                            <!-- Data -->
+                            <td class="p-2.5">
+                                <p class="text-sm text-text-light dark:text-text-dark">{{ comentario.data_publicacao|naturaltime }}</p>
+                                <p class="text-xs text-placeholder-light dark:text-placeholder-dark">{{ comentario.data_publicacao|date:"d/m/Y H:i" }}</p>
+                            </td>
+
+                            <!-- Ações -->
+                            <td class="p-2.5">
+                                <div class="flex items-center justify-end gap-2">
+                                    {% if comentario.status == 'PENDENTE' %}
+                                        <button
+                                            @click="openModal('Aprovar Comentário', 'Tem certeza que deseja aprovar este comentário? Ele será exibido publicamente na página de leitura.', 'aprovar', 'green', {{ comentario.id }})"
+                                            class="flex items-center gap-1 px-3 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors" title="Aprovar comentário">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                            </svg>
+                                            Aprovar
+                                        </button>
+                                        <button data-action="aprovar" data-id="{{ comentario.id }}" hx-post="{% url 'painel_autor:aprovar_comentario_autor' comentario.id %}" hx-target="#comentario-desktop-{{ comentario.id }}" hx-swap="outerHTML swap:1s" style="display: none;"></button>
+
+                                        <button
+                                            @click="openModal('Rejeitar Comentário', 'Tem certeza que deseja rejeitar este comentário? Ele será ocultado e não aparecerá publicamente.', 'rejeitar', 'yellow', {{ comentario.id }})"
+                                            class="flex items-center gap-1 px-3 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors" title="Rejeitar comentário">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                            Rejeitar
+                                        </button>
+                                        <button data-action="rejeitar" data-id="{{ comentario.id }}" hx-post="{% url 'painel_autor:rejeitar_comentario_autor' comentario.id %}" hx-target="#comentario-desktop-{{ comentario.id }}" hx-swap="outerHTML swap:1s" style="display: none;"></button>
+                                    {% endif %}
+
+                                    <button
+                                        @click="openModal('⚠️ Excluir Permanentemente', 'ATENÇÃO: Esta ação é IRREVERSÍVEL e excluirá permanentemente este comentário e todas as suas respostas. Tem certeza absoluta?', 'excluir', 'red', {{ comentario.id }})"
+                                        class="flex items-center gap-1 px-3 py-2 text-xs font-bold text-white bg-red-900 hover:bg-red-950 rounded-lg transition-colors" title="Excluir permanentemente">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                        </svg>
+                                        Excluir
+                                    </button>
+                                    <button data-action="excluir" data-id="{{ comentario.id }}" hx-post="{% url 'painel_autor:excluir_comentario_autor' comentario.id %}" hx-target="#comentario-desktop-{{ comentario.id }}" hx-swap="outerHTML swap:1s" style="display: none;"></button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação (abaixo da tabela) -->
+        {% if is_paginated %}
+        <div class="flex justify-end px-4 py-4 border-t border-border-light dark:border-border-dark">
+            <div class="flex items-center gap-2">
+                <!-- Botão Primeira -->
+                {% if page_obj.has_previous %}
+                    <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page=1"
+                       class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                        Primeira
+                    </a>
+                    <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_obj.previous_page_number }}"
+                       class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                        Anterior
+                    </a>
+                {% else %}
+                    <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                        Primeira
+                    </span>
+                    <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                        Anterior
+                    </span>
+                {% endif %}
+
+                <!-- Números de Página (reutilizar lógica acima) -->
+                {% with current_page=page_obj.number total_pages=page_obj.paginator.num_pages %}
+                    {% if total_pages <= 7 %}
+                        {% for page_num in page_obj.paginator.page_range %}
+                            {% if page_num == current_page %}
+                                <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                    {{ page_num }}
+                                </span>
+                            {% else %}
+                                <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_num }}"
+                                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ page_num }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        {% if current_page <= 4 %}
+                            {% for i in "12345" %}
+                                {% if forloop.counter == current_page %}
+                                    <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                        {{ forloop.counter }}
+                                    </span>
+                                {% else %}
+                                    <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ forloop.counter }}"
+                                       class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                        {{ forloop.counter }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                            <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ total_pages }}"
+                               class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ total_pages }}
+                            </a>
+                        {% elif current_page >= total_pages|add:"-3" %}
+                            <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page=1"
+                               class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                1
+                            </a>
+                            <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                            {% for i in "54321" %}
+                                {% with page_num=total_pages|add:forloop.counter|add:"-6" %}
+                                    {% if page_num == current_page %}
+                                        <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                            {{ page_num }}
+                                        </span>
+                                    {% else %}
+                                        <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_num }}"
+                                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                            {{ page_num }}
+                                        </a>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        {% else %}
+                            <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page=1"
+                               class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                1
+                            </a>
+                            <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                            <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ current_page|add:"-1" }}"
+                               class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ current_page|add:"-1" }}
+                            </a>
+                            <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                {{ current_page }}
+                            </span>
+                            <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ current_page|add:"1" }}"
+                               class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ current_page|add:"1" }}
+                            </a>
+                            <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                            <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ total_pages }}"
+                               class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ total_pages }}
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Botão Próxima e Última -->
+                {% if page_obj.has_next %}
+                    <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_obj.next_page_number }}"
+                       class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                        Próxima
+                    </a>
+                    <a href="?status={{ status_ativa }}&busca_leitor={{ busca_leitor }}&busca={{ busca }}&busca_titulo={{ busca_titulo }}&order_by={{ order_by }}&per_page={{ per_page }}&page={{ page_obj.paginator.num_pages }}"
+                       class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                        Última
+                    </a>
+                {% else %}
+                    <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                        Próxima
+                    </span>
+                    <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                        Última
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    {% else %}
+        <!-- Mensagem de lista vazia -->
+        <div class="p-12 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto text-placeholder-light dark:text-placeholder-dark mb-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+            </svg>
+            <p class="text-lg font-medium text-text-light dark:text-text-dark mb-2">
+                Nenhum comentário encontrado
+            </p>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                {% if status_ativa == 'PENDENTE' %}
+                    Não há comentários aguardando moderação.
+                {% elif status_ativa == 'APROVADO' %}
+                    Não há comentários aprovados.
+                {% elif status_ativa == 'REJEITADO' %}
+                    Não há comentários rejeitados.
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
+</div>
+</div> <!-- Fecha div do Alpine.js x-data -->

@@ -1,0 +1,484 @@
+{% extends 'base.html' %}
+
+{% block title %}Minha Conta - LIVRE DIA{% endblock %}
+
+{% block content %}
+<div class="layout-content-container flex flex-col w-full max-w-4xl flex-1 px-4">
+    <div class="flex flex-wrap justify-between gap-3 p-4">
+        <div class="flex w-full flex-col gap-3">
+            <p class="text-text-light dark:text-text-dark text-4xl font-black leading-tight tracking-[-0.033em] font-display">
+                Minha Conta
+            </p>
+            <p class="text-placeholder-light dark:text-placeholder-dark text-base font-normal leading-normal">
+                Gerencie suas informações pessoais e configurações de conta.
+            </p>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 1: Editar Perfil -->
+    <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6 mb-6">
+        <h3 class="text-xl font-bold text-text-light dark:text-text-dark font-display mb-6">Editar Perfil</h3>
+
+        <form method="post" enctype="multipart/form-data" class="flex flex-col gap-6">
+            {% csrf_token %}
+            <input type="hidden" name="alterar_perfil" value="1">
+
+            <!-- Username (ID de Usuário) - Campo Destacado -->
+            <div class="bg-primary/5 dark:bg-primary/10 p-6 rounded-xl border-2 border-primary/30">
+                <label class="flex flex-col">
+                    <p class="text-primary dark:text-primary text-lg font-bold leading-normal pb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                        {{ form.username.label }}
+                    </p>
+
+                    <div class="relative">
+                        <!-- Símbolo @ na frente -->
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                            <span class="text-primary dark:text-primary text-xl font-bold">@</span>
+                        </div>
+
+                        {{ form.username }}
+
+                        <!-- Ícones de validação (✓ = disponível, ✗ = indisponível) -->
+                        <div id="username-validation-icon" class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none" style="display: none;">
+                            <!-- Ícone de sucesso (✓) -->
+                            <svg id="username-check-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-green-600 dark:text-green-400" style="display: none;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <!-- Ícone de erro (✗) -->
+                            <svg id="username-error-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-red-600 dark:text-red-400" style="display: none;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Mensagem de erro dinâmica -->
+                    {% if form.username.errors %}
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-2">{{ form.username.errors.0 }}</p>
+                    {% else %}
+                    <p id="username-error-message" class="text-sm text-red-600 dark:text-red-400 mt-2" style="display: none;"></p>
+                    {% endif %}
+
+                    <!-- Help text -->
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">{{ form.username.help_text }}</p>
+                </label>
+            </div>
+
+            <!-- Nome e Email -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{form.nome_completo.label}}</p>
+                    {{form.nome_completo}}
+                    {% if form.nome_completo.errors %}<p class="text-xs text-red-600 mt-1">{{form.nome_completo.errors.0}}</p>{% endif %}
+                </label>
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{form.email.label}}</p>
+                    {{form.email}}
+                    {% if form.email.errors %}<p class="text-xs text-red-600 mt-1">{{form.email.errors.0}}</p>{% endif %}
+                </label>
+            </div>
+
+            <!-- Pseudônimo (apenas para Autores) -->
+            {% if user.role == 'AUTOR' %}
+            <div>
+                <label class="flex flex-col">
+                    <div class="flex items-center gap-2 pb-2">
+                        <p class="text-text-light dark:text-text-dark text-sm font-medium">{{form.pseudonimo.label}}</p>
+                        <span class="text-xs text-placeholder-light dark:text-placeholder-dark">(opcional)</span>
+                    </div>
+                    {{form.pseudonimo}}
+                    {% if form.pseudonimo.errors %}
+                        <p class="text-xs text-red-600 mt-1">{{form.pseudonimo.errors.0}}</p>
+                    {% else %}
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                            Use um pseudônimo se desejar publicar textos sem revelar seu nome real.
+                        </p>
+                    {% endif %}
+                </label>
+            </div>
+            {% endif %}
+
+            <!-- Foto -->
+            <div>
+                <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{form.foto.label}}</p>
+                <div class="flex items-center gap-4">
+                    <div id="current-photo-display">
+                        <img src="{{user.get_avatar_url}}" alt="{{user.get_display_name}}" class="w-20 h-20 rounded-full object-cover border-2 border-primary">
+                    </div>
+                    <div id="photo-preview-container" class="flex-1">
+                        <label class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border-light dark:border-border-dark rounded-lg cursor-pointer hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors" for="dropzone-file">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-placeholder-light dark:text-placeholder-dark">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                            </svg>
+                            <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">Clique para alterar foto</p>
+                        </label>
+                    </div>
+                </div>
+                {{form.foto}}
+
+                <!-- Checkbox para remover foto (só aparece se usuário tiver foto) -->
+                {% if user.foto %}
+                <div class="mt-3 flex items-center gap-2 p-3 bg-secondary-light/30 dark:bg-secondary-dark/20 rounded-lg border border-border-light dark:border-border-dark">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        {{form.remover_foto}}
+                        <span class="text-sm text-text-light dark:text-text-dark">
+                            {{form.remover_foto.label}}
+                        </span>
+                    </label>
+                    <!-- Ícone de ajuda com tooltip -->
+                    <div class="ml-auto relative" x-data="{ showTooltip: false }">
+                        <div @mouseenter="showTooltip = true" @mouseleave="showTooltip = false" class="cursor-help">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-500 hover:text-primary transition-colors">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                            </svg>
+                        </div>
+                        <!-- Tooltip -->
+                        <div x-show="showTooltip"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 transform scale-95"
+                             x-transition:enter-end="opacity-100 transform scale-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 transform scale-100"
+                             x-transition:leave-end="opacity-0 transform scale-95"
+                             class="absolute right-0 bottom-full mb-2 w-64 p-3 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50"
+                             style="display: none;">
+                            <div class="relative">
+                                <p>Se desejar não usar foto, deixe essa opção marcada e clique em Salvar Alterações.</p>
+                                <!-- Seta do tooltip -->
+                                <div class="absolute -bottom-1 right-4 w-2 h-2 bg-gray-900 dark:bg-gray-800 transform rotate-45"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Cidade e País -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{form.cidade.label}}</p>
+                    {{form.cidade}}
+                    {% if form.cidade.errors %}<p class="text-xs text-red-600 mt-1">{{form.cidade.errors.0}}</p>{% endif %}
+                </label>
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{form.pais.label}}</p>
+                    {{form.pais}}
+                    {% if form.pais.errors %}<p class="text-xs text-red-600 mt-1">{{form.pais.errors.0}}</p>{% endif %}
+                </label>
+            </div>
+
+            <!-- Sexo -->
+            <div>
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{form.sexo.label}}</p>
+                    {{form.sexo}}
+                    {% if form.sexo.errors %}
+                        <p class="text-xs text-red-600 mt-1">{{form.sexo.errors.0}}</p>
+                    {% else %}
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                            Usado para personalizar mensagens e selos de reconhecimento
+                        </p>
+                    {% endif %}
+                </label>
+            </div>
+
+            <!-- Data de Nascimento -->
+            <div class="min-w-0">
+                <label class="flex flex-col min-w-0">
+                    <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{form.data_nascimento.label}}</p>
+                    <div class="min-w-0 max-w-full [&>input]:max-w-full">
+                        {{form.data_nascimento}}
+                    </div>
+                    {% if form.data_nascimento.errors %}
+                        <p class="text-xs text-red-600 mt-1">{{form.data_nascimento.errors.0}}</p>
+                    {% else %}
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                            {{form.data_nascimento.help_text}}
+                        </p>
+                    {% endif %}
+                </label>
+            </div>
+
+            <!-- Bio (apenas para autores) -->
+            {% if user.role == 'AUTOR' %}
+            <div>
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{form.bio.label}}</p>
+                    {{form.bio}}
+                    {% if form.bio.errors %}
+                        <p class="text-xs text-red-600 mt-1">{{form.bio.errors.0}}</p>
+                    {% else %}
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                            Sua bio aparece no seu perfil público
+                        </p>
+                    {% endif %}
+                </label>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="w-full h-12 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                Salvar Alterações
+            </button>
+        </form>
+
+        <!-- JavaScript para validação de Username em tempo real -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const usernameInput = document.getElementById('id_username');
+            const validationIconContainer = document.getElementById('username-validation-icon');
+            const checkIcon = document.getElementById('username-check-icon');
+            const errorIcon = document.getElementById('username-error-icon');
+            const errorMessage = document.getElementById('username-error-message');
+
+            // Guardar o username original para comparação
+            const originalUsername = usernameInput.value.toLowerCase().trim();
+
+            let typingTimer;
+            const doneTypingInterval = 500; // 500ms de debounce
+
+            // Converter para minúsculas automaticamente ao digitar
+            usernameInput.addEventListener('input', function(e) {
+                // Forçar minúsculas
+                this.value = this.value.toLowerCase();
+
+                // Limpar timer anterior
+                clearTimeout(typingTimer);
+
+                // Esconder validação enquanto digita
+                hideValidation();
+
+                // Validar após parar de digitar
+                const username = this.value.trim();
+                if (username.length > 0) {
+                    typingTimer = setTimeout(function() {
+                        // Se o username não mudou, mostrar sucesso direto
+                        if (username === originalUsername) {
+                            showSuccess('Username atual (sem alteração)');
+                        } else {
+                            validarUsername(username);
+                        }
+                    }, doneTypingInterval);
+                }
+            });
+
+            // Validar ao sair do campo (blur)
+            usernameInput.addEventListener('blur', function() {
+                const username = this.value.trim();
+                if (username.length > 0) {
+                    if (username === originalUsername) {
+                        showSuccess('Username atual (sem alteração)');
+                    } else {
+                        validarUsername(username);
+                    }
+                }
+            });
+
+            function validarUsername(username) {
+                // Fazer requisição AJAX para endpoint de validação
+                fetch(`/contas/api/verificar-username/?username=${encodeURIComponent(username)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.available) {
+                            // Username disponível
+                            showSuccess(data.message);
+                        } else {
+                            // Username inválido ou já em uso
+                            showError(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao validar username:', error);
+                        showError('Erro ao validar. Tente novamente.');
+                    });
+            }
+
+            function showSuccess(message) {
+                validationIconContainer.style.display = 'flex';
+                checkIcon.style.display = 'block';
+                errorIcon.style.display = 'none';
+                errorMessage.style.display = 'none';
+
+                // Borda verde
+                usernameInput.classList.remove('border-red-500', 'dark:border-red-400');
+                usernameInput.classList.add('border-green-500', 'dark:border-green-400');
+            }
+
+            function showError(message) {
+                validationIconContainer.style.display = 'flex';
+                checkIcon.style.display = 'none';
+                errorIcon.style.display = 'block';
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+
+                // Borda vermelha
+                usernameInput.classList.remove('border-green-500', 'dark:border-green-400');
+                usernameInput.classList.add('border-red-500', 'dark:border-red-400');
+            }
+
+            function hideValidation() {
+                validationIconContainer.style.display = 'none';
+                checkIcon.style.display = 'none';
+                errorIcon.style.display = 'none';
+                errorMessage.style.display = 'none';
+
+                // Remover bordas coloridas
+                usernameInput.classList.remove('border-green-500', 'dark:border-green-400', 'border-red-500', 'dark:border-red-400');
+            }
+        });
+        </script>
+    </div>
+
+    <!-- SEÇÃO 2: Alterar/Definir Senha -->
+    <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6 mb-6">
+        {% if usuario_tem_senha %}
+            <h3 class="text-lg font-bold text-text-light dark:text-text-dark font-display mb-4">Alterar Senha</h3>
+        {% else %}
+            <h3 class="text-lg font-bold text-text-light dark:text-text-dark font-display mb-2">Definir Senha</h3>
+            <p class="text-sm text-text-light/70 dark:text-text-dark/70 mb-4">
+                Você se cadastrou via Google e ainda não possui uma senha.
+                Defina uma senha para também poder fazer login com email e senha.
+            </p>
+        {% endif %}
+
+        <form method="post" class="flex flex-col gap-4">
+            {% csrf_token %}
+            <input type="hidden" name="alterar_senha" value="1">
+
+            {% if usuario_tem_senha %}
+            <!-- Campo Senha Atual (apenas para quem já tem senha) -->
+            <label class="flex flex-col">
+                <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{ senha_form.old_password.label }}</p>
+                <div class="relative">
+                    {{ senha_form.old_password }}
+                    <!-- Botão mostrar/ocultar senha -->
+                    <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-4 text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark transition-colors" data-target="id_old_password" tabindex="-1">
+                        <svg class="eye-open w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        <svg class="eye-closed w-5 h-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        </svg>
+                    </button>
+                </div>
+                {% if senha_form.old_password.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ senha_form.old_password.errors.0 }}</p>
+                {% endif %}
+            </label>
+            {% endif %}
+
+            <label class="flex flex-col">
+                <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{ senha_form.new_password1.label }}</p>
+                <div class="relative">
+                    {{ senha_form.new_password1 }}
+                    <!-- Botão mostrar/ocultar senha -->
+                    <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-4 text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark transition-colors" data-target="id_new_password1" tabindex="-1">
+                        <svg class="eye-open w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        <svg class="eye-closed w-5 h-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        </svg>
+                    </button>
+                </div>
+                {% if senha_form.new_password1.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ senha_form.new_password1.errors.0 }}</p>
+                {% endif %}
+            </label>
+
+            <label class="flex flex-col">
+                <p class="text-text-light dark:text-text-dark text-sm font-medium pb-2">{{ senha_form.new_password2.label }}</p>
+                <div class="relative">
+                    {{ senha_form.new_password2 }}
+                    <!-- Botão mostrar/ocultar senha -->
+                    <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-4 text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark transition-colors" data-target="id_new_password2" tabindex="-1">
+                        <svg class="eye-open w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        <svg class="eye-closed w-5 h-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        </svg>
+                    </button>
+                </div>
+                {% if senha_form.new_password2.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ senha_form.new_password2.errors.0 }}</p>
+                {% endif %}
+            </label>
+
+            <button type="submit" name="alterar_senha" class="w-full h-10 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors text-sm">
+                {% if usuario_tem_senha %}Alterar Senha{% else %}Definir Senha{% endif %}
+            </button>
+        </form>
+    </div>
+
+    <!-- SEÇÃO 3: Backup de Textos (apenas para Autores) -->
+    {% if user.role == 'AUTOR' %}
+    <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6 mb-6">
+        <h3 class="text-xl font-bold text-text-light dark:text-text-dark font-display mb-4 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-primary">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Backup dos Seus Textos
+        </h3>
+        <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-4">
+            Baixe uma cópia de todos os seus textos publicados em formato Word (.docx).
+            O arquivo inclui título, subtítulo, data de publicação, categorias e o conteúdo completo de cada texto.
+        </p>
+        <a href="{% url 'usuarios:backup_textos' %}"
+           class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+            Baixar Backup (.docx)
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- SEÇÃO 4: Zona de Perigo -->
+    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+        <h3 class="text-lg font-bold text-red-800 dark:text-red-400 font-display mb-2">Zona de Perigo</h3>
+        <p class="text-sm text-red-700 dark:text-red-300 mb-4">
+            Ao excluir sua conta, todos os seus dados serão removidos permanentemente, incluindo comentários e textos.
+        </p>
+        <a href="{% url 'usuarios:excluir_conta' %}" class="block w-full h-10 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center justify-center">
+            Excluir Minha Conta
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle de visibilidade de senha
+    const toggleButtons = document.querySelectorAll('.toggle-password');
+
+    toggleButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-target');
+            const passwordInput = document.getElementById(targetId);
+            const eyeOpen = this.querySelector('.eye-open');
+            const eyeClosed = this.querySelector('.eye-closed');
+
+            if (passwordInput && eyeOpen && eyeClosed) {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    eyeOpen.classList.add('hidden');
+                    eyeClosed.classList.remove('hidden');
+                } else {
+                    passwordInput.type = 'password';
+                    eyeOpen.classList.remove('hidden');
+                    eyeClosed.classList.add('hidden');
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

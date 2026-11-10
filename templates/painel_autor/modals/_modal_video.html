@@ -1,0 +1,92 @@
+<!-- Modal de Inserir Vídeo -->
+<div x-data="{
+    modalVideoAberto: false,
+    urlVideo: '',
+    inserirVideo() {
+        if (this.urlVideo) {
+            window.dispatchEvent(new CustomEvent('inserir-video', { detail: { url: this.urlVideo } }));
+            this.urlVideo = '';
+            this.modalVideoAberto = false;
+        }
+    }
+}" @open-video-modal.window="modalVideoAberto = true" x-cloak>
+    <!-- Overlay -->
+    <div x-show="modalVideoAberto"
+         @click="modalVideoAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalVideoAberto"
+         @click.away="modalVideoAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-lg w-full border border-border-light dark:border-border-dark">
+            <!-- Header do Modal -->
+            <div class="bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                    Inserir Vídeo
+                </h2>
+                <button @click="modalVideoAberto = false" class="text-white hover:text-gray-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        URL do Vídeo (YouTube) <span class="text-red-600">*</span>
+                    </p>
+                    <input
+                        x-model="urlVideo"
+                        @keydown.enter="inserirVideo()"
+                        type="url"
+                        placeholder="https://www.youtube.com/watch?v=abc123"
+                        class="form-input flex w-full resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-14 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark p-4 text-base font-normal leading-normal"
+                    />
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        Cole a URL completa do vídeo do YouTube
+                    </p>
+                </label>
+
+                <!-- Instruções de uso -->
+                <div class="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p class="text-sm font-bold text-primary mb-2">💡 Como inserir vídeos do YouTube:</p>
+                    <ul class="text-xs text-text-light dark:text-text-dark space-y-1 list-disc list-inside">
+                        <li><strong>Opção 1:</strong> Copie a URL da barra de endereços</li>
+                        <li><strong>Opção 2:</strong> Clique em "Compartilhar" e use a URL curta</li>
+                        <li><strong>Importante:</strong> Cole a URL completa, não o código embed</li>
+                        <li><strong>Posicionamento:</strong> O vídeo será inserido na posição do cursor</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalVideoAberto = false" class="px-6 py-2 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg font-medium hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                    Cancelar
+                </button>
+                <button @click="inserirVideo()" class="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                    Inserir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

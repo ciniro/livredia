@@ -1,0 +1,583 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+{% load humanize %}
+{% load tempo_filters %}
+
+{% block title %}Gestão de Obras - Painel Admin - LIVRE DIA{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8" x-data="{
+    showDeleteModal: false,
+    textoTitulo: '',
+    textoPk: null
+}">
+    <!-- Cabeçalho com Estatísticas -->
+    <div class="flex flex-wrap justify-between items-center gap-4">
+        <div>
+            <h1 class="text-text-light dark:text-text-dark text-2xl sm:text-3xl font-black leading-tight tracking-[-0.033em] font-display">
+                Gestão de Obras
+            </h1>
+            <p class="text-placeholder-light dark:text-placeholder-dark text-xs mt-2">
+                Total: {{ total_obras }} | Ativos: {{ total_ativos }} | Suspensos: {{ total_suspensos }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <form method="get" action="{% url 'painel_admin:gestao_obras' %}" class="space-y-4">
+        <!-- Primeira Linha: Busca -->
+        <div class="flex flex-wrap gap-3 items-end">
+            <!-- Busca por Título ou Subtítulo -->
+            <label class="flex flex-col flex-1 min-w-[250px]">
+                <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Filtrar por título ou subtítulo da obra</span>
+                <input
+                    type="text"
+                    name="busca_titulo"
+                    value="{{ busca_titulo }}"
+                    placeholder="Digite o título ou subtítulo da obra..."
+                    class="form-input flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-9 placeholder:text-placeholder-light dark:text-placeholder-dark px-3 text-xs font-normal">
+            </label>
+
+            <!-- Filtro por Autor ou Pseudônimo -->
+            <label class="flex flex-col flex-1 min-w-[250px]">
+                <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Filtrar por Autor ou Pseudônimo</span>
+                <input
+                    type="text"
+                    name="busca_autor"
+                    value="{{ busca_autor }}"
+                    placeholder="Digite o nome do autor ou pseudônimo..."
+                    class="form-input flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-9 placeholder:text-placeholder-light dark:text-placeholder-dark px-3 text-xs font-normal">
+            </label>
+        </div>
+
+        <!-- Segunda Linha: Ordenação, Obras por página e Status -->
+        <div class="flex flex-wrap gap-3 items-end">
+            <!-- Ordenação -->
+            <label class="flex flex-col min-w-[200px]">
+                <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Ordenar por</span>
+                <select
+                    name="ordenar"
+                    class="form-select flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-12 px-3 text-xs font-normal">
+                    <option value="-data_publicacao" {% if ordenar == '-data_publicacao' %}selected{% endif %}>Mais recentes</option>
+                    <option value="data_antigos" {% if ordenar == 'data_antigos' %}selected{% endif %}>Mais antigos</option>
+                    <option value="titulo_az" {% if ordenar == 'titulo_az' %}selected{% endif %}>Título (A-Z)</option>
+                    <option value="titulo_za" {% if ordenar == 'titulo_za' %}selected{% endif %}>Título (Z-A)</option>
+                    <option value="autor_az" {% if ordenar == 'autor_az' %}selected{% endif %}>Autor (A-Z)</option>
+                    <option value="autor_za" {% if ordenar == 'autor_za' %}selected{% endif %}>Autor (Z-A)</option>
+                    <option value="-total_visualizacoes" {% if ordenar == '-total_visualizacoes' %}selected{% endif %}>Mais visualizados</option>
+                    <option value="total_visualizacoes" {% if ordenar == 'total_visualizacoes' %}selected{% endif %}>Menos visualizados</option>
+                    <option value="-tempo_total_leitura" {% if ordenar == '-tempo_total_leitura' %}selected{% endif %}>Maior tempo total de leitura</option>
+                    <option value="tempo_total_leitura" {% if ordenar == 'tempo_total_leitura' %}selected{% endif %}>Menor tempo total de leitura</option>
+                    <option value="-tempo_medio_leitura" {% if ordenar == '-tempo_medio_leitura' %}selected{% endif %}>Maior tempo médio de leitura</option>
+                    <option value="tempo_medio_leitura" {% if ordenar == 'tempo_medio_leitura' %}selected{% endif %}>Menor tempo médio de leitura</option>
+                </select>
+            </label>
+
+            <!-- Obras por página -->
+            <label class="flex flex-col">
+                <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Obras por página</span>
+                <select
+                    name="per_page"
+                    class="form-select flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-12 px-3 text-xs font-normal">
+                    <option value="30" {% if per_page == '30' %}selected{% endif %}>30</option>
+                    <option value="50" {% if per_page == '50' %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == '100' %}selected{% endif %}>100</option>
+                </select>
+            </label>
+
+            <!-- Filtro por Status de Suspensão -->
+            <label class="flex flex-col min-w-[200px]">
+                <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Status</span>
+                <select
+                    name="status_suspensao"
+                    class="form-select flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-12 px-3 text-xs font-normal">
+                    <option value="" {% if status_suspensao == '' %}selected{% endif %}>Todos</option>
+                    <option value="ativo" {% if status_suspensao == 'ativo' %}selected{% endif %}>Apenas Ativos</option>
+                    <option value="suspenso" {% if status_suspensao == 'suspenso' %}selected{% endif %}>Apenas Suspensos</option>
+                </select>
+            </label>
+
+            <!-- Botão Filtrar -->
+            <button
+                type="submit"
+                class="flex items-center justify-center h-10 px-5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                Filtrar
+            </button>
+
+            <!-- Botão Limpar -->
+            <a
+                href="{% url 'painel_admin:gestao_obras' %}"
+                class="flex items-center justify-center h-9 px-4 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+                Limpar
+            </a>
+        </div>
+    </form>
+
+    <!-- Paginação (acima da tabela) -->
+    {% if is_paginated %}
+    <div class="flex justify-end">
+        <div class="flex items-center gap-2">
+            <!-- Botão Primeira -->
+            {% if page_obj.has_previous %}
+                <a href="?page=1{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Primeira
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Anterior
+                </a>
+            {% else %}
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Primeira
+                </span>
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Anterior
+                </span>
+            {% endif %}
+
+            <!-- Números de Página -->
+            {% with current_page=page_obj.number total_pages=page_obj.paginator.num_pages %}
+                {% if total_pages <= 7 %}
+                    <!-- Mostrar todas as páginas se forem 7 ou menos -->
+                    {% for page_num in page_obj.paginator.page_range %}
+                        {% if page_num == current_page %}
+                            <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                {{ page_num }}
+                            </span>
+                        {% else %}
+                            <a href="?page={{ page_num }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                               class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ page_num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Lógica inteligente para muitas páginas -->
+                    {% if current_page <= 4 %}
+                        <!-- Início: mostrar 1 2 3 4 5 ... última -->
+                        {% for i in "12345" %}
+                            {% if forloop.counter == current_page %}
+                                <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                    {{ forloop.counter }}
+                                </span>
+                            {% else %}
+                                <a href="?page={{ forloop.counter }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ forloop.counter }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?page={{ total_pages }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% elif current_page >= total_pages|add:"-3" %}
+                        <!-- Final: mostrar primeira ... n-4 n-3 n-2 n-1 n -->
+                        <a href="?page=1{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        {% for i in "54321" %}
+                            {% with page_num=total_pages|add:forloop.counter|add:"-6" %}
+                                {% if page_num == current_page %}
+                                    <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                        {{ page_num }}
+                                    </span>
+                                {% else %}
+                                    <a href="?page={{ page_num }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                                       class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                        {{ page_num }}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Meio: mostrar 1 ... atual-1 atual atual+1 ... última -->
+                        <a href="?page=1{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?page={{ current_page|add:"-1" }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"-1" }}
+                        </a>
+                        <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                            {{ current_page }}
+                        </span>
+                        <a href="?page={{ current_page|add:"1" }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"1" }}
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?page={{ total_pages }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% endif %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Botão Próxima e Última -->
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Próxima
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Última
+                </a>
+            {% else %}
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Próxima
+                </span>
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Última
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabela de Obras -->
+    <div class="overflow-hidden rounded-xl border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-secondary-light/30 dark:bg-secondary-dark/20">
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Título</th>
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Subtítulo</th>
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Autor/Pseudônimo</th>
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Comentários</th>
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Exibições totais</th>
+
+                        <!-- Visualizações únicas -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">
+                            Visualizações únicas
+                        </th>
+
+                        <!-- Tempo Total -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">
+                            Tempo Total
+                        </th>
+
+                        <!-- Tempo Médio -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">
+                            Tempo Médio
+                        </th>
+
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Status</th>
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for texto in textos %}
+                    <tr class="border-t border-border-light dark:border-border-dark hover:bg-secondary-light/10 dark:hover:bg-secondary-dark/10 transition-colors">
+                        <!-- Título -->
+                        <td class="p-2.5 text-sm text-text-light dark:text-text-dark">
+                            <a href="/texto/{{ texto.slug }}/" target="_blank" class="hover:text-primary hover:underline font-medium">
+                                {{ texto.titulo|truncatewords:10 }}
+                            </a>
+                        </td>
+
+                        <!-- Subtítulo -->
+                        <td class="p-2.5 text-sm text-placeholder-light dark:text-placeholder-dark">
+                            {% if texto.subtitulo %}
+                                {{ texto.subtitulo|truncatewords:8 }}
+                            {% else %}
+                                <span class="italic text-placeholder-light dark:text-placeholder-dark">Sem subtítulo</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Autor/Pseudônimo -->
+                        <td class="p-2.5 text-sm text-text-light dark:text-text-dark">
+                            {% if texto.display_autoria == 'REAL' %}
+                                {{ texto.autor.get_full_name }}
+                            {% elif texto.display_autoria == 'PSEUDONIMO' and texto.autor.pseudonimo %}
+                                {{ texto.autor.pseudonimo }}
+                            {% elif texto.display_autoria == 'AMBOS' and texto.autor.pseudonimo %}
+                                {{ texto.autor.get_full_name }} ({{ texto.autor.pseudonimo }})
+                            {% else %}
+                                {{ texto.autor.get_full_name }}
+                            {% endif %}
+                        </td>
+
+                        <!-- Comentários -->
+                        <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                            {{ texto.total_comentarios }}
+                        </td>
+
+                        <!-- Exibições totais -->
+                        <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                            {{ texto.total_visualizacoes }}
+                        </td>
+
+                        <!-- Visualizações únicas -->
+                        <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                            {{ texto.visualizacoes_unicas }}
+                        </td>
+
+                        <!-- Tempo Total de Leitura -->
+                        <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                            {{ texto.tempo_total_leitura|formatar_tempo }}
+                        </td>
+
+                        <!-- Tempo Médio de Leitura -->
+                        <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                            {{ texto.tempo_total_leitura|calcular_tempo_medio:texto.visualizacoes_unicas }}
+                        </td>
+
+                        <!-- Status (botão direto) -->
+                        <td class="p-2.5">
+                            <form method="post" action="{% url 'painel_admin:toggle_suspender_texto' texto.pk %}" class="inline">
+                                {% csrf_token %}
+                                {% if texto.is_suspended %}
+                                    <button
+                                        type="submit"
+                                        class="px-3 py-1.5 text-xs font-bold rounded bg-green-600 text-white hover:bg-green-700 transition-colors">
+                                        REATIVAR
+                                    </button>
+                                {% else %}
+                                    <button
+                                        type="submit"
+                                        class="px-3 py-1.5 text-xs font-bold rounded bg-primary text-white hover:bg-primary/90 transition-colors">
+                                        SUSPENDER
+                                    </button>
+                                {% endif %}
+                            </form>
+                        </td>
+
+                        <!-- Ações -->
+                        <td class="p-2.5">
+                            <!-- Botão Excluir -->
+                            <button
+                                @click="showDeleteModal = true; textoTitulo = '{{ texto.titulo|escapejs }}'; textoPk = {{ texto.pk }}"
+                                class="px-3 py-1.5 text-xs font-bold rounded bg-red-500 text-white hover:bg-red-600 transition-colors">
+                                EXCLUIR
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="p-8 text-center text-placeholder-light dark:text-placeholder-dark">
+                            Nenhuma obra encontrada com os filtros aplicados.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginação (abaixo da tabela) -->
+    {% if is_paginated %}
+    <div class="flex justify-end mt-6">
+        <div class="flex items-center gap-2">
+            <!-- Botão Primeira -->
+            {% if page_obj.has_previous %}
+                <a href="?page=1{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Primeira
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Anterior
+                </a>
+            {% else %}
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Primeira
+                </span>
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Anterior
+                </span>
+            {% endif %}
+
+            <!-- Números de Página -->
+            {% with current_page=page_obj.number total_pages=page_obj.paginator.num_pages %}
+                {% if total_pages <= 7 %}
+                    <!-- Mostrar todas as páginas se forem 7 ou menos -->
+                    {% for page_num in page_obj.paginator.page_range %}
+                        {% if page_num == current_page %}
+                            <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                {{ page_num }}
+                            </span>
+                        {% else %}
+                            <a href="?page={{ page_num }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                               class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ page_num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Lógica inteligente para muitas páginas -->
+                    {% if current_page <= 4 %}
+                        <!-- Início: mostrar 1 2 3 4 5 ... última -->
+                        {% for i in "12345" %}
+                            {% if forloop.counter == current_page %}
+                                <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                    {{ forloop.counter }}
+                                </span>
+                            {% else %}
+                                <a href="?page={{ forloop.counter }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ forloop.counter }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?page={{ total_pages }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% elif current_page >= total_pages|add:"-3" %}
+                        <!-- Final: mostrar primeira ... n-4 n-3 n-2 n-1 n -->
+                        <a href="?page=1{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        {% for i in "54321" %}
+                            {% with page_num=total_pages|add:forloop.counter|add:"-6" %}
+                                {% if page_num == current_page %}
+                                    <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                        {{ page_num }}
+                                    </span>
+                                {% else %}
+                                    <a href="?page={{ page_num }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                                       class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                        {{ page_num }}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Meio: mostrar 1 ... atual-1 atual atual+1 ... última -->
+                        <a href="?page=1{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?page={{ current_page|add:"-1" }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"-1" }}
+                        </a>
+                        <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                            {{ current_page }}
+                        </span>
+                        <a href="?page={{ current_page|add:"1" }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"1" }}
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?page={{ total_pages }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% endif %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Botão Próxima e Última -->
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Próxima
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if busca_titulo %}&busca_titulo={{ busca_titulo }}{% endif %}{% if busca_autor %}&busca_autor={{ busca_autor }}{% endif %}{% if status_suspensao %}&status_suspensao={{ status_suspensao }}{% endif %}{% if ordenar %}&ordenar={{ ordenar }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Última
+                </a>
+            {% else %}
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Próxima
+                </span>
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Última
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div
+        x-show="showDeleteModal"
+        x-cloak
+        @keydown.escape.window="showDeleteModal = false"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+        style="display: none;">
+
+        <div
+            @click.away="showDeleteModal = false"
+            class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-2xl w-full p-8 space-y-6">
+
+            <!-- Ícone de Aviso -->
+            <div class="flex items-center justify-center">
+                <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-red-600 dark:text-red-400">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Título -->
+            <h2 class="text-2xl font-bold text-center text-text-light dark:text-text-dark font-display">
+                Confirmar Exclusão Permanente
+            </h2>
+
+            <!-- Mensagem de Aviso -->
+            <div class="space-y-4 text-text-light dark:text-text-dark">
+                <p class="text-center font-medium">
+                    Você está prestes a excluir a obra:
+                </p>
+                <p class="text-center text-lg font-bold text-primary" x-text="textoTitulo"></p>
+
+                <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4 space-y-3">
+                    <p class="font-bold text-red-600 dark:text-red-400">⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!</p>
+
+                    <ul class="list-disc list-inside space-y-2 text-sm">
+                        <li>O texto será excluído <strong>permanentemente</strong> da plataforma</li>
+                        <li>Todos os <strong>comentários vinculados</strong> serão deletados</li>
+                        <li>Todas as <strong>visualizações registradas</strong> serão perdidas</li>
+                        <li>O próprio <strong>autor pode excluir</strong> seu texto se desejar</li>
+                    </ul>
+
+                    <p class="text-sm italic">
+                        💡 <strong>Recomendação:</strong> Converse com o autor antes de excluir, a menos que haja uma razão de força maior. Excluir sem o consentimento do autor pode gerar desconforto.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="flex gap-4 pt-4">
+                <!-- Botão Cancelar -->
+                <button
+                    @click="showDeleteModal = false"
+                    class="flex-1 px-6 py-3 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                    CANCELAR
+                </button>
+
+                <!-- Botão Confirmar -->
+                <form :action="`{% url 'painel_admin:excluir_texto' 0 %}`.replace('0', textoPk)" method="post" class="flex-1">
+                    {% csrf_token %}
+                    <button
+                        type="submit"
+                        class="w-full px-6 py-3 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors">
+                        CONFIRMAR EXCLUSÃO
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

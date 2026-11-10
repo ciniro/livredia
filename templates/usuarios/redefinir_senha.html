@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}LIVRE DIA - Redefinir Senha{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Força estilos consistentes para autocomplete */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-text-fill-color: #1b150e !important;
+        -webkit-box-shadow: 0 0 0 1000px #fcfaf8 inset !important;
+        box-shadow: 0 0 0 1000px #fcfaf8 inset !important;
+        border: 1px solid #e7ddd0 !important;
+        background-color: #fcfaf8 !important;
+        transition: background-color 5000s ease-in-out 0s !important;
+    }
+
+    .dark input:-webkit-autofill,
+    .dark input:-webkit-autofill:hover,
+    .dark input:-webkit-autofill:focus,
+    .dark input:-webkit-autofill:active {
+        -webkit-text-fill-color: #f3eee7 !important;
+        -webkit-box-shadow: 0 0 0 1000px #211a11 inset !important;
+        box-shadow: 0 0 0 1000px #211a11 inset !important;
+        border: 1px solid #4a4137 !important;
+        background-color: #211a11 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="layout-content-container flex flex-col max-w-md w-full px-4 sm:px-0">
+    <div class="flex flex-col items-center gap-8">
+        <div class="text-center">
+            <p class="text-4xl font-black leading-tight tracking-[-0.033em] font-display">Nova senha</p>
+            <p class="text-base font-normal leading-normal text-text-light dark:text-text-dark mt-4">
+                Defina uma nova senha para sua conta
+            </p>
+        </div>
+
+        <!-- Formulário de Redefinição -->
+        <form method="post" class="w-full flex flex-col gap-6">
+            {% csrf_token %}
+
+            <div class="flex flex-col gap-4">
+                <!-- Campo Nova Senha -->
+                <label class="flex flex-col w-full">
+                    <p class="text-base font-medium leading-normal pb-2">Nova senha</p>
+                    <div class="relative flex w-full flex-1 items-stretch rounded-lg">
+                        <input
+                            id="id_password1"
+                            name="password1"
+                            class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary h-14 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark p-[15px] pr-12 text-base font-normal leading-normal"
+                            placeholder="Digite sua nova senha"
+                            type="password"
+                            required
+                            autofocus
+                        />
+                        <!-- Botão mostrar/ocultar senha -->
+                        <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-4 text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark transition-colors" data-target="id_password1" tabindex="-1">
+                            <!-- Ícone de olho (mostrar senha) -->
+                            <svg class="eye-open w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            <!-- Ícone de olho riscado (ocultar senha) -->
+                            <svg class="eye-closed w-5 h-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
+                </label>
+
+                <!-- Campo Confirmar Nova Senha -->
+                <label class="flex flex-col w-full">
+                    <p class="text-base font-medium leading-normal pb-2">Confirmar nova senha</p>
+                    <div class="relative flex w-full flex-1 items-stretch rounded-lg">
+                        <input
+                            id="id_password2"
+                            name="password2"
+                            class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary h-14 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark p-[15px] pr-12 text-base font-normal leading-normal"
+                            placeholder="Digite novamente sua nova senha"
+                            type="password"
+                            required
+                        />
+                        <!-- Botão mostrar/ocultar senha -->
+                        <button type="button" class="toggle-password absolute inset-y-0 right-0 flex items-center pr-4 text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark transition-colors" data-target="id_password2" tabindex="-1">
+                            <!-- Ícone de olho (mostrar senha) -->
+                            <svg class="eye-open w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            <!-- Ícone de olho riscado (ocultar senha) -->
+                            <svg class="eye-closed w-5 h-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Dicas de senha forte -->
+            <div class="bg-secondary-light dark:bg-secondary-dark p-4 rounded-lg border border-border-light dark:border-border-dark">
+                <p class="text-sm font-medium text-text-light dark:text-text-dark mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-primary">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                    </svg>
+                    Sua senha deve ter:
+                </p>
+                <ul class="text-xs text-placeholder-light dark:text-placeholder-dark space-y-1 ml-6 list-disc">
+                    <li>Pelo menos 8 caracteres</li>
+                    <li>Não pode ser muito parecida com seu nome ou email</li>
+                    <li>Não pode ser uma senha muito comum (ex: "12345678")</li>
+                    <li>Não pode ser totalmente numérica</li>
+                </ul>
+            </div>
+
+            <!-- Botão Salvar -->
+            <div class="flex flex-col gap-3">
+                <button type="submit" class="flex min-w-[84px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white dark:text-text-light text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
+                    <span class="truncate">Salvar nova senha</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Informação adicional -->
+        <div class="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-4">
+            <div class="flex items-start">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-primary mr-3 mt-0.5 flex-shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+                <div class="flex-1">
+                    <p class="text-sm leading-normal text-text-light dark:text-text-dark">
+                        <strong>Dica de segurança:</strong> Use uma senha forte com letras, números e símbolos. Não compartilhe sua senha com ninguém.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Selecionar todos os botões de toggle
+    const toggleButtons = document.querySelectorAll('.toggle-password');
+
+    toggleButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('data-target');
+            const passwordInput = document.getElementById(targetId);
+            const eyeOpen = this.querySelector('.eye-open');
+            const eyeClosed = this.querySelector('.eye-closed');
+
+            if (passwordInput && eyeOpen && eyeClosed) {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    eyeOpen.classList.add('hidden');
+                    eyeClosed.classList.remove('hidden');
+                } else {
+                    passwordInput.type = 'password';
+                    eyeOpen.classList.remove('hidden');
+                    eyeClosed.classList.add('hidden');
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

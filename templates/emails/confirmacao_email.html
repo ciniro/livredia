@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirme seu E-mail - LIVRE DIA</title>
+    <style>
+        /* Reset básico */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #4F4A45;
+            line-height: 1.6;
+        }
+
+        /* Container principal */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #FDFBF6;
+            border: 1px solid #e0ddd5;
+        }
+
+        /* Cabeçalho */
+        .header {
+            background-color: #e69019;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            margin: 8px 0 0;
+            color: #ffffff;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        /* Conteúdo */
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            color: #3A4D39;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 30px;
+            font-size: 15px;
+            color: #4F4A45;
+            line-height: 1.8;
+        }
+
+        .message p {
+            margin: 0 0 15px 0;
+        }
+
+        /* Botão */
+        .button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+
+        .confirm-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background-color: #e69019;
+            color: #ffffff !important;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 8px;
+            letter-spacing: 0.5px;
+            transition: background-color 0.3s;
+        }
+
+        .confirm-button:hover {
+            background-color: #d47a05;
+        }
+
+        /* Link alternativo */
+        .alt-link {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f5f3ed;
+            border-left: 3px solid #e69019;
+        }
+
+        .alt-link p {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: #4F4A45;
+        }
+
+        .alt-link a {
+            word-break: break-all;
+            color: #e69019;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        /* Rodapé */
+        .footer {
+            background-color: #3A4D39;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 13px;
+            color: #ffffff;
+            opacity: 0.9;
+        }
+
+        .footer a {
+            color: #e69019;
+            text-decoration: none;
+        }
+
+        /* Responsividade */
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .confirm-button {
+                padding: 14px 30px;
+                font-size: 15px;
+            }
+
+            .footer {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1>✉️ LIVRE DIA</h1>
+            <p>Confirme seu e-mail para ativar sua conta</p>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="content">
+            <div class="greeting">
+                Olá, {{ nome }}!
+            </div>
+
+            <div class="message">
+                <p>
+                    Seja muito bem-vindo(a) ao <strong>LIVRE DIA</strong>, a plataforma de curadoria de textos humanos autênticos! 📚
+                </p>
+                <p>
+                    Para garantir a segurança da sua conta e começar a explorar nosso acervo de crônicas, poesias e ensaios, precisamos confirmar seu endereço de e-mail.
+                </p>
+                <p>
+                    É rápido e fácil! Basta clicar no botão abaixo:
+                </p>
+            </div>
+
+            <!-- Botão de Confirmação -->
+            <div class="button-container">
+                <a href="{{ confirmation_link }}" class="confirm-button">
+                    Confirmar Meu E-mail
+                </a>
+            </div>
+
+            <!-- Link Alternativo -->
+            <div class="alt-link">
+                <p><strong>Caso o botão não funcione</strong>, copie e cole este link na barra de endereços do seu navegador:</p>
+                <a href="{{ confirmation_link }}">{{ confirmation_link }}</a>
+            </div>
+
+            <div class="message" style="margin-top: 30px;">
+                <p style="font-size: 13px; color: #666;">
+                    Este link é válido por <strong>7 dias</strong>. Se você não se cadastrou no LIVRE DIA, pode ignorar este e-mail com segurança.
+                </p>
+            </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="footer">
+            <p>
+                Textos humanos autênticos, livres de IA.<br>
+                <a href="https://livredia.com.br">livredia.com.br</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

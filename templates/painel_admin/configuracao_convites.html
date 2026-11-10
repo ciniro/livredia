@@ -1,0 +1,214 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Configuração de Convites - Painel Admin{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col h-full">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-border-light dark:border-border-dark">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-bold leading-tight text-text-light dark:text-text-dark font-display">
+                Configuração de Convites
+            </h1>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Defina quantos autores cada autor pode convidar para a plataforma
+            </p>
+        </div>
+
+        <!-- Botão Voltar -->
+        <a href="{% url 'painel_admin:gestao_autores' %}"
+           class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-500 text-white text-sm font-bold leading-normal tracking-wide hover:bg-gray-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Voltar
+        </a>
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="flex-1 overflow-auto px-6 py-6">
+        <div class="max-w-4xl mx-auto space-y-8">
+
+            <!-- Card de Configuração -->
+            <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden">
+                <div class="bg-primary/10 dark:bg-primary/20 px-6 py-4 border-b border-border-light dark:border-border-dark">
+                    <div class="flex items-center gap-3">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-primary">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-text-light dark:text-text-dark">Limite de Convites por Autor</h2>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Configuração atual do sistema</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" class="p-6">
+                    {% csrf_token %}
+
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                        <div class="flex-1">
+                            <label for="limite_convites" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                                Quantidade máxima de convites
+                            </label>
+                            <div class="flex items-center gap-4">
+                                <input type="number"
+                                       name="limite_convites"
+                                       id="limite_convites"
+                                       value="{{ config.limite_convites_autor }}"
+                                       min="0"
+                                       max="100"
+                                       class="w-32 h-12 px-4 rounded-lg border border-border-light dark:border-border-dark bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                <span class="text-sm text-placeholder-light dark:text-placeholder-dark">convites por autor</span>
+                            </div>
+                            <p class="mt-2 text-xs text-placeholder-light dark:text-placeholder-dark">
+                                Valor entre 0 e 100. Cada autor pode convidar até este número de novos autores.
+                            </p>
+                        </div>
+
+                        <button type="submit"
+                                class="flex items-center justify-center h-12 px-6 bg-verde-floresta text-white text-base font-bold rounded-lg hover:bg-verde-floresta/90 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Informações sobre convites -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-600 dark:text-blue-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-blue-800 dark:text-blue-300 font-bold text-lg mb-2">Como funciona o sistema de convites</h3>
+                        <ul class="text-blue-700 dark:text-blue-400 text-sm leading-relaxed space-y-2">
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-500 mt-1">•</span>
+                                <span>Cada autor pode convidar outros escritores para a plataforma, até o limite definido acima</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-500 mt-1">•</span>
+                                <span>Um convite só é contabilizado quando o autor convidado <strong>ativa sua conta</strong> (clicando em "Aderir ao Livre Dia")</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-500 mt-1">•</span>
+                                <span>Convites pendentes ou expirados não contam contra o limite do autor</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-500 mt-1">•</span>
+                                <span>Autores cadastrados pelo painel administrativo não consomem convites de ninguém</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-500 mt-1">•</span>
+                                <span>Se definir o limite como <strong>0</strong>, nenhum autor poderá convidar novos autores</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estatísticas -->
+            <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden">
+                <div class="bg-verde-floresta/10 dark:bg-verde-floresta/20 px-6 py-4 border-b border-border-light dark:border-border-dark">
+                    <div class="flex items-center gap-3">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-verde-floresta/20 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-verde-floresta">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-text-light dark:text-text-dark">Estatísticas de Convites</h2>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Dados sobre convites entre autores</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <!-- Card de estatística principal -->
+                    <div class="flex items-center gap-4 p-4 bg-verde-floresta/5 dark:bg-verde-floresta/10 rounded-lg border border-verde-floresta/20 mb-6">
+                        <div class="flex-shrink-0 w-16 h-16 rounded-full bg-verde-floresta/20 flex items-center justify-center">
+                            <span class="text-3xl font-black text-verde-floresta">{{ convites_ativados }}</span>
+                        </div>
+                        <div>
+                            <p class="text-lg font-bold text-text-light dark:text-text-dark">
+                                {% if convites_ativados == 1 %}
+                                    autor foi convidado por outro autor
+                                {% else %}
+                                    autores foram convidados por outros autores
+                                {% endif %}
+                            </p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                                Total de convites ativados (autores que aceitaram)
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Top autores que mais convidaram -->
+                    {% if autores_top_convites %}
+                    <h3 class="text-base font-bold text-text-light dark:text-text-dark mb-4">Autores que mais convidaram</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-border-light dark:border-border-dark">
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-placeholder-light dark:text-placeholder-dark">#</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-placeholder-light dark:text-placeholder-dark">Autor</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-placeholder-light dark:text-placeholder-dark">Username</th>
+                                    <th class="text-center py-3 px-4 text-sm font-medium text-placeholder-light dark:text-placeholder-dark">Convites Ativados</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for autor in autores_top_convites %}
+                                <tr class="border-b border-border-light/50 dark:border-border-dark/50 hover:bg-secondary-light/50 dark:hover:bg-secondary-dark/50">
+                                    <td class="py-3 px-4 text-sm text-placeholder-light dark:text-placeholder-dark">{{ forloop.counter }}</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center gap-3">
+                                            {% if autor.foto %}
+                                            <img src="{{ autor.foto.url }}" alt="{{ autor.nome_exibicao }}" class="w-8 h-8 rounded-full object-cover">
+                                            {% else %}
+                                            <div class="w-8 h-8 rounded-full bg-verde-floresta text-white flex items-center justify-center text-xs font-bold">
+                                                {{ autor.nome_exibicao|slice:":1"|upper }}
+                                            </div>
+                                            {% endif %}
+                                            <span class="text-sm font-medium text-text-light dark:text-text-dark">{{ autor.nome_exibicao }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm text-placeholder-light dark:text-placeholder-dark">@{{ autor.username }}</td>
+                                    <td class="py-3 px-4 text-center">
+                                        <span class="inline-flex items-center justify-center min-w-[2rem] px-2 py-1 text-sm font-bold rounded-full bg-verde-floresta/20 text-verde-floresta">
+                                            {{ autor.total_convites }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8 text-placeholder-light dark:text-placeholder-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto mb-3 opacity-50">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                        </svg>
+                        <p class="text-sm">Nenhum autor convidou outros autores ainda.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Última atualização -->
+            <div class="text-center text-xs text-placeholder-light dark:text-placeholder-dark">
+                Última atualização da configuração: {{ config.data_atualizacao|date:"d/m/Y H:i" }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

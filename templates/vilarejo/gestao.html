@@ -1,0 +1,471 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Gestão - {{ vilarejo.nome }} - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Força a cor de fundo do main para cobrir todo o espaço */
+    main {
+        background-color: #f5f5f4 !important; /* stone-100 - modo claro */
+    }
+    .dark main {
+        background-color: #1c1917 !important; /* stone-900 - modo escuro */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="w-full -mt-10 sm:-mt-20">
+    <!-- Banner do Vilarejo - IGUAL à página principal -->
+    <div class="relative w-screen h-64 sm:h-80" style="margin-left: calc(-50vw + 50%);">
+        {% if vilarejo.capa_personalizada %}
+        <img src="{{ vilarejo.capa_personalizada.url }}" alt="Banner do Vilarejo" class="w-full h-full object-cover object-center">
+        {% else %}
+        <picture>
+            <source media="(min-width: 768px)" srcset="{% static 'img/banner_vilarejo_md_lg.png' %}">
+            <img src="{% static 'img/banner_vilarejo_m.png' %}" alt="Banner do Vilarejo" class="w-full h-full object-cover object-center">
+        </picture>
+        {% endif %}
+        <!-- Conteúdo sobreposto no banner -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <div class="bg-white/85 dark:bg-stone-900/85 backdrop-blur-sm rounded-2xl px-6 py-4 sm:px-8 sm:py-6 shadow-xl max-w-[90%] sm:max-w-lg">
+                <div class="flex flex-col items-center gap-2">
+                    <img src="{% static 'img/village.png' %}" alt="Vilarejo" class="w-12 h-12 sm:w-14 sm:h-14">
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-800 dark:text-stone-100 text-center">
+                        Gestão do Vilarejo
+                    </h1>
+                    <p id="nome-vilarejo-header" class="text-lg text-amber-600 dark:text-amber-400">
+                        {{ vilarejo.nome }}
+                    </p>
+                </div>
+                <div class="flex flex-col items-center gap-2 mt-3">
+                    <a href="{% url 'vilarejo:vilarejo_detalhe' vilarejo.id %}"
+                       class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600
+                              text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg
+                              transition-all duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Voltar ao Chat
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container principal de gestão -->
+    <div class="w-full bg-stone-100 dark:bg-stone-900 p-4 sm:p-6 lg:p-8 mt-4">
+        <div class="mx-auto" style="max-width: min(72rem, 100%);">
+
+        <!-- Nome do Vilarejo (largura total) -->
+        <div class="bg-white dark:bg-stone-800 rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-lg font-bold text-stone-800 dark:text-stone-100 mb-4">
+                Nome do Vilarejo
+            </h2>
+            <form id="form-nome" class="flex flex-col sm:flex-row gap-2">
+                {% csrf_token %}
+                <input type="text"
+                       name="nome"
+                       id="input-nome"
+                       value="{{ vilarejo.nome }}"
+                       maxlength="100"
+                       class="flex-1 px-4 py-2 rounded-lg border border-stone-300 dark:border-stone-600
+                              bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200
+                              focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                <button type="submit"
+                        class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium
+                               transition-colors duration-200">
+                    Salvar
+                </button>
+            </form>
+            <p id="nome-feedback" class="mt-2 text-sm hidden"></p>
+        </div>
+
+        <!-- LINHA 3: Grid 2 colunas (Moradores | Banimentos) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Moradores Permanentes -->
+            <div class="bg-white dark:bg-stone-800 rounded-xl shadow-lg p-6">
+                <h2 class="text-lg font-bold text-stone-800 dark:text-stone-100 mb-2">
+                    Moradores Permanentes ({{ moradores|length }})
+                </h2>
+                <p class="text-sm text-stone-500 dark:text-stone-400 mb-4">
+                    Alguns vizinhos são mais que especiais e não queremos perdê-los, por causa disso, não corra o risco do vizinho se mudar para outro vilarejo e dê a ele a oportunidade de morar independente da similaridade de gostos no seu vilarejo de forma permanente!
+                </p>
+
+                {% if moradores %}
+                <div class="space-y-3 mb-4">
+                    {% for m in moradores %}
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-stone-50 dark:bg-stone-700">
+                        <div class="flex items-center gap-3">
+                            {% if m.usuario.foto %}
+                            <img src="{{ m.usuario.foto.url }}"
+                                 alt="{{ m.usuario.username }}"
+                                 class="w-10 h-10 rounded-full object-cover">
+                            {% else %}
+                            <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                                <span class="text-amber-600 dark:text-amber-400 font-bold">
+                                    {{ m.usuario.username|slice:":1"|upper }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <p class="font-medium text-stone-800 dark:text-stone-200">
+                                    {{ m.usuario.get_display_name }}
+                                </p>
+                                <p class="text-sm text-stone-500 dark:text-stone-400">
+                                    Desde {{ m.data_convite|date:"d/m/Y" }}
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="removerMorador({{ m.usuario.id }}, '{{ m.usuario.get_display_name|escapejs }}')"
+                                class="px-3 py-1 text-sm bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400
+                                       rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+                            Remover
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-stone-500 dark:text-stone-400 text-center py-4 mb-4">
+                    Nenhum morador permanente
+                </p>
+                {% endif %}
+
+                <!-- Convidar vizinho atual como morador -->
+                {% if vizinhos_para_convidar %}
+                <h3 class="text-sm font-semibold text-stone-600 dark:text-stone-400 mb-2 mt-4">
+                    Convidar vizinho atual:
+                </h3>
+                <div class="space-y-2">
+                    {% for v in vizinhos_para_convidar %}
+                    <div class="flex items-center justify-between p-2 rounded-lg border border-stone-200 dark:border-stone-600">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5 rounded">
+                                {{ v.similaridade }}%
+                            </span>
+                            {% if v.usuario.foto %}
+                            <img src="{{ v.usuario.foto.url }}"
+                                 alt="{{ v.usuario.username }}"
+                                 class="w-8 h-8 rounded-full object-cover">
+                            {% else %}
+                            <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                                <span class="text-amber-600 dark:text-amber-400 font-bold text-sm">
+                                    {{ v.usuario.username|slice:":1"|upper }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            <span class="text-stone-700 dark:text-stone-300">
+                                {{ v.usuario.get_display_name }}
+                            </span>
+                        </div>
+                        <button onclick="convidarMorador({{ v.usuario.id }}, '{{ v.usuario.get_display_name|escapejs }}')"
+                                class="px-3 py-1 text-sm bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400
+                                       rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors">
+                            Convidar
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Banimentos -->
+            <div class="bg-white dark:bg-stone-800 rounded-xl shadow-lg p-6">
+                <h2 class="text-lg font-bold text-stone-800 dark:text-stone-100 mb-2">
+                    Banimentos ({{ banidos|length }})
+                </h2>
+                <p class="text-sm text-stone-500 dark:text-stone-400 mb-4">
+                    Se você não quer manter uma pessoa qualquer como moradora do seu vilarejo com permissão de comentar no seu chat, como anfitrião e dono do seu espaço você tem o direito de banir ela. Nesse caso ela não verá mais seu vilarejo e você não verá mais o dela.
+                </p>
+
+                {% if banidos %}
+                <div class="space-y-3 mb-4">
+                    {% for b in banidos %}
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-red-50 dark:bg-red-900/20">
+                        <div class="flex items-center gap-3">
+                            {% if b.usuario_banido.foto %}
+                            <img src="{{ b.usuario_banido.foto.url }}"
+                                 alt="{{ b.usuario_banido.username }}"
+                                 class="w-10 h-10 rounded-full object-cover opacity-50">
+                            {% else %}
+                            <div class="w-10 h-10 rounded-full bg-stone-300 dark:bg-stone-600 flex items-center justify-center">
+                                <span class="text-stone-500 dark:text-stone-400 font-bold">
+                                    {{ b.usuario_banido.username|slice:":1"|upper }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <p class="font-medium text-stone-800 dark:text-stone-200">
+                                    {{ b.usuario_banido.get_display_name }}
+                                </p>
+                                <p class="text-sm text-stone-500 dark:text-stone-400">
+                                    Desde {{ b.data_banimento|date:"d/m/Y" }}
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="desbanirUsuario({{ b.usuario_banido.id }}, '{{ b.usuario_banido.get_display_name|escapejs }}')"
+                                class="px-3 py-1 text-sm bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400
+                                       rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors">
+                            Desbanir
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-stone-500 dark:text-stone-400 text-center py-4 mb-4">
+                    Nenhum usuário banido
+                </p>
+                {% endif %}
+
+                <!-- Vizinhos atuais para banir -->
+                {% if vizinhos %}
+                <h3 class="text-sm font-semibold text-stone-600 dark:text-stone-400 mb-2 mt-4">
+                    Banir vizinho atual:
+                </h3>
+                <div class="space-y-2">
+                    {% for v in vizinhos %}
+                    <div class="flex items-center justify-between p-2 rounded-lg border border-stone-200 dark:border-stone-600">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5 rounded">
+                                {{ v.similaridade }}%
+                            </span>
+                            {% if v.usuario.foto %}
+                            <img src="{{ v.usuario.foto.url }}"
+                                 alt="{{ v.usuario.username }}"
+                                 class="w-8 h-8 rounded-full object-cover">
+                            {% else %}
+                            <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                                <span class="text-amber-600 dark:text-amber-400 font-bold text-sm">
+                                    {{ v.usuario.username|slice:":1"|upper }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            <span class="text-stone-700 dark:text-stone-300">
+                                {{ v.usuario.get_display_name }}
+                            </span>
+                        </div>
+                        <button onclick="banirUsuario({{ v.usuario.id }}, '{{ v.usuario.get_display_name|escapejs }}')"
+                                class="px-3 py-1 text-sm bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400
+                                       rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+                            Banir
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- LINHA 4: Histórico do Condomínio (largura total) -->
+        <div class="bg-white dark:bg-stone-800 rounded-xl shadow-lg p-6" x-data="{ paginaAtual: 1, itensPorPagina: 5 }">
+            <h2 class="text-lg font-bold text-stone-800 dark:text-stone-100 mb-4">
+                Histórico do Condomínio
+            </h2>
+
+            {% if historico %}
+            <div class="space-y-3" id="historico-lista">
+                {% for h in historico %}
+                <div class="flex items-start gap-3 p-3 rounded-lg bg-stone-50 dark:bg-stone-700 historico-item"
+                     data-index="{{ forloop.counter }}"
+                     x-show="$el.dataset.index > (paginaAtual - 1) * itensPorPagina && $el.dataset.index <= paginaAtual * itensPorPagina"
+                     id="historico-{{ h.id }}">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+                                {% if h.tipo_evento == 'MORADOR_ADICIONADO' %}bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400
+                                {% elif h.tipo_evento == 'MORADOR_REMOVIDO' %}bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-400
+                                {% elif h.tipo_evento == 'USUARIO_BANIDO' %}bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400
+                                {% elif h.tipo_evento == 'USUARIO_DESBANIDO' %}bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400
+                                {% else %}bg-stone-200 dark:bg-stone-600 text-stone-600 dark:text-stone-400{% endif %}">
+                        {% if h.tipo_evento == 'MORADOR_ADICIONADO' %}
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
+                        {% elif h.tipo_evento == 'MORADOR_REMOVIDO' %}
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"/>
+                        </svg>
+                        {% elif h.tipo_evento == 'USUARIO_BANIDO' %}
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                        </svg>
+                        {% elif h.tipo_evento == 'USUARIO_DESBANIDO' %}
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {% else %}
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-stone-800 dark:text-stone-200">
+                            {{ h.detalhes }}
+                        </p>
+                        <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">
+                            {% if h.realizado_por %}Por {{ h.realizado_por.get_display_name }} em {% endif %}{{ h.data|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                    <button onclick="excluirHistorico({{ h.id }})"
+                            class="flex-shrink-0 w-8 h-8 flex items-center justify-center text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                            title="Excluir registro">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginação -->
+            {% if historico|length > 5 %}
+            <div class="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-stone-200 dark:border-stone-600">
+                <button @click="paginaAtual = Math.max(1, paginaAtual - 1)"
+                        :disabled="paginaAtual === 1"
+                        :class="paginaAtual === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-stone-200 dark:hover:bg-stone-600'"
+                        class="px-3 py-1 rounded-lg text-stone-600 dark:text-stone-300 transition-colors">
+                    Anterior
+                </button>
+                <span class="text-sm text-stone-500 dark:text-stone-400">
+                    Página <span x-text="paginaAtual"></span> de <span x-text="Math.ceil({{ historico|length }} / itensPorPagina)"></span>
+                </span>
+                <button @click="paginaAtual = Math.min(Math.ceil({{ historico|length }} / itensPorPagina), paginaAtual + 1)"
+                        :disabled="paginaAtual >= Math.ceil({{ historico|length }} / itensPorPagina)"
+                        :class="paginaAtual >= Math.ceil({{ historico|length }} / itensPorPagina) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-stone-200 dark:hover:bg-stone-600'"
+                        class="px-3 py-1 rounded-lg text-stone-600 dark:text-stone-300 transition-colors">
+                    Próxima
+                </button>
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="text-stone-500 dark:text-stone-400 text-center py-4">
+                Nenhum registro no histórico
+            </p>
+            {% endif %}
+        </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const vilarejoId = {{ vilarejo.id }};
+const csrfToken = '{{ csrf_token }}';
+
+// Alterar nome
+document.getElementById('form-nome').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nome = document.getElementById('input-nome').value.trim();
+    const feedback = document.getElementById('nome-feedback');
+
+    fetch('{% url "vilarejo:alterar_nome" vilarejo.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: 'nome=' + encodeURIComponent(nome)
+    })
+    .then(response => response.json())
+    .then(data => {
+        feedback.classList.remove('hidden', 'text-red-600', 'text-emerald-600');
+        if (data.success) {
+            feedback.textContent = data.message;
+            feedback.classList.add('text-emerald-600');
+            // Atualiza o nome no cabeçalho sem reload
+            document.getElementById('nome-vilarejo-header').textContent = nome;
+        } else {
+            feedback.textContent = data.error;
+            feedback.classList.add('text-red-600');
+        }
+    });
+});
+
+function convidarMorador(usuarioId, nome) {
+    fetch('{% url "vilarejo:convidar_morador" vilarejo.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: 'usuario_id=' + usuarioId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function removerMorador(usuarioId, nome) {
+    fetch('{% url "vilarejo:remover_morador" vilarejo.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: 'usuario_id=' + usuarioId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function desbanirUsuario(usuarioId, nome) {
+    fetch('{% url "vilarejo:desbanir_usuario" vilarejo.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: 'usuario_id=' + usuarioId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function banirUsuario(usuarioId, nome) {
+    fetch('{% url "vilarejo:banir_usuario" vilarejo.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: 'usuario_id=' + usuarioId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function excluirHistorico(historicoId) {
+    fetch('/vilarejo/{{ vilarejo.id }}/gestao/historico/' + historicoId + '/excluir/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const elemento = document.getElementById('historico-' + historicoId);
+            if (elemento) {
+                elemento.remove();
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

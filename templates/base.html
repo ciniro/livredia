@@ -1,0 +1,519 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="{% if user.is_authenticated %}{{ tema_plataforma|default:'light' }}{% endif %}" lang="pt-BR">
+<script>
+    // Detecta tema do sistema para usuários não logados
+    (function() {
+        var isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
+        if (!isAuthenticated) {
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.add(prefersDark ? 'dark' : 'light');
+        }
+    })();
+</script>
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}LIVRE DIA{% endblock %}</title>
+
+    <!-- Meta Description para SEO -->
+    <meta name="description" content="{% block meta_description %}Livre Dia é uma plataforma de curadoria de textos humanos autênticos — crônicas, poesias, ensaios — escritos por autores verificados com Selo Livre de IA.{% endblock %}">
+
+    <!-- Content Security Policy para Cloudflare Turnstile, Google Fonts, YouTube e imagens externas -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval'
+            https://challenges.cloudflare.com;
+        style-src 'self' 'unsafe-inline'
+            https://fonts.googleapis.com;
+        font-src 'self'
+            https://fonts.gstatic.com;
+        img-src 'self' data: blob: https:
+            https://ui-avatars.com;
+        frame-src 'self'
+            https://challenges.cloudflare.com
+            https://www.youtube.com
+            https://youtube.com
+            https://www.youtube-nocookie.com;
+        connect-src 'self'
+            https://challenges.cloudflare.com;
+    ">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#e69019">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Livre Dia">
+
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="{% static 'img/icons/icon-192x192.png' %}">
+
+    <!-- Tailwind CSS (compilado localmente) -->
+    <link rel="stylesheet" href="{% static 'css/tailwind.min.css' %}"/>
+
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+
+    <!-- Toastr.js - Notificações Toast -->
+    <link rel="stylesheet" href="{% static 'css/vendor/toastr.min.css' %}"/>
+
+    <!-- Alpine.js -->
+    <script defer src="{% static 'js/vendor/alpine.min.js' %}"></script>
+
+    <!-- HTMX - Interatividade Server-driven -->
+    <script src="{% static 'js/vendor/htmx.min.js' %}"></script>
+
+    <!-- Cropper.js -->
+    <link rel="stylesheet" href="{% static 'css/vendor/cropper.min.css' %}"/>
+
+    <style>
+        body {
+            font-family: 'Noto Sans', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Newsreader', serif;
+        }
+
+        /* Estilos para autocomplete do navegador - garante consistência visual */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active,
+        textarea:-webkit-autofill,
+        textarea:-webkit-autofill:hover,
+        textarea:-webkit-autofill:focus,
+        select:-webkit-autofill,
+        select:-webkit-autofill:hover,
+        select:-webkit-autofill:focus {
+            /* Modo claro */
+            -webkit-text-fill-color: #1b150e !important;
+            -webkit-box-shadow: 0 0 0px 1000px #fcfaf8 inset !important;
+            box-shadow: 0 0 0px 1000px #fcfaf8 inset !important;
+            border-color: #e7ddd0 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* Autocomplete no modo escuro */
+        .dark input:-webkit-autofill,
+        .dark input:-webkit-autofill:hover,
+        .dark input:-webkit-autofill:focus,
+        .dark input:-webkit-autofill:active,
+        .dark textarea:-webkit-autofill,
+        .dark textarea:-webkit-autofill:hover,
+        .dark textarea:-webkit-autofill:focus,
+        .dark select:-webkit-autofill,
+        .dark select:-webkit-autofill:hover,
+        .dark select:-webkit-autofill:focus {
+            -webkit-text-fill-color: #f3eee7 !important;
+            -webkit-box-shadow: 0 0 0px 1000px #211a11 inset !important;
+            box-shadow: 0 0 0px 1000px #211a11 inset !important;
+            border-color: #4a4137 !important;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark font-sans">
+    <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+
+            <!-- Header -->
+            <header class="sticky top-0 z-50 bg-[#e8ebe6]/95 dark:bg-[#2d3d2d]/95 backdrop-blur-sm">
+                <div class="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#3A4D39]/20 dark:border-[#5a7d59]/30 px-4 sm:px-10 md:px-20 lg:px-40 py-3">
+                    <div class="flex items-center gap-8">
+                        <a href="{% url 'core:home' %}" class="flex items-center gap-4 text-text-light dark:text-text-dark hover:text-primary dark:hover:text-primary transition-colors cursor-pointer">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                                <path clip-rule="evenodd" d="M24 4H42V17.3333V30.6667H24V44H6V30.6667V17.3333H24V4Z" fill-rule="evenodd"></path>
+                            </svg>
+                            <h2 class="text-xl font-bold leading-tight tracking-[-0.015em] font-display">LIVRE DIA</h2>
+                        </a>
+                        <div class="hidden md:flex items-center gap-9">
+                            <a class="text-sm font-medium leading-normal hover:text-primary dark:hover:text-primary" href="{% url 'acervo_textos' %}">Acervo de Textos</a>
+                            <a class="text-sm font-medium leading-normal hover:text-primary dark:hover:text-primary" href="{% url 'galeria_autores' %}">Autores</a>
+                            <a class="text-sm font-medium leading-normal hover:text-primary dark:hover:text-primary" href="{% url 'core:pagina_manifesto' %}">Manifesto</a>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-end gap-2">
+                        {% if user.is_authenticated %}
+                            <!-- Sino de Notificações (Item 5.1 do ROADMAP) -->
+                            {% if exibir_sino %}
+                            <div class="relative mr-3 flex items-center" x-data="{
+                                openNotif: false,
+                                notificacoes: [],
+                                temMais: false,
+                                totalNaoLidas: {{ total_notificacoes_nao_lidas }},
+                                async carregarNotificacoes() {
+                                    try {
+                                        const response = await fetch('{% url "core:listar_notificacoes" %}');
+                                        const data = await response.json();
+                                        this.notificacoes = data.notificacoes;
+                                        this.temMais = data.tem_mais || false;
+                                    } catch (error) {
+                                        console.error('Erro ao carregar notificações:', error);
+                                    }
+                                },
+                                async marcarNotificacaoComoLida(notificacaoId, linkDestino) {
+                                    try {
+                                        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+                                        const response = await fetch(`/notificacoes/${notificacaoId}/marcar-lida/`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'X-CSRFToken': csrftoken,
+                                                'Content-Type': 'application/json'
+                                            }
+                                        });
+                                        const data = await response.json();
+                                        if (data.success) {
+                                            // Decrementar contador
+                                            if (this.totalNaoLidas > 0) {
+                                                this.totalNaoLidas--;
+                                            }
+                                            // Remover notificação da lista
+                                            this.notificacoes = this.notificacoes.filter(n => n.id !== notificacaoId);
+                                            // Fechar dropdown
+                                            this.openNotif = false;
+                                            // Redirecionar
+                                            window.location.href = linkDestino;
+                                        }
+                                    } catch (error) {
+                                        console.error('Erro ao marcar notificação como lida:', error);
+                                        // Mesmo com erro, redirecionar
+                                        window.location.href = linkDestino;
+                                    }
+                                },
+                                async toggleNotificacoes() {
+                                    this.openNotif = !this.openNotif;
+                                    if (this.openNotif) {
+                                        await this.carregarNotificacoes();
+                                    }
+                                },
+                                tempoRelativo(dataIso) {
+                                    const agora = new Date();
+                                    const data = new Date(dataIso);
+                                    const diffMs = agora - data;
+                                    const diffMinutos = Math.floor(diffMs / 60000);
+                                    const diffHoras = Math.floor(diffMs / 3600000);
+                                    const diffDias = Math.floor(diffMs / 86400000);
+
+                                    if (diffMinutos < 1) return 'Agora mesmo';
+                                    if (diffMinutos === 1) return 'Há 1 minuto';
+                                    if (diffMinutos < 60) return `Há ${diffMinutos} minutos`;
+                                    if (diffHoras === 1) return 'Há 1 hora';
+                                    if (diffHoras < 24) return `Há ${diffHoras} horas`;
+                                    if (diffDias === 1) return 'Há 1 dia';
+                                    return `Há ${diffDias} dias`;
+                                }
+                            }">
+                                <button @click="toggleNotificacoes()" class="relative hover:opacity-80 transition-opacity" aria-label="Abrir notificações">
+                                    <!-- Ícone Sino (Heroicon Bell) - Aumentado para w-9 h-9 -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-9 h-9 text-text-light dark:text-text-dark">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                                    </svg>
+
+                                    <!-- Contador Vermelho (só aparece se totalNaoLidas >= 1) - Vermelho mais claro -->
+                                    <span x-show="totalNaoLidas >= 1" class="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold text-black bg-red-500 rounded-full border border-black" x-text="totalNaoLidas"></span>
+                                </button>
+
+                                <!-- Dropdown de Notificações -->
+                                <div x-show="openNotif" @click.away="openNotif = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute top-full right-0 mt-3 w-64 max-w-[90vw] bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg py-1 z-50 max-h-96 overflow-y-auto" style="display: none;">
+                                    <!-- Cabeçalho -->
+                                    <div class="px-4 py-1.5 border-b border-border-light dark:border-border-dark">
+                                        <h3 class="text-xs font-bold text-text-light dark:text-text-dark uppercase">Notificações</h3>
+                                    </div>
+
+                                    <!-- Lista de Notificações -->
+                                    <div x-show="notificacoes.length === 0" class="px-4 py-6 text-center">
+                                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark">Nenhuma notificação no momento</p>
+                                    </div>
+
+                                    <template x-for="notif in notificacoes" :key="notif.id">
+                                        <button @click="marcarNotificacaoComoLida(notif.id, notif.link_destino)" class="block w-full text-left px-4 py-2 hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors border-b border-border-light dark:border-border-dark">
+                                            <div class="flex items-center gap-3">
+                                                <!-- Foto do Usuário de Origem (clicável para perfil) -->
+                                                <template x-if="notif.usuario_origem_perfil">
+                                                    <a :href="notif.usuario_origem_perfil" @click.stop class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border border-border-light dark:border-border-dark hover:opacity-80 transition-opacity">
+                                                        <img :src="notif.usuario_origem_avatar || '/static/images/default-avatar.png'" :alt="notif.usuario_origem_nome" class="w-full h-full object-cover">
+                                                    </a>
+                                                </template>
+                                                <template x-if="!notif.usuario_origem_perfil">
+                                                    <div class="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border border-border-light dark:border-border-dark">
+                                                        <img :src="notif.usuario_origem_avatar || '/static/images/default-avatar.png'" :alt="notif.usuario_origem_nome" class="w-full h-full object-cover">
+                                                    </div>
+                                                </template>
+                                                <!-- Conteúdo da Notificação -->
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-xs text-text-light dark:text-text-dark whitespace-normal break-words leading-relaxed" x-text="notif.texto"></p>
+                                                    <p class="text-[10px] text-placeholder-light dark:text-placeholder-dark mt-1" x-text="tempoRelativo(notif.data_criacao)"></p>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </template>
+
+                                    <!-- Botão "Ver todas" (se houver mais de 10 notificações) -->
+                                    <div x-show="totalNaoLidas > 10" class="border-t border-border-light dark:border-border-dark">
+                                        <a href="/@{{ user.username }}#notificacoes" class="block w-full text-center px-4 py-2.5 text-xs font-semibold text-primary hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                            <span x-text="`Ver todas (+${totalNaoLidas - 10})`"></span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Dropdown do Usuário -->
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" class="flex items-center gap-2 hover:opacity-80 transition-opacity" aria-label="Abrir menu do usuário">
+                                    <!-- Foto do Usuário -->
+                                    <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary">
+                                        <img src="{{ user.get_avatar_url }}" alt="{{ user.get_display_name }}" class="w-full h-full object-cover">
+                                    </div>
+                                    <!-- Nome do Usuário -->
+                                    <span class="hidden md:block text-sm font-medium text-text-light dark:text-text-dark">
+                                        {{ user.first_name }}
+                                    </span>
+                                    <!-- Ícone Dropdown -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-text-light dark:text-text-dark" :class="{ 'rotate-180': open }">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </button>
+
+                                <!-- Dropdown Menu -->
+                                <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="absolute right-0 mt-2 w-64 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg shadow-lg py-1 z-50" style="display: none;">
+                                    {% if user.role == 'AUTOR' or user.role == 'AUTOR_ADMIN' %}
+                                    <!-- Para autores: dois links de perfil -->
+                                    <a href="{% url 'perfil_publico' username=user.username %}" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                            </svg>
+                                            Perfil de Autor
+                                        </div>
+                                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark ml-6">Como as pessoas veem você</p>
+                                    </a>
+                                    <a href="{% url 'perfil_leitor_autor' username=user.username %}" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                                            </svg>
+                                            Perfil de Leitor
+                                        </div>
+                                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark ml-6">Suas listas e estatísticas de leitura</p>
+                                    </a>
+                                    {% else %}
+                                    <!-- Para não-autores: link único de perfil -->
+                                    <a href="{% url 'perfil_publico' username=user.username %}" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            </svg>
+                                            Perfil
+                                        </div>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'vilarejo:lista_vilarejos' %}" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
+                                            </svg>
+                                            Vilarejos literarios
+                                        </div>
+                                    </a>
+                                    <a href="{% url 'usuarios:minha_conta' %}" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                            </svg>
+                                            Minha Conta
+                                        </div>
+                                    </a>
+                                    <a href="{% url 'usuarios:configuracoes' %}" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                        <div class="flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                            </svg>
+                                            Configurações
+                                        </div>
+                                    </a>
+                                    {% if user.pode_acessar_painel_admin %}
+                                        <a href="{% url 'painel_admin:dashboard' %}" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                            <div class="flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                                                </svg>
+                                                Painel Administrativo
+                                            </div>
+                                        </a>
+                                    {% endif %}
+                                    {% if user.pode_acessar_painel_autor %}
+                                        <a href="{% url 'painel_autor:dashboard' %}" class="block px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                            <div class="flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                                </svg>
+                                                Painel do Autor
+                                            </div>
+                                        </a>
+                                    {% endif %}
+
+                                    <!-- Divisor -->
+                                    <div class="border-t border-border-light dark:border-border-dark my-1"></div>
+
+                                    <!-- Botão Sair -->
+                                    <form method="post" action="{% url 'usuarios:logout' %}" class="block">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors">
+                                            <div class="flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                                                </svg>
+                                                Sair
+                                            </div>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% else %}
+                            <a href="{% url 'usuarios:login' %}" class="flex min-w-[70px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-3 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark text-sm font-bold leading-normal tracking-[0.015em] ring-2 ring-primary">
+                                <span class="truncate">Entrar</span>
+                            </a>
+                            <a href="{% url 'usuarios:cadastro_leitor' %}" class="flex min-w-[70px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-3 bg-primary text-white dark:text-text-light text-sm font-bold leading-normal tracking-[0.015em]">
+                                <span class="truncate">Cadastrar-se</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="flex flex-1 justify-center py-10 sm:py-20">
+                {% block content %}{% endblock %}
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-[#dde0db]/95 dark:bg-[#2d3d2d]/95 border-t border-[#3A4D39]/20 dark:border-[#5a7d59]/30 mt-auto">
+                <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                        <div class="space-y-4">
+                            <h3 class="text-sm font-semibold tracking-wider uppercase text-text-light dark:text-text-dark font-display">Navegação</h3>
+                            <ul class="space-y-2">
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'core:home' %}">Home</a></li>
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'acervo_textos' %}">Acervo de Textos</a></li>
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'galeria_autores' %}">Autores</a></li>
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'core:pagina_manifesto' %}">Manifesto</a></li>
+                            </ul>
+                        </div>
+                        <div class="space-y-4">
+                            <h3 class="text-sm font-semibold tracking-wider uppercase text-text-light dark:text-text-dark font-display">Institucional</h3>
+                            <ul class="space-y-2">
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'core:pagina_quem_somos' %}">Quem Somos</a></li>
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'core:pagina_selo' %}">Selo Livre de IA</a></li>
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'core:rede_convites' %}">Rede de Convites</a></li>
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'core:fale_conosco' %}">Fale Conosco</a></li>
+                            </ul>
+                        </div>
+                        <div class="space-y-4">
+                            <h3 class="text-sm font-semibold tracking-wider uppercase text-text-light dark:text-text-dark font-display">Legal</h3>
+                            <ul class="space-y-2">
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'core:pagina_termos' %}">Termos de Uso e Responsabilidade</a></li>
+                                <li><a class="text-base text-placeholder-light dark:text-placeholder-dark hover:text-primary dark:hover:text-primary underline decoration-1 underline-offset-2" href="{% url 'core:pagina_transparencia' %}">Transparência Algorítmica</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-8 border-t border-border-light dark:border-border-dark pt-8 text-center">
+                        <p class="text-base text-placeholder-light dark:text-placeholder-dark">
+                            <a href="{% url 'core:pagina_selo' %}" class="text-primary hover:underline">LIVRE DIA<sup>&reg;</sup></a> e o <a href="{% url 'core:pagina_selo' %}" class="text-primary hover:underline">selo LIVRE DE IA<sup>&reg;</sup></a> são marcas registradas desde 2025. Para parcerias <a href="{% url 'core:fale_conosco' %}" class="text-primary hover:underline inline-flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>entre em contato conosco</a>.
+                        </p>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- jQuery (necessário para Toastr) -->
+    <script src="{% static 'js/vendor/jquery.min.js' %}"></script>
+
+    <!-- Toastr.js -->
+    <script src="{% static 'js/vendor/toastr.min.js' %}"></script>
+
+    <!-- Cropper.js -->
+    <script src="{% static 'js/vendor/cropper.min.js' %}"></script>
+
+    <!-- Image Cropper Modal (LIVRE DIA) -->
+    <script src="{% static 'js/image-cropper.js' %}"></script>
+
+    <!-- Configuração do Toastr -->
+    <script>
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": true,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "3000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+    </script>
+
+    <!-- Configuração HTMX - CSRF Token -->
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
+
+    <!-- Mensagens Django via Toastr -->
+    {% if messages %}
+        <script>
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                    toastr.success("{{ message|escapejs }}");
+                {% elif message.tags == 'error' %}
+                    toastr.error("{{ message|escapejs }}");
+                {% elif message.tags == 'warning' %}
+                    toastr.warning("{{ message|escapejs }}");
+                {% elif message.tags == 'info' %}
+                    toastr.info("{{ message|escapejs }}");
+                {% else %}
+                    toastr.info("{{ message|escapejs }}");
+                {% endif %}
+            {% endfor %}
+        </script>
+    {% endif %}
+
+    <!-- ETAPA 7 - Sistema de Selos: Modal de Celebração -->
+    {% if request.session.selos_pendentes_ids %}
+        {% include 'usuarios/partials/_modal_selo_especial.html' with selos_pendentes_ids=request.session.selos_pendentes_ids %}
+    {% endif %}
+
+    <!-- PWA - Registro do Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('[PWA] Service Worker registrado com sucesso:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('[PWA] Falha ao registrar Service Worker:', error);
+                    });
+            });
+        }
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

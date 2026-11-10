@@ -1,0 +1,29 @@
+{
+  "name": "projeto_livredia",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "css:build": "tailwindcss -i static/css/tailwind.input.css -o static/css/tailwind.min.css --minify",
+    "css:watch": "tailwindcss -i static/css/tailwind.input.css -o static/css/tailwind.min.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ciniro/livredia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ciniro/livredia/issues"
+  },
+  "homepage": "https://github.com/ciniro/livredia#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.17",
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tailwindcss/forms": "^0.5.10",
+    "tailwindcss": "^4.1.17"
+  }
+}

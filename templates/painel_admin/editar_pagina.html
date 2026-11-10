@@ -1,0 +1,1268 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}{{ pagina_titulo }} - Painel Admin - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<!-- Quill.js CSS -->
+<link href="{% static 'css/vendor/quill.snow.css' %}" rel="stylesheet">
+<!-- Quill.js JS -->
+<script src="{% static 'js/vendor/quill.min.js' %}"></script>
+<!-- Quill Image Resize Module -->
+<script src="{% static 'js/vendor/quill-image-resize.min.js' %}"></script>
+{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8">
+    <!-- Cabeçalho -->
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <h1 class="text-text-light dark:text-text-dark text-4xl sm:text-5xl font-black leading-tight tracking-[-0.033em] font-display">
+            {{ pagina_titulo }}
+        </h1>
+    </div>
+
+    <!-- Breadcrumb / Info do Slug -->
+    <div class="flex items-center gap-2 text-sm text-placeholder-light dark:text-placeholder-dark">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+        </svg>
+        <span>Slug: <code class="bg-secondary-light dark:bg-secondary-dark px-2 py-0.5 rounded font-mono text-xs">{{ slug_readonly }}</code></span>
+    </div>
+
+    <!-- Formulário -->
+    <form method="post" class="space-y-8" id="form-editar-pagina">
+        {% csrf_token %}
+
+        <!-- Título da Página -->
+        <label class="flex flex-col min-w-40">
+            <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                Título da Página <span class="text-red-600">*</span>
+            </p>
+            {{ form.titulo }}
+            {% if form.titulo.errors %}
+                <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.titulo.errors.0 }}</p>
+            {% endif %}
+            <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">{{ form.titulo.help_text }}</p>
+        </label>
+
+        <!-- Editor de Conteúdo (Quill.js) -->
+        <div class="flex flex-col">
+            <div class="flex items-center justify-between pb-2">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal">
+                    Conteúdo <span class="text-red-600">*</span>
+                </p>
+                <!-- Botões: Toggle HTML e Ajuda -->
+                <div class="flex items-center gap-3">
+                    <!-- Botão Toggle HTML -->
+                    <button type="button" id="toggle-html-btn" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text-light dark:text-text-dark bg-secondary-light dark:bg-secondary-dark hover:bg-border-light dark:hover:bg-border-dark rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+                        </svg>
+                        <span>Visualizar HTML</span>
+                    </button>
+
+                    <!-- Botão Ajuda (Alpine.js) -->
+                    <button type="button" @click="$dispatch('open-help-modal')" class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                        </svg>
+                        <span>AJUDA</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Container do Quill.js (WYSIWYG) -->
+            <div id="quill-editor" class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg" style="min-height: 400px;">
+                {# O conteúdo será carregado aqui pelo JavaScript #}
+            </div>
+
+            <!-- Editor de HTML (code editor) -->
+            <textarea id="html-editor" class="hidden w-full min-h-[400px] p-4 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-text-light dark:text-text-dark font-mono text-sm focus:outline-0 focus:ring-2 focus:ring-primary/50" style="resize: vertical;"></textarea>
+
+            <!-- Textarea hidden que será preenchido antes do submit -->
+            {{ form.conteudo }}
+
+            {% if form.conteudo.errors %}
+                <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.conteudo.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="flex gap-4 justify-end">
+            <!-- Botão Voltar -->
+            <a href="{% url 'painel_admin:dashboard' %}" class="flex min-w-[150px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark text-base font-bold leading-normal hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                <span class="truncate">Voltar ao Dashboard</span>
+            </a>
+
+            <!-- Botão Salvar -->
+            <button type="submit" class="flex min-w-[150px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal hover:bg-primary/90 transition-colors">
+                <span class="truncate">Salvar Alterações</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal de Inserir Link -->
+<div x-data="{
+    modalLinkAberto: false,
+    urlLink: '',
+    textoLink: '',
+    inserirLink() {
+        if (this.urlLink) {
+            window.dispatchEvent(new CustomEvent('inserir-link', {
+                detail: { url: this.urlLink, texto: this.textoLink }
+            }));
+            this.urlLink = '';
+            this.textoLink = '';
+            this.modalLinkAberto = false;
+        }
+    }
+}" @open-link-modal.window="modalLinkAberto = true; textoLink = $event.detail?.texto || ''" x-cloak>
+    <!-- Overlay -->
+    <div x-show="modalLinkAberto"
+         @click="modalLinkAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalLinkAberto"
+         @click.away="modalLinkAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-lg w-full border border-border-light dark:border-border-dark">
+            <!-- Header do Modal -->
+            <div class="bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                    </svg>
+                    Inserir Link
+                </h2>
+                <button @click="modalLinkAberto = false" class="text-white hover:text-gray-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6 space-y-4">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        Texto do Link <span class="text-placeholder-light dark:text-placeholder-dark">(opcional)</span>
+                    </p>
+                    <input
+                        x-model="textoLink"
+                        type="text"
+                        placeholder="Texto que aparecerá no link"
+                        class="form-input flex w-full resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-14 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark p-4 text-base font-normal leading-normal"
+                    />
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        Deixe vazio para usar a URL como texto
+                    </p>
+                </label>
+
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        URL do Link <span class="text-red-600">*</span>
+                    </p>
+                    <input
+                        x-model="urlLink"
+                        @keydown.enter="inserirLink()"
+                        type="text"
+                        placeholder="https://exemplo.com"
+                        class="form-input flex w-full resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-14 placeholder:text-placeholder-light dark:text-placeholder-dark p-4 text-base font-normal leading-normal"
+                    />
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        Digite a URL completa começando com http:// ou https://
+                    </p>
+                </label>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalLinkAberto = false" class="px-6 py-2 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg font-medium hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                    Cancelar
+                </button>
+                <button @click="inserirLink()" class="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                    Inserir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Inserir Imagem -->
+<div x-data="{
+    modalImagemAberto: false,
+    urlImagem: '',
+    inserirImagem() {
+        if (this.urlImagem) {
+            window.dispatchEvent(new CustomEvent('inserir-imagem', { detail: { url: this.urlImagem } }));
+            this.urlImagem = '';
+            this.modalImagemAberto = false;
+        }
+    }
+}" @open-image-modal.window="modalImagemAberto = true" x-cloak>
+    <!-- Overlay -->
+    <div x-show="modalImagemAberto"
+         @click="modalImagemAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalImagemAberto"
+         @click.away="modalImagemAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-lg w-full border border-border-light dark:border-border-dark">
+            <!-- Header do Modal -->
+            <div class="bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                    </svg>
+                    Inserir Imagem
+                </h2>
+                <button @click="modalImagemAberto = false" class="text-white hover:text-gray-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        URL da Imagem <span class="text-red-600">*</span>
+                    </p>
+                    <input
+                        x-model="urlImagem"
+                        @keydown.enter="inserirImagem()"
+                        type="url"
+                        placeholder="https://exemplo.com/imagem.jpg"
+                        class="form-input flex w-full resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-14 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark p-4 text-base font-normal leading-normal"
+                    />
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        Cole a URL completa da imagem que deseja inserir
+                    </p>
+                </label>
+
+                <!-- Instruções de uso -->
+                <div class="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p class="text-sm font-bold text-primary mb-2">💡 Como trabalhar com imagens:</p>
+                    <ul class="text-xs text-text-light dark:text-text-dark space-y-1 list-disc list-inside">
+                        <li><strong>Redimensionar:</strong> Clique na imagem e arraste os cantos para ajustar o tamanho</li>
+                        <li><strong>Remover:</strong> Clique na imagem e pressione Delete ou Backspace</li>
+                        <li><strong>Posicionar:</strong> A imagem será inserida na posição do cursor</li>
+                        <li><strong>Dica:</strong> Use URLs de imagens hospedadas em serviços confiáveis (ex: Imgur, Cloudinary)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalImagemAberto = false" class="px-6 py-2 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg font-medium hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                    Cancelar
+                </button>
+                <button @click="inserirImagem()" class="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                    Inserir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Inserir Vídeo -->
+<div x-data="{
+    modalVideoAberto: false,
+    urlVideo: '',
+    inserirVideo() {
+        if (this.urlVideo) {
+            window.dispatchEvent(new CustomEvent('inserir-video', { detail: { url: this.urlVideo } }));
+            this.urlVideo = '';
+            this.modalVideoAberto = false;
+        }
+    }
+}" @open-video-modal.window="modalVideoAberto = true" x-cloak>
+    <!-- Overlay -->
+    <div x-show="modalVideoAberto"
+         @click="modalVideoAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalVideoAberto"
+         @click.away="modalVideoAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-lg w-full border border-border-light dark:border-border-dark">
+            <!-- Header do Modal -->
+            <div class="bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                    Inserir Vídeo
+                </h2>
+                <button @click="modalVideoAberto = false" class="text-white hover:text-gray-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        URL do Vídeo (YouTube) <span class="text-red-600">*</span>
+                    </p>
+                    <input
+                        x-model="urlVideo"
+                        @keydown.enter="inserirVideo()"
+                        type="url"
+                        placeholder="https://www.youtube.com/watch?v=abc123"
+                        class="form-input flex w-full resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-14 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark p-4 text-base font-normal leading-normal"
+                    />
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        Cole a URL completa do vídeo do YouTube
+                    </p>
+                </label>
+
+                <!-- Instruções de uso -->
+                <div class="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p class="text-sm font-bold text-primary mb-2">💡 Como inserir vídeos do YouTube:</p>
+                    <ul class="text-xs text-text-light dark:text-text-dark space-y-1 list-disc list-inside">
+                        <li><strong>Opção 1:</strong> Abra o vídeo no YouTube e copie a URL da barra de endereços (ex: <code class="bg-background-light dark:bg-background-dark px-1 rounded">https://www.youtube.com/watch?v=abc123</code>)</li>
+                        <li><strong>Opção 2:</strong> Clique em "Compartilhar" e copie a URL curta (ex: <code class="bg-background-light dark:bg-background-dark px-1 rounded">https://youtu.be/abc123</code>)</li>
+                        <li><strong>Importante:</strong> Cole a URL completa, não o código embed/iframe</li>
+                        <li><strong>Posicionamento:</strong> O vídeo será inserido na posição do cursor</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalVideoAberto = false" class="px-6 py-2 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg font-medium hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                    Cancelar
+                </button>
+                <button @click="inserirVideo()" class="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                    Inserir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ajuda -->
+<div x-data="{ modalAberto: false }" @open-help-modal.window="modalAberto = true" x-cloak>
+    <!-- Overlay -->
+    <div x-show="modalAberto"
+         @click="modalAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalAberto"
+         @click.away="modalAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-border-light dark:border-border-dark">
+            <!-- Header do Modal -->
+            <div class="sticky top-0 bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-2xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                    </svg>
+                    Guia do Editor de Páginas
+                </h2>
+                <button @click="modalAberto = false" class="text-white hover:text-gray-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6 space-y-6 text-text-light dark:text-text-dark">
+                <!-- Intro -->
+                <div class="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                    <p class="text-sm text-text-light dark:text-text-dark">
+                        <strong>📌 Ordem dos Controles:</strong> Os controles abaixo estão listados na mesma ordem em que aparecem na barra de ferramentas, da esquerda para a direita.
+                    </p>
+                </div>
+
+                <!-- 1 e 2: Cabeçalhos e Tamanho da Fonte -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">1️⃣ e 2️⃣ Estrutura de Texto</h3>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Cabeçalhos (H1, H2, H3, H4, H5, H6)</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Cria títulos de diferentes níveis. H1 é o maior (título principal), H6 é o menor. Use "Normal" para texto comum.</p>
+                        </div>
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Tamanho da Fonte</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Ajusta o tamanho do texto: Pequeno, Normal, Grande ou Enorme.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3: Negrito, Itálico, Sublinhado, Tachado -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">3️⃣ Formatação Básica</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="flex items-start gap-3 p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <span class="font-bold text-lg">B</span>
+                            <div>
+                                <p class="font-bold">Negrito</p>
+                                <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Deixa o texto em <strong>negrito</strong></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <span class="italic text-lg">I</span>
+                            <div>
+                                <p class="font-bold">Itálico</p>
+                                <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Deixa o texto em <em>itálico</em></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <span class="underline text-lg">U</span>
+                            <div>
+                                <p class="font-bold">Sublinhado</p>
+                                <p class="text-sm text-placeholder-light dark:text-placeholder-dark"><u>Sublinha</u> o texto selecionado</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <span class="line-through text-lg">S</span>
+                            <div>
+                                <p class="font-bold">Tachado</p>
+                                <p class="text-sm text-placeholder-light dark:text-placeholder-dark"><s>Risca</s> o texto selecionado</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4: Cores -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">4️⃣ Cores</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Cor do Texto</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Altera a cor das letras. Clique no dropdown e escolha uma cor.</p>
+                        </div>
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Cor de Fundo</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Adiciona cor de fundo (destaque) ao texto selecionado.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5: Subscript e Superscript -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">5️⃣ Subscrito e Sobrescrito</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Subscrito (x₂)</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Texto abaixo da linha base. Ex: H₂O</p>
+                        </div>
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Sobrescrito (x²)</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Texto acima da linha base. Ex: E=mc²</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6: Listas -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">6️⃣ Listas</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Lista Ordenada (1, 2, 3...)</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Cria lista numerada automaticamente</p>
+                        </div>
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Lista Não-Ordenada (• • •)</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Cria lista com marcadores (bullets)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7: Indentação -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">7️⃣ Indentação</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Diminuir Recuo (←)</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Move o parágrafo para a esquerda</p>
+                        </div>
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Aumentar Recuo (→)</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Move o parágrafo para a direita</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8: Direção do texto -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">8️⃣ Direção do Texto</h3>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Direção RTL (Right-to-Left)</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Inverte a direção do texto (útil para idiomas como árabe e hebraico)</p>
+                    </div>
+                </div>
+
+                <!-- 9: Alinhamento -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">9️⃣ Alinhamento</h3>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Alinhamento do Texto</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Alinha o parágrafo à <strong>Esquerda</strong>, <strong>Centro</strong>, <strong>Direita</strong> ou <strong>Justificado</strong></p>
+                    </div>
+                </div>
+
+                <!-- 10: Blockquote e Code -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">🔟 Elementos Especiais</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Citação (Blockquote)</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Cria bloco de citação com borda verde à esquerda</p>
+                        </div>
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Bloco de Código</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Formata texto como código de programação (fonte monoespaçada, fundo cinza)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 11: Link, Imagem, Vídeo -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">1️⃣1️⃣ Mídia e Links</h3>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Link (🔗)</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-2">Adiciona link clicável ao texto selecionado ou insere novo link.</p>
+                            <div class="text-xs space-y-1">
+                                <p class="text-primary font-semibold">💡 Como usar:</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">• Selecione o texto e clique no botão</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">• Digite a URL completa (ex: https://exemplo.com)</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">• Opcionalmente, digite um texto personalizado</p>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Imagem (🖼️) - Somente via URL</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-2">Insere imagem através de URL externa.</p>
+                            <div class="text-xs space-y-1">
+                                <p class="text-primary font-semibold">💡 Trabalhando com imagens:</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">• <strong>Inserir:</strong> Cole a URL completa (ex: https://exemplo.com/foto.jpg)</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">• <strong>Redimensionar:</strong> Clique e arraste os cantos da imagem</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">• <strong>Remover:</strong> Clique na imagem e pressione Delete ou Backspace</p>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                            <p class="font-bold mb-1">Vídeo (🎬) - YouTube</p>
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-2">Incorpora vídeo do YouTube diretamente na página.</p>
+                            <div class="text-xs space-y-1">
+                                <p class="text-primary font-semibold">💡 Como inserir vídeos do YouTube:</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">1. Abra o vídeo no YouTube</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">2. Copie a URL (ex: <code class="bg-background-light dark:bg-background-dark px-1 rounded">https://www.youtube.com/watch?v=abc123</code>)</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">3. Ou clique em "Compartilhar" e use a URL curta (<code class="bg-background-light dark:bg-background-dark px-1 rounded">https://youtu.be/abc123</code>)</p>
+                                <p class="text-placeholder-light dark:text-placeholder-dark">4. Cole no modal e clique em "Inserir"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 12: Clean -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4 text-primary">1️⃣2️⃣ Limpar Formatação</h3>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Remover Formatação (Tx)</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Remove <strong>toda</strong> a formatação do texto selecionado, mantendo apenas o texto puro (sem negrito, cores, links, etc.)</p>
+                    </div>
+                </div>
+
+                <!-- Dicas Finais -->
+                <div class="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                    <h3 class="text-lg font-bold mb-2 text-primary flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+                        </svg>
+                        Dicas Úteis
+                    </h3>
+                    <ul class="text-sm space-y-2 list-disc list-inside text-text-light dark:text-text-dark">
+                        <li>Use <strong>"Visualizar HTML"</strong> para ver/editar o código fonte diretamente</li>
+                        <li>Passe o mouse sobre a maioria dos botões para ver tooltips amarelas com dicas rápidas</li>
+                        <li>Para imagens e vídeos, use sempre URLs completas começando com <code class="bg-background-light dark:bg-background-dark px-1 rounded">https://</code></li>
+                        <li><strong>Teste a página pública</strong> após salvar para garantir que tudo está exibido corretamente</li>
+                        <li>Use <kbd class="bg-background-light dark:bg-background-dark px-2 py-1 rounded border border-border-light dark:border-border-dark">Ctrl+Z</kbd> (ou <kbd class="bg-background-light dark:bg-background-dark px-2 py-1 rounded border border-border-light dark:border-border-dark">Cmd+Z</kbd> no Mac) para desfazer alterações</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end">
+                <button @click="modalAberto = false" class="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                    Entendi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para inicializar Quill.js e Editor HTML -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let isHtmlMode = false;
+
+    // Registrar módulo de redimensionamento de imagens
+    if (window.ImageResize) {
+        Quill.register('modules/imageResize', window.ImageResize.default);
+    }
+
+    // Configurar formato customizado de vídeo para aceitar URLs do YouTube
+    const BlockEmbed = Quill.import('blots/block/embed');
+
+    class VideoBlot extends BlockEmbed {
+        static create(value) {
+            console.log('🎬 VideoBlot.create() chamado com URL:', value);
+            const node = super.create();
+
+            const sanitizedUrl = this.sanitize(value);
+            console.log('🔧 URL sanitizada:', sanitizedUrl);
+
+            node.setAttribute('frameborder', '0');
+            node.setAttribute('allowfullscreen', true);
+            node.setAttribute('src', sanitizedUrl);
+            node.setAttribute('width', '640');
+            node.setAttribute('height', '360');
+
+            // Adicionar atributos allow necessários para evitar erro 153
+            node.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+            node.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
+            // Permitir redimensionamento via CSS
+            node.style.maxWidth = '100%';
+            node.style.resize = 'both';
+            node.style.overflow = 'auto';
+
+            console.log('✅ VideoBlot.create() finalizou. Elemento:', node);
+            return node;
+        }
+
+        static sanitize(url) {
+            // Converter URLs do YouTube para formato embed com configurações adequadas
+            if (url.includes('youtube.com/watch')) {
+                const videoId = url.split('v=')[1]?.split('&')[0];
+                if (videoId) {
+                    // Usar youtube.com normal (youtube-nocookie pode causar erro 153)
+                    return `https://www.youtube.com/embed/${videoId}`;
+                }
+            } else if (url.includes('youtu.be/')) {
+                const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+                if (videoId) {
+                    return `https://www.youtube.com/embed/${videoId}`;
+                }
+            } else if (url.includes('youtube.com/embed/') || url.includes('youtube-nocookie.com/embed/')) {
+                // Já está no formato embed
+                return url;
+            }
+            return url;
+        }
+
+        static value(node) {
+            return node.getAttribute('src');
+        }
+    }
+
+    VideoBlot.blotName = 'video';
+    VideoBlot.tagName = 'iframe';
+
+    Quill.register(VideoBlot);
+
+    // Inicializar Quill.js com toolbar expandida
+    var quill = new Quill('#quill-editor', {
+        theme: 'snow',
+        modules: {
+            imageResize: {
+                displaySize: true, // Mostrar tamanho da imagem
+                modules: ['Resize', 'DisplaySize', 'Toolbar'],
+                // Configurar para redimensionar também iframes (vídeos)
+                handleSelector: 'img, iframe'
+            },
+            toolbar: {
+                container: [
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }],
+                    [{ 'align': [] }],
+                    ['blockquote', 'code-block'],
+                    ['link', 'image', 'video'],
+                    ['clean']
+                ],
+                handlers: {
+                    image: function() {
+                        // Abrir modal Alpine.js para inserir URL da imagem
+                        window.dispatchEvent(new CustomEvent('open-image-modal'));
+                    },
+                    video: function() {
+                        // Abrir modal Alpine.js para inserir URL do vídeo
+                        window.dispatchEvent(new CustomEvent('open-video-modal'));
+                    },
+                    link: function(value) {
+                        if (value) {
+                            // Se já existe um link, abrir modal com a URL atual
+                            const selection = this.quill.getSelection();
+                            if (selection) {
+                                const text = this.quill.getText(selection.index, selection.length);
+                                window.dispatchEvent(new CustomEvent('open-link-modal', {
+                                    detail: { texto: text }
+                                }));
+                            }
+                        } else {
+                            // Abrir modal Alpine.js para inserir link
+                            const selection = this.quill.getSelection();
+                            const text = selection ? this.quill.getText(selection.index, selection.length) : '';
+                            window.dispatchEvent(new CustomEvent('open-link-modal', {
+                                detail: { texto: text }
+                            }));
+                        }
+                    }
+                }
+            }
+        },
+        placeholder: 'Digite o conteúdo da página aqui...'
+    });
+
+    // Aguardar Quill carregar completamente antes de fazer qualquer customização
+    console.log('✅ Quill editor inicializado');
+
+    // Posicionar tooltips dinamicamente com position: fixed
+    // Rastrear posição do mouse para posicionar tooltips acima do cursor
+    let currentTooltip = null;
+
+    document.addEventListener('mousemove', function(e) {
+        const hoveredElement = document.elementFromPoint(e.clientX, e.clientY);
+
+        if (hoveredElement && hoveredElement.closest('.ql-toolbar')) {
+            const toolbarButton = hoveredElement.closest('[title]');
+
+            if (toolbarButton && toolbarButton.hasAttribute('title')) {
+                // Calcular posição da tooltip acima do cursor
+                const style = document.createElement('style');
+                style.id = 'dynamic-tooltip-position';
+
+                // Remover estilo anterior se existir
+                const oldStyle = document.getElementById('dynamic-tooltip-position');
+                if (oldStyle) oldStyle.remove();
+
+                // Adicionar novo estilo com posição dinâmica
+                style.textContent = `
+                    .ql-toolbar button[title]:hover::after,
+                    .ql-toolbar .ql-picker[title]:hover::after {
+                        top: ${e.clientY - 40}px !important;
+                        left: ${e.clientX}px !important;
+                        transform: translateX(-50%);
+                    }
+                `;
+
+                document.head.appendChild(style);
+            }
+        }
+    });
+
+
+    // Adicionar tooltips (hints em balão) aos botões da toolbar
+    // Aguardar um pequeno delay para garantir que a toolbar foi renderizada
+    setTimeout(function() {
+        const toolbar = document.querySelector('.ql-toolbar');
+
+        if (toolbar) {
+            // Função auxiliar para adicionar title a um elemento
+            function addTooltip(selector, text) {
+                const element = toolbar.querySelector(selector);
+                if (element) {
+                    element.setAttribute('title', text);
+                }
+            }
+
+            // NOTA: NÃO adicionar tooltips aos dropdowns de HEADER e SIZE
+            // Isso causa problemas de renderização do texto (fica branco)
+            // Os outros dropdowns (cores, alinhamento) funcionam normalmente
+
+            // addTooltip('.ql-header .ql-picker-label', 'Cabeçalhos (H1, H2, H3, H4, H5, H6)');
+            // addTooltip('.ql-header', 'Cabeçalhos (H1, H2, H3, H4, H5, H6)');
+            // addTooltip('.ql-size .ql-picker-label', 'Tamanho da fonte (Pequeno, Normal, Grande, Enorme)');
+            // addTooltip('.ql-size', 'Tamanho da fonte (Pequeno, Normal, Grande, Enorme)');
+
+            // Formatação básica
+            addTooltip('button.ql-bold', 'Negrito');
+            addTooltip('button.ql-italic', 'Itálico');
+            addTooltip('button.ql-underline', 'Sublinhado');
+            addTooltip('button.ql-strike', 'Tachado');
+
+            // Cores - Funcionam normalmente com tooltips
+            const colorButtons = toolbar.querySelectorAll('.ql-color');
+            colorButtons.forEach(btn => btn.setAttribute('title', 'Cor do texto'));
+
+            const backgroundButtons = toolbar.querySelectorAll('.ql-background');
+            backgroundButtons.forEach(btn => btn.setAttribute('title', 'Cor de fundo'));
+
+            // Subscript e Superscript
+            const scriptButtons = toolbar.querySelectorAll('button.ql-script');
+            if (scriptButtons[0]) scriptButtons[0].setAttribute('title', 'Subscrito (texto abaixo da linha)');
+            if (scriptButtons[1]) scriptButtons[1].setAttribute('title', 'Sobrescrito (texto acima da linha)');
+
+            // Listas
+            const listButtons = toolbar.querySelectorAll('button.ql-list');
+            if (listButtons[0]) listButtons[0].setAttribute('title', 'Lista ordenada (1, 2, 3...)');
+            if (listButtons[1]) listButtons[1].setAttribute('title', 'Lista não-ordenada (• • •)');
+
+            // Indentação
+            const indentButtons = toolbar.querySelectorAll('button.ql-indent');
+            if (indentButtons[0]) indentButtons[0].setAttribute('title', 'Diminuir recuo');
+            if (indentButtons[1]) indentButtons[1].setAttribute('title', 'Aumentar recuo');
+
+            // Direção do texto
+            addTooltip('button.ql-direction', 'Direção do texto (da direita para esquerda)');
+
+            // Alinhamento - Funciona normalmente com tooltip
+            addTooltip('.ql-align .ql-picker-label', 'Alinhamento do texto (Esquerda, Centro, Direita, Justificado)');
+            addTooltip('.ql-align', 'Alinhamento do texto (Esquerda, Centro, Direita, Justificado)');
+
+            // Blockquote e Code
+            addTooltip('button.ql-blockquote', 'Citação (Blockquote)');
+            addTooltip('button.ql-code-block', 'Bloco de código');
+
+            // Link, Imagem, Vídeo
+            addTooltip('button.ql-link', 'Inserir link');
+            addTooltip('button.ql-image', 'Inserir imagem (via URL)');
+            addTooltip('button.ql-video', 'Inserir vídeo (via URL)');
+
+            // Clean (remover formatação) - Este é o "Tx"
+            addTooltip('button.ql-clean', 'Remover formatação do texto selecionado');
+
+            // Debug: Verificar quantos tooltips foram adicionados
+            console.log('Tooltips adicionados com sucesso');
+        } else {
+            console.error('Toolbar do Quill não encontrada');
+        }
+    }, 200);
+
+    // Elementos do DOM
+    var textareaConteudo = document.getElementById('quill-editor-content');
+    var htmlEditor = document.getElementById('html-editor');
+    var quillContainer = document.getElementById('quill-editor');
+    var toggleBtn = document.getElementById('toggle-html-btn');
+    var toggleBtnText = toggleBtn.querySelector('span');
+
+    // Listener para inserir link quando o usuário confirmar no modal
+    window.addEventListener('inserir-link', function(event) {
+        const url = event.detail.url;
+        const texto = event.detail.texto;
+
+        if (url) {
+            const range = quill.getSelection() || { index: quill.getLength() };
+
+            if (range.length > 0) {
+                // Há texto selecionado - aplicar link ao texto selecionado
+                quill.formatText(range.index, range.length, 'link', url);
+                quill.setSelection(range.index + range.length);
+            } else if (texto && texto.trim() !== '') {
+                // Não há seleção, mas há texto digitado no campo - inserir texto com link
+                quill.insertText(range.index, texto);
+                quill.formatText(range.index, texto.length, 'link', url);
+                quill.setSelection(range.index + texto.length);
+            } else {
+                // Não há seleção nem texto - inserir URL como texto com link
+                quill.insertText(range.index, url);
+                quill.formatText(range.index, url.length, 'link', url);
+                quill.setSelection(range.index + url.length);
+            }
+        }
+    });
+
+    // Listener para inserir imagem quando o usuário confirmar no modal
+    window.addEventListener('inserir-imagem', function(event) {
+        const url = event.detail.url;
+        if (url) {
+            const range = quill.getSelection() || { index: quill.getLength() };
+            quill.insertEmbed(range.index, 'image', url);
+            // Mover cursor para depois da imagem
+            quill.setSelection(range.index + 1);
+        }
+    });
+
+    // Listener para inserir vídeo quando o usuário confirmar no modal
+    window.addEventListener('inserir-video', function(event) {
+        console.log('📡 Evento inserir-video recebido:', event.detail);
+        const url = event.detail.url;
+        console.log('🔗 URL recebida:', url);
+
+        if (url) {
+            const range = quill.getSelection() || { index: quill.getLength() };
+            console.log('📍 Range/posição:', range);
+
+            try {
+                // O VideoBlot customizado fará toda a conversão automaticamente
+                quill.insertEmbed(range.index, 'video', url);
+                console.log('✅ insertEmbed() executado com sucesso');
+
+                // Mover cursor para depois do vídeo
+                quill.setSelection(range.index + 1);
+
+                console.log('✅ Vídeo inserido com sucesso');
+            } catch (error) {
+                console.error('❌ Erro ao inserir vídeo:', error);
+            }
+        } else {
+            console.warn('⚠️ URL vazia ou inválida');
+        }
+    });
+
+    // Carregar conteúdo existente do textarea hidden
+    console.log('=== DEBUG: Carregamento do Quill ===');
+    console.log('Textarea encontrado:', textareaConteudo !== null);
+    console.log('Conteúdo tem valor:', textareaConteudo && textareaConteudo.value ? 'SIM' : 'NÃO');
+    console.log('Tamanho do conteúdo:', textareaConteudo && textareaConteudo.value ? textareaConteudo.value.length : 0);
+
+    if (textareaConteudo && textareaConteudo.value) {
+        try {
+            // Usar método seguro do Quill para inserir HTML
+            quill.clipboard.dangerouslyPasteHTML(textareaConteudo.value);
+            htmlEditor.value = textareaConteudo.value;
+            console.log('✅ Conteúdo carregado no Quill com sucesso');
+        } catch (error) {
+            console.error('❌ Erro ao carregar conteúdo no Quill:', error);
+            // Fallback: tentar com innerHTML
+            try {
+                quill.root.innerHTML = textareaConteudo.value;
+                htmlEditor.value = textareaConteudo.value;
+                console.log('✅ Conteúdo carregado no Quill (fallback)');
+            } catch (fallbackError) {
+                console.error('❌ Erro no fallback:', fallbackError);
+            }
+        }
+    } else {
+        console.log('⚠️ Nenhum conteúdo para carregar');
+    }
+
+    // Função para alternar entre modos WYSIWYG e HTML
+    toggleBtn.addEventListener('click', function() {
+        isHtmlMode = !isHtmlMode;
+
+        if (isHtmlMode) {
+            // Modo HTML
+            htmlEditor.value = quill.root.innerHTML;
+            quillContainer.classList.add('hidden');
+            htmlEditor.classList.remove('hidden');
+            toggleBtnText.textContent = 'Visualizar Editor';
+        } else {
+            // Modo WYSIWYG
+            try {
+                quill.clipboard.dangerouslyPasteHTML(htmlEditor.value);
+            } catch (error) {
+                console.error('Erro ao carregar HTML:', error);
+                quill.root.innerHTML = htmlEditor.value;
+            }
+            htmlEditor.classList.add('hidden');
+            quillContainer.classList.remove('hidden');
+            toggleBtnText.textContent = 'Visualizar HTML';
+        }
+    });
+
+    // Sincronizar editores em tempo real
+    quill.on('text-change', function() {
+        if (!isHtmlMode) {
+            htmlEditor.value = quill.root.innerHTML;
+        }
+    });
+
+    htmlEditor.addEventListener('input', function() {
+        if (isHtmlMode) {
+            try {
+                quill.clipboard.dangerouslyPasteHTML(htmlEditor.value);
+            } catch (error) {
+                console.error('Erro ao sincronizar HTML:', error);
+                quill.root.innerHTML = htmlEditor.value;
+            }
+        }
+    });
+
+    // Sincronizar com textarea hidden antes de enviar formulário
+    var form = document.getElementById('form-editar-pagina');
+    form.addEventListener('submit', function(e) {
+        if (isHtmlMode) {
+            // Se estiver em modo HTML, usar o conteúdo do editor HTML
+            textareaConteudo.value = htmlEditor.value;
+        } else {
+            // Se estiver em modo WYSIWYG, usar o conteúdo do Quill
+            textareaConteudo.value = quill.root.innerHTML;
+        }
+    });
+});
+</script>
+
+<!-- CSS customizado para garantir renderização correta dos elementos do Quill -->
+<style>
+/* Tooltips customizados - Amarelo com fonte preta, sem fade */
+/* Desabilitar tooltip padrão do navegador */
+.ql-toolbar [title] {
+    position: relative;
+}
+
+.ql-toolbar [title]::after,
+.ql-toolbar [title]::before {
+    /* Ocultar tooltip padrão quando hover em qualquer elemento com title */
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Tooltip customizado amarelo - mais compacto e bem posicionado */
+.ql-toolbar button[title]:hover::after,
+.ql-toolbar .ql-picker[title]:hover::after {
+    content: attr(title);
+    position: fixed; /* Fixed para ficar SEMPRE acima da sidebar */
+    bottom: auto;
+    top: auto;
+    left: auto;
+    background-color: #FCD34D; /* Amarelo */
+    color: #000000; /* Preto */
+    padding: 6px 10px; /* Mais compacto */
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 12px; /* Menor */
+    font-weight: 600;
+    z-index: 999999; /* Muito acima de tudo */
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    opacity: 1;
+    visibility: visible;
+    /* SEM transições/fade */
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Setinha do tooltip - ocultar por enquanto com position fixed */
+.ql-toolbar button[title]:hover::before,
+.ql-toolbar .ql-picker[title]:hover::before {
+    display: none; /* Simplificar - sem setinha com position fixed */
+}
+
+/* Evitar que tooltips de elementos adjacentes apareçam ao mesmo tempo */
+.ql-toolbar .ql-formats > *:not(:hover)::after,
+.ql-toolbar .ql-formats > *:not(:hover)::before {
+    display: none !important;
+}
+
+/* Garantir que o item selecionado no dropdown seja laranja */
+.ql-snow .ql-picker-item.ql-selected {
+    color: #e69019;
+}
+
+/* DESABILITAR tooltips nativos do Quill completamente */
+/* Usuário quer usar APENAS as modais customizadas para links e imagens */
+.ql-tooltip {
+    display: none !important; /* Ocultar completamente */
+}
+
+</style>
+<style>
+/* Estilos para o editor Quill */
+.ql-editor {
+    min-height: 400px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Garantir que listas sejam exibidas corretamente */
+.ql-editor ol,
+.ql-editor ul {
+    padding-left: 1.5em !important;
+    margin: 1em 0 !important;
+}
+
+.ql-editor ol li,
+.ql-editor ul li {
+    list-style-position: outside !important;
+}
+
+.ql-editor ol {
+    list-style-type: decimal !important;
+}
+
+.ql-editor ul {
+    list-style-type: disc !important;
+}
+
+/* Estilos simples para vídeos (iframes do YouTube) */
+.ql-editor iframe {
+    max-width: 100%;
+    margin: 1em auto;
+    border: 2px solid #e69019;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
+/* Indicador visual ao passar mouse sobre vídeo */
+.ql-editor iframe:hover {
+    outline: 2px solid #e69019;
+    outline-offset: 2px;
+}
+
+/* Estilos para links */
+.ql-editor a {
+    color: #e69019;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.ql-editor a:hover {
+    color: #c57a15;
+}
+
+/* Estilos para cabeçalhos */
+.ql-editor h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
+.ql-editor h2 { font-size: 1.5em; font-weight: bold; margin: 0.75em 0; }
+.ql-editor h3 { font-size: 1.17em; font-weight: bold; margin: 0.83em 0; }
+.ql-editor h4 { font-size: 1em; font-weight: bold; margin: 1em 0; }
+.ql-editor h5 { font-size: 0.83em; font-weight: bold; margin: 1.17em 0; }
+.ql-editor h6 { font-size: 0.67em; font-weight: bold; margin: 1.33em 0; }
+
+/* Estilos para blockquotes */
+.ql-editor blockquote {
+    border-left: 4px solid #3A4D39;
+    padding-left: 1em;
+    margin: 1em 0;
+    font-style: italic;
+    color: #4F4A45;
+}
+
+/* Estilos para code blocks */
+.ql-editor pre {
+    background-color: #f4f4f4;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1em 0;
+}
+
+/* Estilos para parágrafos */
+.ql-editor p {
+    margin: 1em 0;
+}
+
+/* Estilos para indentação */
+.ql-editor .ql-indent-1 { padding-left: 3em; }
+.ql-editor .ql-indent-2 { padding-left: 6em; }
+.ql-editor .ql-indent-3 { padding-left: 9em; }
+.ql-editor .ql-indent-4 { padding-left: 12em; }
+.ql-editor .ql-indent-5 { padding-left: 15em; }
+.ql-editor .ql-indent-6 { padding-left: 18em; }
+.ql-editor .ql-indent-7 { padding-left: 21em; }
+.ql-editor .ql-indent-8 { padding-left: 24em; }
+
+/* Estilos para imagens no editor - Deixar claro que são clicáveis/selecionáveis */
+.ql-editor img {
+    cursor: pointer;
+    transition: opacity 0.2s, box-shadow 0.2s;
+    border-radius: 4px;
+    max-width: 100%;
+    height: auto;
+    position: relative;
+}
+
+.ql-editor img:hover {
+    opacity: 0.9;
+    box-shadow: 0 0 0 3px rgba(230, 144, 25, 0.3);
+}
+
+.ql-editor img.ql-selected {
+    box-shadow: 0 0 0 3px #e69019;
+}
+
+/* Botão REMOVER sobre a imagem */
+.image-remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: #dc2626;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.2s;
+    display: none;
+}
+
+.image-remove-btn:hover {
+    background-color: #b91c1c;
+}
+
+/* Container para imagem + botão */
+.image-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.image-wrapper:hover .image-remove-btn {
+    display: block;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,738 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configurações - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<!-- Carregar CSS dos temas dinamicamente do banco de dados -->
+{% for tema in temas %}
+<link rel="stylesheet" href="{% static 'css/themes/' %}{{ tema.arquivo_css }}">
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<div class="layout-content-container flex flex-col w-full max-w-4xl flex-1 px-4">
+    <div class="flex flex-wrap justify-between gap-3 p-4">
+        <div class="flex w-full flex-col gap-3">
+            <p class="text-text-light dark:text-text-dark text-4xl font-black leading-tight tracking-[-0.033em] font-display">
+                Configurações
+            </p>
+            <p class="text-placeholder-light dark:text-placeholder-dark text-base font-normal leading-normal">
+                Torne sua experiência ainda melhor! Ajuste tudo do seu jeito.
+            </p>
+        </div>
+    </div>
+
+    <form method="post" class="flex flex-col gap-6">
+        {% csrf_token %}
+
+        <!-- SEÇÃO 1: Conforto de Leitura -->
+        <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark font-display mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-primary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                </svg>
+                Sua Leitura, Do Seu Jeito
+            </h3>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-6">
+                Queremos que cada leitura seja especial. Escolha o visual e o tamanho que mais agradam seus olhos!
+            </p>
+
+            <!-- Alpine.js data para controle do tema (usa slug para preview) -->
+            <div class="flex flex-col gap-6" x-data="{ temaPreview: '{{ tema_atual_slug }}' }">
+                <!-- Tema de Leitura -->
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-sm font-medium pb-3">
+                        {{ form.tema_leitura_padrao.label }}
+                    </p>
+
+                    <!-- Preview do tema + Select -->
+                    <div class="flex items-center gap-4">
+                        <!-- Preview do tema com "Livre Dia" -->
+                        <div class="flex-shrink-0 w-36 h-16 flex items-center justify-center border-2 border-border-light dark:border-border-dark rounded-lg overflow-hidden transition-all duration-300"
+                             :class="`tema-${temaPreview}`">
+                            <p class="font-display font-bold text-lg px-3 text-center">
+                                Livre Dia
+                            </p>
+                        </div>
+
+                        <!-- Select de tema (agora com data-slug para Alpine.js) -->
+                        <div class="flex-1">
+                            <select name="{{ form.tema_leitura_padrao.name }}"
+                                    id="{{ form.tema_leitura_padrao.auto_id }}"
+                                    @change="temaPreview = $event.target.selectedOptions[0].dataset.slug"
+                                    class="form-select w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 p-3">
+                                {% for tema in form.tema_leitura_padrao.field.queryset %}
+                                    <option value="{{ tema.id }}"
+                                            data-slug="{{ tema.slug }}"
+                                            {% if form.tema_leitura_padrao.value == tema.id %}selected{% endif %}>
+                                        {{ tema.nome_exibicao }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    {% if form.tema_leitura_padrao.errors %}
+                        <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.tema_leitura_padrao.errors.0 }}</p>
+                    {% else %}
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                            {{ form.tema_leitura_padrao.help_text }} O bloco ao lado mostra como o tema ficará aplicado na leitura!
+                        </p>
+                    {% endif %}
+                </label>
+
+                <!-- Nível de Zoom -->
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-sm font-medium pb-3">
+                        {{ form.nivel_zoom_padrao.label }}
+                    </p>
+
+                    <!-- Exibidor de valor em destaque + Preview + Slider -->
+                    <div class="flex items-center gap-4">
+                        <!-- Valor numérico em destaque -->
+                        <div class="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-primary/10 border-2 border-primary rounded-lg">
+                            <p id="zoom-value-display" class="text-primary font-bold text-3xl">
+                                {{ form.nivel_zoom_padrao.value|default:5 }}
+                            </p>
+                        </div>
+
+                        <!-- Preview do tamanho da letra -->
+                        <div class="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-secondary-light dark:bg-secondary-dark border-2 border-border-light dark:border-border-dark rounded-lg">
+                            <p id="zoom-letter-preview" class="text-text-light dark:text-text-dark font-serif font-bold transition-all duration-200" style="font-size: 1rem;">
+                                A
+                            </p>
+                        </div>
+
+                        <!-- Slider -->
+                        <div class="flex-1">
+                            {{ form.nivel_zoom_padrao }}
+                        </div>
+                    </div>
+
+                    {% if form.nivel_zoom_padrao.errors %}
+                        <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.nivel_zoom_padrao.errors.0 }}</p>
+                    {% else %}
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                            {{ form.nivel_zoom_padrao.help_text }} A letra <span class="font-semibold">"A"</span> ao lado mostra como ficará o tamanho do texto quando você estiver lendo.
+                        </p>
+                    {% endif %}
+                </label>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 2: Tema da Plataforma (Light/Dark) -->
+        <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6"
+             x-data="{
+                 temaAtual: '{{ tema_plataforma|default:'light' }}',
+                 salvando: false,
+                 async aplicarTema(tema) {
+                     this.temaAtual = tema;
+                     // Aplicar classe no elemento html imediatamente
+                     document.documentElement.className = tema;
+
+                     // Salvar no banco de dados via AJAX
+                     this.salvando = true;
+                     try {
+                         const formData = new FormData();
+                         formData.append('tema', tema);
+                         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+                         await fetch('{% url 'usuarios:alterar_tema_plataforma' %}', {
+                             method: 'POST',
+                             body: formData
+                         });
+                     } catch (error) {
+                         console.error('Erro ao salvar tema:', error);
+                     }
+                     this.salvando = false;
+                 }
+             }">
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark font-display mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-primary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                </svg>
+                Aparência da Plataforma
+                <!-- Indicador de salvamento -->
+                <span x-show="salvando" x-transition class="ml-2 text-xs text-primary font-normal">Salvando...</span>
+            </h3>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-6">
+                Escolha entre o modo claro ou escuro para navegar na plataforma. A alteração é salva automaticamente.
+            </p>
+
+            <!-- Opções de tema com preview visual -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {% for choice in form.tema_plataforma %}
+                <label class="cursor-pointer group"
+                       @click="aplicarTema('{{ choice.data.value }}')">
+                    <input type="radio"
+                           name="{{ form.tema_plataforma.name }}"
+                           value="{{ choice.data.value }}"
+                           {% if choice.data.selected %}checked{% endif %}
+                           class="sr-only peer">
+                    <div class="border-2 rounded-lg overflow-hidden transition-all hover:border-primary/50"
+                         :class="temaAtual === '{{ choice.data.value }}' ? 'border-green-500 ring-2 ring-green-500/30' : 'border-border-light dark:border-border-dark'">
+                        <!-- Preview do tema -->
+                        <div class="relative w-full h-24 flex items-center justify-center
+                                    {% if choice.data.value == 'light' %}bg-[#fcfaf8]{% else %}bg-[#211a11]{% endif %}">
+                            <!-- Checkmark quando selecionado -->
+                            <div class="absolute top-2 right-2 bg-green-500 rounded-full p-1 transition-opacity"
+                                 :class="temaAtual === '{{ choice.data.value }}' ? 'opacity-100' : 'opacity-0'">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="white" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                            </div>
+                            <!-- Ícone sol/lua -->
+                            {% if choice.data.value == 'light' %}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-[#e69019]">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                            </svg>
+                            {% else %}
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-[#f3eee7]">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                            </svg>
+                            {% endif %}
+                        </div>
+
+                        <!-- Info do tema -->
+                        <div class="p-3 {% if choice.data.value == 'light' %}bg-[#f3eee7]{% else %}bg-[#32291e]{% endif %}">
+                            <h4 class="font-semibold text-sm {% if choice.data.value == 'light' %}text-[#1b150e]{% else %}text-[#f3eee7]{% endif %}">
+                                {{ choice.choice_label }}
+                            </h4>
+                            <p class="text-xs {% if choice.data.value == 'light' %}text-[#97794e]{% else %}text-[#a18a6c]{% endif %}">
+                                {% if choice.data.value == 'light' %}
+                                Ideal para ambientes bem iluminados
+                                {% else %}
+                                Ideal para leitura noturna
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            {% if form.tema_plataforma.errors %}
+                <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.tema_plataforma.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- SEÇÃO 3: Personalização do Perfil (Item 1.1 do ROADMAP) -->
+        <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6"
+             x-data="{
+                 capaEscolhida: {{ capa_atual_id|default:'null' }},
+                 capaOriginal: {{ capa_atual_id|default:'null' }}
+             }">
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark font-display mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-primary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
+                Personalize Sua Página de Perfil
+            </h3>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-6">
+                Escolha uma entre as nossas lindas capas selecionadas de fotógrafos famosos para deixar sua página de perfil maravilhosa!
+                <span class="font-semibold">Estas imagens são de domínio público</span> e os fotógrafos concederam direito de uso livre das mesmas.
+            </p>
+
+            <!-- Grid de Capas -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {% for capa in capas_disponiveis %}
+                <label class="cursor-pointer group">
+                    <input type="radio" name="{{ form.capa_escolhida.name }}" value="{{ capa.id }}"
+                           {% if capa.id == capa_atual_id %}checked{% endif %}
+                           @change="capaEscolhida = {{ capa.id }}"
+                           class="sr-only peer">
+
+                    <!-- Border verde se for a capa selecionada (capaEscolhida), senão border padrão -->
+                    <div class="border-2 rounded-lg overflow-hidden transition-all hover:border-primary/50"
+                         :class="capaEscolhida == {{ capa.id }} ? 'border-green-500 ring-2 ring-green-500/30' : 'border-border-light dark:border-border-dark'">
+                        <!-- Preview da Capa (aspect ratio 21:9) -->
+                        <div class="relative w-full overflow-hidden bg-gray-100 dark:bg-gray-800" style="aspect-ratio: 21/9;">
+                            <img src="{% load static %}{% static capa.caminho_imagem %}"
+                                 alt="{{ capa.nome }}"
+                                 class="w-full h-full object-cover">
+
+                            <!-- Checkmark verde quando selecionado -->
+                            <div class="absolute top-2 right-2 bg-green-500 rounded-full p-1 transition-opacity"
+                                 :class="capaEscolhida == {{ capa.id }} ? 'opacity-100' : 'opacity-0'">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="white" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Info da Capa -->
+                        <div class="p-3 bg-background-light dark:bg-background-dark">
+                            <h4 class="font-semibold text-sm text-text-light dark:text-text-dark mb-1">{{ capa.nome }}</h4>
+                            <!-- Mensagem só aparece se capa selecionada for diferente da original -->
+                            <p class="text-xs font-semibold text-green-600 dark:text-green-400 transition-opacity mb-1"
+                               :class="(capaEscolhida == {{ capa.id }} && capaEscolhida != capaOriginal) ? 'opacity-100' : 'opacity-0'">
+                                (Salve as configurações para usar esta capa)
+                            </p>
+                            <p class="text-xs text-placeholder-light dark:text-placeholder-dark mb-1">
+                                <span class="font-medium">Fotógrafo:</span> {{ capa.fotografo }}
+                            </p>
+                            <a href="{{ capa.fonte_url }}" target="_blank" rel="noopener noreferrer"
+                               class="text-xs text-primary hover:underline flex items-center gap-1">
+                                Ver fonte
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            {% if form.capa_escolhida.errors %}
+                <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.capa_escolhida.errors.0 }}</p>
+            {% endif %}
+
+            <!-- Alinhamento Vertical da Capa -->
+            <div class="mt-6 pt-6 border-t border-border-light dark:border-border-dark">
+                <h4 class="text-lg font-semibold text-text-light dark:text-text-dark mb-3">Alinhamento Vertical</h4>
+                <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-4">
+                    Escolha qual parte da imagem de capa será exibida no banner do seu perfil.
+                </p>
+                <div class="flex flex-col gap-3">
+                    {% for choice in form.alinhamento_vertical_capa %}
+                    <label class="flex items-center gap-3 cursor-pointer p-3 hover:bg-secondary-light dark:hover:bg-secondary-dark rounded-lg transition border border-border-light dark:border-border-dark">
+                        {{ choice.tag }}
+                        <span class="text-sm text-text-light dark:text-text-dark">{{ choice.choice_label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% if form.alinhamento_vertical_capa.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.alinhamento_vertical_capa.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- SEÇÃO 4: Notificações -->
+        <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark font-display mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-primary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                </svg>
+                Fique Por Dentro!
+            </h3>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-6">
+                Escolha o que você quer saber e como prefere receber nossas mensagens.
+            </p>
+
+            <div class="flex flex-col gap-4">
+                <!-- E-mail de Autores Favoritos -->
+                <label class="flex items-start gap-3 cursor-pointer p-3 hover:bg-background-light/50 dark:hover:bg-background-dark/50 rounded-lg transition">
+                    {{ form.receber_email_autores_favoritos }}
+                    <div class="flex-1">
+                        <p class="text-text-light dark:text-text-dark text-sm font-medium">
+                            {{ form.receber_email_autores_favoritos.label }}
+                        </p>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                            {{ form.receber_email_autores_favoritos.help_text }}
+                        </p>
+                    </div>
+                </label>
+
+                <!-- E-mail Promocional -->
+                <label class="flex items-start gap-3 cursor-pointer p-3 hover:bg-background-light/50 dark:hover:bg-background-dark/50 rounded-lg transition">
+                    {{ form.receber_email_promocional }}
+                    <div class="flex-1">
+                        <p class="text-text-light dark:text-text-dark text-sm font-medium">
+                            {{ form.receber_email_promocional.label }}
+                        </p>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                            {{ form.receber_email_promocional.help_text }}
+                        </p>
+                    </div>
+                </label>
+
+                <!-- E-mail de Parceiros -->
+                <label class="flex items-start gap-3 cursor-pointer p-3 hover:bg-background-light/50 dark:hover:bg-background-dark/50 rounded-lg transition">
+                    {{ form.receber_email_parceiros }}
+                    <div class="flex-1">
+                        <p class="text-text-light dark:text-text-dark text-sm font-medium">
+                            {{ form.receber_email_parceiros.label }}
+                        </p>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                            {{ form.receber_email_parceiros.help_text }}
+                        </p>
+                    </div>
+                </label>
+
+                <!-- Exibir Sininho -->
+                <label class="flex items-start gap-3 cursor-pointer p-3 hover:bg-background-light/50 dark:hover:bg-background-dark/50 rounded-lg transition">
+                    {{ form.exibir_sininho_notificacoes }}
+                    <div class="flex-1">
+                        <p class="text-text-light dark:text-text-dark text-sm font-medium">
+                            {{ form.exibir_sininho_notificacoes.label }}
+                        </p>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                            {{ form.exibir_sininho_notificacoes.help_text }}
+                        </p>
+                    </div>
+                </label>
+
+                <!-- Exibir E-mail no Perfil -->
+                <label class="flex items-start gap-3 cursor-pointer p-3 hover:bg-background-light/50 dark:hover:bg-background-dark/50 rounded-lg transition">
+                    {{ form.exibir_email_perfil }}
+                    <div class="flex-1">
+                        <p class="text-text-light dark:text-text-dark text-sm font-medium">
+                            {{ form.exibir_email_perfil.label }}
+                        </p>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                            {{ form.exibir_email_perfil.help_text }}
+                        </p>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 5: Controle de Conteúdo Sensível (MELHORIA 73) -->
+        {% if usuario_maior_18 %}
+        <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark font-display mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-primary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                Conteúdo Sensível
+            </h3>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-6">
+                Como você é maior de 18 anos, pode optar por não visualizar avisos de conteúdo sensível antes de ler textos classificados como inapropriados para menores.
+            </p>
+
+            <div class="flex flex-col gap-4">
+                <!-- Checkbox de Avisos de Maioridade -->
+                <label class="flex items-start gap-3 cursor-pointer p-3 hover:bg-background-light/50 dark:hover:bg-background-dark/50 rounded-lg transition">
+                    {{ form.mostrar_aviso_maioridade }}
+                    <div class="flex-1">
+                        <p class="text-text-light dark:text-text-dark text-sm font-medium">
+                            {{ form.mostrar_aviso_maioridade.label }}
+                        </p>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                            Se marcado, você não verá avisos antes de acessar textos com conteúdo sensível. Use com responsabilidade.
+                        </p>
+                    </div>
+                </label>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- SEÇÃO 6: Contas Vinculadas -->
+        <!-- x-data para controlar o modal de desvinculação -->
+        <div x-data="{ modalDesvincularAberto: false }"
+             class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark font-display mb-6 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-primary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                </svg>
+                Contas Vinculadas
+            </h3>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-6">
+                Vincule sua conta a serviços externos para facilitar o acesso à plataforma.
+            </p>
+
+            <div class="flex flex-col gap-4">
+                <!-- Google -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-border-light dark:border-border-dark rounded-lg">
+                    <div class="flex items-center gap-4">
+                        <!-- Ícone do Google -->
+                        <div class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-white rounded-lg border border-gray-200 dark:border-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-6 h-6">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-text-light dark:text-text-dark font-semibold">Google</p>
+                            {% if google_vinculado %}
+                                <p class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 flex-shrink-0">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+                                    <span class="truncate">Vinculado ({{ google_email }})</span>
+                                </p>
+                            {% else %}
+                                <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                                    Não vinculado
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if google_vinculado %}
+                        <!-- Botão para abrir modal de confirmação -->
+                        <button type="button"
+                                @click="modalDesvincularAberto = true"
+                                class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition flex-shrink-0">
+                            Desvincular
+                        </button>
+                    {% else %}
+                        <!-- Link para vincular -->
+                        <a href="{% url 'google_login' %}?process=connect&next={% url 'usuarios:configuracoes' %}"
+                           class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition flex-shrink-0 text-center">
+                            Vincular
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if not user.has_usable_password and google_vinculado %}
+            <div class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                    <div>
+                        <p class="text-sm font-medium text-amber-800 dark:text-amber-300">
+                            Você está usando apenas o Google para login
+                        </p>
+                        <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                            Para maior segurança, recomendamos que você
+                            <a href="{% url 'usuarios:minha_conta' %}" class="font-semibold underline hover:no-underline">cadastre uma senha</a>
+                            na sua conta.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Modal de Confirmação para Desvincular Google -->
+            <!-- Backdrop escuro -->
+            <div x-cloak
+                 x-show="modalDesvincularAberto"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+                 @click="modalDesvincularAberto = false"
+                 @keydown.escape.window="modalDesvincularAberto = false">
+            </div>
+
+            <!-- Modal -->
+            <div x-cloak
+                 x-show="modalDesvincularAberto"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+                <div class="bg-background-light dark:bg-background-dark rounded-2xl shadow-2xl max-w-md w-full border border-border-light dark:border-border-dark overflow-hidden"
+                     @click.stop>
+
+                    <!-- Header do Modal -->
+                    <div class="bg-red-50 dark:bg-red-900/20 px-6 py-4 border-b border-red-200 dark:border-red-800">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-600 dark:text-red-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-red-800 dark:text-red-300 font-display">
+                                Desvincular Conta Google?
+                            </h3>
+                        </div>
+                    </div>
+
+                    <!-- Conteúdo do Modal -->
+                    <div class="px-6 py-5">
+                        <p class="text-text-light dark:text-text-dark text-sm mb-4">
+                            Você está prestes a desvincular sua conta Google do LIVRE DIA.
+                        </p>
+
+                        {% if not user.has_usable_password %}
+                        <!-- Alerta especial para usuários sem senha -->
+                        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+                            <div class="flex items-start gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-bold text-amber-800 dark:text-amber-300">
+                                        Atenção: Você não poderá mais fazer login!
+                                    </p>
+                                    <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                                        Você não possui uma senha cadastrada. Se desvincular o Google, perderá o acesso à sua conta.
+                                        <a href="{% url 'usuarios:minha_conta' %}" class="font-semibold underline hover:no-underline">
+                                            Cadastre uma senha primeiro.
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-4">
+                            Após desvincular, você ainda poderá fazer login usando seu email e senha.
+                        </p>
+                        {% endif %}
+
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                            Esta ação pode ser desfeita vinculando sua conta novamente.
+                        </p>
+                    </div>
+
+                    <!-- Footer do Modal com botões -->
+                    <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark flex gap-3 justify-end">
+                        <button type="button"
+                                @click="modalDesvincularAberto = false"
+                                class="px-5 py-2.5 text-sm font-medium text-text-light dark:text-text-dark bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                            Cancelar
+                        </button>
+
+                        <a href="{% url 'usuarios:desvincular_google' %}"
+                           class="px-5 py-2.5 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+                           onclick="event.preventDefault(); document.getElementById('form-desvincular-google').submit();">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.181 8.68a4.503 4.503 0 0 1 1.903 6.405m-9.768-2.782L3.56 14.06a4.5 4.5 0 0 0 6.364 6.365l3.129-3.129m5.614-5.615 1.757-1.757a4.5 4.5 0 0 0-6.364-6.365l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                            </svg>
+                            Sim, Desvincular
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão Salvar -->
+        <div class="flex justify-end gap-3 pb-6">
+            <a href="{% url 'core:home' %}" class="px-6 py-3 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 font-medium transition">
+                Cancelar
+            </a>
+            <button type="submit" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-bold transition">
+                Salvar Configurações
+            </button>
+        </div>
+    </form>
+
+    <!-- Form oculto para desvincular Google (necessário estar fora do form principal) -->
+    <form id="form-desvincular-google" method="post" action="{% url 'usuarios:desvincular_google' %}" class="hidden">
+        {% csrf_token %}
+    </form>
+
+</div>
+
+<!-- CSS customizado para slider -->
+<style>
+/* Estilo do slider - barra principal */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 8px;
+    outline: none;
+    background: #e7ddd0;
+}
+
+/* Estilo do thumb (botão deslizante) - Chrome/Safari */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e69019;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Estilo do thumb - Firefox */
+input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e69019;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Track - Firefox */
+input[type="range"]::-moz-range-track {
+    height: 8px;
+    border-radius: 8px;
+    background: #e7ddd0;
+}
+
+/* Dark mode adjustments */
+.dark input[type="range"] {
+    background: #4a4137;
+}
+
+.dark input[type="range"]::-moz-range-track {
+    background: #4a4137;
+}
+
+/* Carregar CSS dos temas dinamicamente do banco de dados */
+/* Sistema modular de temas - cada tema tem seu próprio arquivo CSS */
+</style>
+
+<!-- JavaScript para atualizar exibidor de zoom em tempo real e preview da letra -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const zoomInput = document.getElementById('id_nivel_zoom_padrao');
+    const zoomDisplay = document.getElementById('zoom-value-display');
+    const letterPreview = document.getElementById('zoom-letter-preview');
+
+    if (zoomInput && zoomDisplay && letterPreview) {
+        // Corrigir atributos min e max do slider (Django sobrescreve para min="0")
+        zoomInput.setAttribute('min', '1');
+        zoomInput.setAttribute('max', '10');
+
+        // Se o valor atual for 0, corrigir para 1
+        if (parseInt(zoomInput.value) === 0) {
+            zoomInput.value = 1;
+        }
+
+        // Função para atualizar o display numérico e preview da letra
+        function updateZoom() {
+            let value = parseInt(zoomInput.value);
+
+            // Garantir que o valor esteja entre 1 e 10
+            if (value < 1) {
+                value = 1;
+                zoomInput.value = 1;
+            } else if (value > 10) {
+                value = 10;
+                zoomInput.value = 10;
+            }
+
+            // Atualizar display numérico
+            zoomDisplay.textContent = value;
+
+            // Atualizar preview da letra (escala de 0.75rem a 1.5rem)
+            // Fórmula: fontSize = 0.75 + (value - 1) * 0.0833
+            const fontSize = 0.75 + (value - 1) * 0.0833;
+            letterPreview.style.fontSize = fontSize + 'rem';
+        }
+
+        // Atualizar ao carregar
+        updateZoom();
+
+        // Atualizar ao mover o slider
+        zoomInput.addEventListener('input', updateZoom);
+    }
+});
+</script>
+{% endblock %}

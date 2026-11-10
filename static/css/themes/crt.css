@@ -1,0 +1,6 @@
+/* Tema CRT - Terminal verde fosforescente */
+.tema-crt {
+    background-color: #0f0f0f;
+    color: #33ff33;
+    font-family: 'Courier New', monospace;
+}

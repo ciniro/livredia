@@ -1,0 +1,357 @@
+{% load static humanize %}
+
+<!-- CSRF Token para requisições Alpine.js -->
+{% csrf_token %}
+
+<!-- Contador de Resultados -->
+<div class="mb-4">
+    <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+        <span class="font-medium text-text-light dark:text-text-dark">{{ total_resultados }}</span> obra{{ total_resultados|pluralize:"s" }} encontrada{{ total_resultados|pluralize:"s" }}
+    </p>
+</div>
+
+<!-- Lista de Textos -->
+<div class="space-y-6">
+
+    {% if textos %}
+        {% for texto in textos %}
+        <article class="bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark rounded-lg p-6 hover:shadow-md transition"
+                 x-data="{
+                     seguindoAutor: {{ texto.seguindo_autor|lower }},
+                     naListaLeitura: {{ texto.na_lista_leitura|lower }},
+                     usuarioLogado: {{ user.is_authenticated|lower }},
+                     modalLoginNecessario: false,
+                     async toggleSeguirAutor() {
+                         if (!this.usuarioLogado) {
+                             this.modalLoginNecessario = true;
+                             return;
+                         }
+                         try {
+                             const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                             const response = await fetch('/texto/autor/{{ texto.autor.pk }}/toggle-seguir/', {
+                                 method: 'POST',
+                                 headers: {
+                                     'Content-Type': 'application/json',
+                                     'X-CSRFToken': csrftoken
+                                 }
+                             });
+                             const data = await response.json();
+                             if (data.success) {
+                                 this.seguindoAutor = data.seguindo;
+                             } else if (data.requires_login) {
+                                 this.modalLoginNecessario = true;
+                             } else {
+                                 alert(data.message || 'Erro ao seguir autor');
+                             }
+                         } catch (error) {
+                             console.error('Erro:', error);
+                             alert('Ocorreu um erro. Tente novamente.');
+                         }
+                     },
+                     async toggleLeituraPosterior() {
+                         if (!this.usuarioLogado) {
+                             this.modalLoginNecessario = true;
+                             return;
+                         }
+                         try {
+                             const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                             const response = await fetch('/texto/{{ texto.pk }}/toggle-leitura-posterior/', {
+                                 method: 'POST',
+                                 headers: {
+                                     'Content-Type': 'application/json',
+                                     'X-CSRFToken': csrftoken
+                                 }
+                             });
+                             const data = await response.json();
+                             if (data.success) {
+                                 this.naListaLeitura = data.na_lista;
+                             } else {
+                                 alert(data.message || 'Erro ao salvar para ler mais tarde');
+                             }
+                         } catch (error) {
+                             console.error('Erro:', error);
+                             alert('Ocorreu um erro. Tente novamente.');
+                         }
+                     }
+                 }">
+
+            <div class="flex flex-col md:flex-row gap-6">
+
+                <!-- Avatar do Autor + Botão Seguir (Coluna da Esquerda) -->
+                <div class="flex-shrink-0 flex flex-col items-center gap-2">
+                    <a href="{% url 'textos:leitura_texto' pk=texto.pk %}">
+                        <img
+                            src="{{ texto.autor.get_avatar_url }}"
+                            alt="{{ texto.autor.get_full_name }}"
+                            class="w-16 h-16 rounded-full object-cover border-2 border-border-light dark:border-border-dark"
+                        >
+                    </a>
+
+                    <!-- Botão Seguir/Seguindo (Item 3.3 do ROADMAP) -->
+                    <!-- Só aparece se o usuário logado NÃO for o próprio autor -->
+                    {% if user != texto.autor %}
+                    <button @click="toggleSeguirAutor"
+                            :class="seguindoAutor
+                                ? 'px-2 py-1 text-xs font-semibold text-white bg-primary hover:bg-orange-600 rounded transition-colors flex items-center gap-1 whitespace-nowrap'
+                                : 'px-2 py-1 text-xs font-semibold text-white bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center gap-1 whitespace-nowrap'">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                        </svg>
+                        <span x-text="seguindoAutor ? 'Seguindo' : 'Seguir'"></span>
+                    </button>
+                    {% endif %}
+
+                    <!-- Modal: Login Necessário (teleportado para o body para evitar problemas de stacking context) -->
+                    <template x-teleport="body">
+                        <div x-show="modalLoginNecessario" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4" @click="modalLoginNecessario = false">
+                            <div @click.stop class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                                <h3 class="text-xl font-bold mb-3 text-text-light dark:text-text-dark">Faça parte da nossa comunidade</h3>
+                                <p class="text-gray-600 dark:text-gray-300 mb-6 text-justify">
+                                    Para ter acesso a esse e outros recursos incríveis da plataforma Livre Dia você precisa ter uma conta. É rápido, gratuito e incentiva nossos autores a produzir trabalhos cada vez melhores. Faça parte da nossa comunidade!
+                                </p>
+                                <div class="flex flex-col gap-3">
+                                    <a href="{% url 'usuarios:cadastro_leitor' %}?next={{ request.path }}"
+                                       class="w-full px-4 py-3 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-opacity-90 transition text-center">
+                                        Cadastrar-se Gratuitamente
+                                    </a>
+                                    <a href="{% url 'usuarios:login' %}?next={{ request.path }}"
+                                       class="w-full px-4 py-3 text-sm font-semibold bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition text-center">
+                                        Já tenho conta - Fazer Login
+                                    </a>
+                                    <a href="#" @click.prevent="modalLoginNecessario = false"
+                                       class="w-full text-center px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition">
+                                        Agora não
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Conteúdo do Texto (Coluna da Direita) -->
+                <div class="flex-1">
+
+                    <!-- Título e Subtítulo -->
+                    <div class="mb-3">
+                        <h2 class="text-2xl font-display font-bold text-text-light dark:text-text-dark mb-1">
+                            <a href="{% url 'textos:leitura_texto' pk=texto.pk %}" class="hover:text-primary transition">
+                                {{ texto.titulo }}
+                            </a>
+                        </h2>
+                        {% if texto.subtitulo %}
+                        <p class="text-lg text-placeholder-light dark:text-placeholder-dark font-display">
+                            {{ texto.subtitulo }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Metadados (Autor, Data, Views) -->
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-placeholder-light dark:text-placeholder-dark mb-3">
+                        <span class="font-medium text-text-light dark:text-text-dark">
+                            Por
+                            {% if texto.display_autoria == 'PSEUDONIMO' and texto.autor.pseudonimo %}
+                                {{ texto.autor.pseudonimo }}
+                            {% elif texto.display_autoria == 'AMBOS' %}
+                                {{ texto.autor.get_full_name }}{% if texto.autor.pseudonimo %} ({{ texto.autor.pseudonimo }}){% endif %}
+                            {% else %}
+                                {{ texto.autor.get_full_name }}
+                            {% endif %}
+                        </span>
+                        <span>•</span>
+                        <span>
+                            {{ texto.data_publicacao|naturaltime }}
+                        </span>
+                        <span>•</span>
+                        <span class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {{ texto.total_views }} visualiza{{ texto.total_views|pluralize:"ção,ções" }}
+                        </span>
+                    </div>
+
+                    <!-- ID do usuário (@username) clicável - Item 3.1 do ROADMAP -->
+                    <div class="mb-3">
+                        <a href="/@{{ texto.autor.username }}/" class="text-xs text-placeholder-light dark:text-placeholder-dark hover:text-primary transition-colors">
+                            @{{ texto.autor.username }}
+                        </a>
+                    </div>
+
+                    <!-- Tags -->
+                    {% if texto.tags.all %}
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        {% for tag in texto.tags.all %}
+                        <a
+                            href="?tag={{ tag.slug }}"
+                            class="px-3 py-1 bg-verde-floresta/10 text-verde-floresta dark:text-verde-floresta-light text-sm rounded-full hover:bg-verde-floresta/20 transition"
+                        >
+                            {{ tag.nome }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Preview do Conteúdo (primeiros 300 caracteres) -->
+                    <div class="text-text-light dark:text-text-dark mb-4 leading-relaxed">
+                        {{ texto.conteudo|striptags|truncatewords_html:50|safe }}
+                    </div>
+
+                    <!-- Botões de Ação (Item 4.2 do ROADMAP) -->
+                    <div class="flex gap-2">
+                        <!-- Botão "Ler mais tarde" / "Remover da lista" (Item 4.2 do ROADMAP) -->
+                        <button
+                            type="button"
+                            @click="toggleLeituraPosterior()"
+                            class="inline-flex items-center gap-2 px-5 py-2 font-medium rounded-lg transition"
+                            :class="naListaLeitura
+                                ? 'bg-stone-800 text-white hover:bg-stone-700'
+                                : 'bg-stone-200 text-stone-800 hover:bg-stone-300'"
+                        >
+                            <!-- Ícone bookmark outline (não está na lista) -->
+                            <svg x-show="!naListaLeitura" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                            </svg>
+                            <!-- Ícone bookmark solid (está na lista) -->
+                            <svg x-show="naListaLeitura" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4" style="display:none">
+                                <path fill-rule="evenodd" d="M6.32 2.577a49.255 49.255 0 0111.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 01-1.085.67L12 18.089l-7.165 3.583A.75.75 0 013.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93z" clip-rule="evenodd" />
+                            </svg>
+                            <span x-text="naListaLeitura ? 'Remover da lista' : 'Ler mais tarde'">Ler mais tarde</span>
+                        </button>
+
+                        <!-- Botão "Ler agora" -->
+                        <a
+                            href="{% url 'textos:leitura_texto' pk=texto.pk %}"
+                            class="inline-flex items-center gap-2 px-5 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition"
+                        >
+                            Ler agora
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </article>
+        {% endfor %}
+    {% else %}
+        <!-- Mensagem quando não há resultados -->
+        <div class="bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark rounded-lg p-12 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto mb-4 text-placeholder-light dark:text-placeholder-dark">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.182 16.318A4.486 4.486 0 0012.016 15a4.486 4.486 0 00-3.198 1.318M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
+            </svg>
+            <h3 class="text-xl font-display font-bold text-text-light dark:text-text-dark mb-2">
+                Nenhum texto encontrado
+            </h3>
+            <p class="text-placeholder-light dark:text-placeholder-dark mb-6">
+                Tente ajustar os filtros ou limpar todos os filtros para ver mais resultados.
+            </p>
+            <a
+                href="{% url 'acervo_textos' %}"
+                hx-get="{% url 'acervo_textos' %}"
+                hx-target="#lista-textos"
+                hx-push-url="true"
+                class="inline-block px-6 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition"
+            >
+                Limpar Filtros
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- Paginação -->
+{% if is_paginated %}
+<div class="mt-8 flex justify-center">
+    <nav class="flex items-center gap-2" aria-label="Paginação">
+
+        <!-- Botão Anterior -->
+        {% if page_obj.has_previous %}
+            <a
+                href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                hx-get="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                hx-target="#lista-textos"
+                hx-push-url="true"
+                hx-indicator="#loading-indicator"
+                class="px-3 py-2 border border-border-light dark:border-border-dark rounded-lg text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition"
+                aria-label="Primeira página"
+            >
+                «
+            </a>
+            <a
+                href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                hx-get="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                hx-target="#lista-textos"
+                hx-push-url="true"
+                hx-indicator="#loading-indicator"
+                class="px-3 py-2 border border-border-light dark:border-border-dark rounded-lg text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition"
+                aria-label="Página anterior"
+            >
+                ‹
+            </a>
+        {% else %}
+            <span class="px-3 py-2 border border-border-light dark:border-border-dark rounded-lg text-placeholder-light/50 dark:text-placeholder-dark/50 cursor-not-allowed">«</span>
+            <span class="px-3 py-2 border border-border-light dark:border-border-dark rounded-lg text-placeholder-light/50 dark:text-placeholder-dark/50 cursor-not-allowed">‹</span>
+        {% endif %}
+
+        <!-- Números de Página -->
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <span class="px-4 py-2 bg-primary text-white font-medium rounded-lg">
+                    {{ num }}
+                </span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a
+                    href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    hx-get="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    hx-target="#lista-textos"
+                    hx-push-url="true"
+                    hx-indicator="#loading-indicator"
+                    class="px-4 py-2 border border-border-light dark:border-border-dark rounded-lg text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition"
+                >
+                    {{ num }}
+                </a>
+            {% endif %}
+        {% endfor %}
+
+        <!-- Botão Próximo -->
+        {% if page_obj.has_next %}
+            <a
+                href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                hx-get="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                hx-target="#lista-textos"
+                hx-push-url="true"
+                hx-indicator="#loading-indicator"
+                class="px-3 py-2 border border-border-light dark:border-border-dark rounded-lg text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition"
+                aria-label="Próxima página"
+            >
+                ›
+            </a>
+            <a
+                href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                hx-get="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                hx-target="#lista-textos"
+                hx-push-url="true"
+                hx-indicator="#loading-indicator"
+                class="px-3 py-2 border border-border-light dark:border-border-dark rounded-lg text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition"
+                aria-label="Última página"
+            >
+                »
+            </a>
+        {% else %}
+            <span class="px-3 py-2 border border-border-light dark:border-border-dark rounded-lg text-placeholder-light/50 dark:text-placeholder-dark/50 cursor-not-allowed">›</span>
+            <span class="px-3 py-2 border border-border-light dark:border-border-dark rounded-lg text-placeholder-light/50 dark:text-placeholder-dark/50 cursor-not-allowed">»</span>
+        {% endif %}
+
+    </nav>
+</div>
+
+<!-- Informação de Paginação -->
+<div class="mt-4 text-center text-sm text-placeholder-light dark:text-placeholder-dark">
+    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    ({{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }} textos)
+</div>
+{% endif %}

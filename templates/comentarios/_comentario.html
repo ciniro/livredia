@@ -1,0 +1,156 @@
+{% load humanize %}
+{% load static %}
+{% load comentario_extras %}
+
+<!-- Container: comentário + respostas (para exclusão correta) -->
+<div id="comentario-container-{{ comentario.id }}">
+<!-- Comentário -->
+<div id="comentario-{{ comentario.id }}" class="flex gap-4 {% if comentario.pai %}ml-8 pl-4 border-l-2 {% if comentario.autor == texto.autor %}border-primary{% else %}border-border-light dark:border-border-dark{% endif %}{% endif %}">
+    <!-- Avatar: clicável se não for anônimo -->
+    {% if comentario.publicado_anonimamente %}
+        <div class="w-12 h-12 bg-center bg-no-repeat aspect-square bg-cover rounded-full flex-shrink-0"
+             style="background-image: url('https://ui-avatars.com/api/?name=Anonimo&size=200&background=e69019&color=fff&bold=true&font-size=0.4');">
+        </div>
+    {% else %}
+        <a href="/@{{ comentario.autor.username }}/" target="_blank" rel="noopener noreferrer"
+           class="w-12 h-12 bg-center bg-no-repeat aspect-square bg-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity {% if comentario.autor.id in leitores_especiais_do_autor %}ring-2 ring-blue-500{% endif %}"
+           style="background-image: url('{{ comentario.autor.get_avatar_url }}');"
+           title="Ver perfil de {{ comentario.autor.get_full_name }}">
+        </a>
+    {% endif %}
+    <div class="flex-1 {% if comentario.autor == texto.autor %}bg-primary/10 p-4 rounded-lg{% endif %}">
+        <p class="font-bold text-accent-light dark:text-accent-dark flex items-center gap-2">
+            {% if comentario.publicado_anonimamente %}
+                <span>Anônimo</span>
+            {% else %}
+                <a href="/@{{ comentario.autor.username }}/" target="_blank" rel="noopener noreferrer"
+                   class="hover:text-primary transition-colors">
+                    {{ comentario.autor.get_full_name }}
+                </a>
+            {% endif %}
+
+            {# Badges de Verificação (somente para comentários não-anônimos) #}
+            {% if not comentario.publicado_anonimamente %}
+                <span class="inline-flex gap-1 items-center">
+                    {# Badge de Autor (role=AUTOR) #}
+                    {% if comentario.autor.role == 'AUTOR' %}
+                        <img src="{% static 'img/badge_autor.png' %}"
+                             alt="Autor Verificado"
+                             title="Este é um autor verificado da plataforma Livre Dia."
+                             class="w-4 h-4 inline-block">
+                    {% endif %}
+
+                    {# Badge de Admin (role=ADMIN OU role=AUTOR + is_admin) #}
+                    {% if comentario.autor.role == 'ADMIN' or comentario.autor.is_admin %}
+                        <img src="{% static 'img/badge_administrador.png' %}"
+                             alt="Administrador"
+                             title="Este é um administrador da plataforma Livre Dia"
+                             class="w-4 h-4 inline-block">
+                    {% endif %}
+
+                    {# ETAPA 8 - Sistema de Selos: Selo de Leitor Especial #}
+                    {# Exibe selo dourado se o comentarista for leitor especial do autor deste texto #}
+                    {% if comentario.autor.id in leitores_especiais_do_autor %}
+                        <img src="{% static 'img/selo_ouro.png' %}"
+                             alt="Leitor Especial"
+                             title="O autor {{ texto.autor.get_full_name }} concedeu a este leitor o selo de leitor especial por suas contribuições em seu trabalho!"
+                             class="w-4 h-4 inline-block">
+                    {% endif %}
+                </span>
+            {% endif %}
+
+            {# Indicador "(Autor)" para autor do texto #}
+            {% if comentario.autor == texto.autor %}
+                <span class="text-xs font-normal text-primary">(Autor)</span>
+            {% endif %}
+        </p>
+        <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-2">
+            {{ comentario.data_publicacao|naturaltime }}
+        </p>
+        <p class="text-text-light dark:text-text-dark/90">
+            {{ comentario.conteudo|renderizar_mencoes|safe }}
+        </p>
+
+        <!-- Mensagem de pendente (apenas para o autor do comentário) -->
+        {% if comentario.status == 'PENDENTE' and comentario.autor == user %}
+        <div class="mt-2 px-2 py-1.5 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+            <p class="text-xs text-yellow-800 dark:text-yellow-200">
+                Comentário esperando aprovação do autor.
+            </p>
+        </div>
+        {% endif %}
+
+        <!-- Botões de ação (Responder e Excluir) -->
+        <div class="flex gap-3 mt-2">
+            {% if user.is_authenticated and texto.permite_comentarios %}
+            <button class="text-xs text-accent-light dark:text-accent-dark hover:underline"
+                    @click="$refs.respostaForm{{ comentario.id }}.classList.toggle('hidden')">
+                Responder
+            </button>
+            {% endif %}
+
+            {% if user.is_authenticated and comentario.autor == user %}
+            <button class="text-xs text-red-600 dark:text-red-400 hover:underline"
+                    hx-post="{% url 'textos:deletar_comentario' comentario.id %}"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                    hx-target="#comentario-container-{{ comentario.id }}"
+                    hx-swap="outerHTML">
+                Excluir
+            </button>
+            {% endif %}
+        </div>
+
+        {% if user.is_authenticated and texto.permite_comentarios %}
+        <!-- Formulário de Resposta (oculto por padrão) -->
+        <div x-ref="respostaForm{{ comentario.id }}" class="hidden mt-4">
+            <form hx-post="{% url 'textos:leitura_texto' texto.pk %}"
+                  hx-target="#respostas-{{ comentario.id }}"
+                  hx-swap="afterbegin"
+                  hx-on::after-request="if(event.detail.successful) { this.reset(); $refs.respostaForm{{ comentario.id }}.classList.add('hidden'); }"
+                  class="flex flex-col gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="pai" value="{{ comentario.id }}">
+                <textarea name="conteudo"
+                          class="form-textarea w-full rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark focus:ring-primary focus:border-primary text-sm text-text-light dark:text-text-dark"
+                          placeholder="Escreva sua resposta..."
+                          rows="3"
+                          required></textarea>
+                <div class="flex justify-end items-center gap-2">
+                    <button type="button"
+                            @click="$refs.respostaForm{{ comentario.id }}.classList.add('hidden')"
+                            class="px-3 py-1 text-xs text-text-light dark:text-text-dark hover:underline">
+                        Cancelar
+                    </button>
+                    {% if texto.permite_comentarios_anonimos %}
+                    <label class="flex items-center gap-1 text-xs text-text-light dark:text-text-dark/80">
+                        <input type="checkbox"
+                               name="publicado_anonimamente"
+                               class="form-checkbox h-4 w-4 rounded border-2 border-gray-400 dark:border-gray-500 text-primary focus:ring-2 focus:ring-primary/50 bg-white dark:bg-gray-700 cursor-pointer"/>
+                        <span class="whitespace-nowrap">Responder como Anônimo</span>
+                    </label>
+                    {% endif %}
+                    <button type="submit"
+                            class="px-4 py-1 bg-primary text-white text-xs font-bold rounded hover:bg-primary/90 whitespace-nowrap">
+                        Responder
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Respostas Aninhadas (Recursão) -->
+<div id="respostas-{{ comentario.id }}">
+{% if comentario.respostas.all %}
+    {% for resposta in comentario.respostas.all %}
+        {# Mostrar se: aprovado OU (pendente E autor é o usuário logado) #}
+        {% if resposta.status == 'APROVADO' %}
+            {% include 'comentarios/_comentario.html' with comentario=resposta texto=texto %}
+        {% elif resposta.status == 'PENDENTE' and resposta.autor == user %}
+            {% include 'comentarios/_comentario.html' with comentario=resposta texto=texto %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+</div>
+</div><!-- Fecha comentario-container -->

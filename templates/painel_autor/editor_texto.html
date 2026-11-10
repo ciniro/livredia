@@ -1,0 +1,2062 @@
+{% extends 'base_autor.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }} - Área {% if user.sexo == 'M' %}do Autor{% elif user.sexo == 'F' %}da Autora{% elif user.sexo == 'O' %}de Autore{% else %}de Escrita{% endif %} - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<!-- Quill.js CSS -->
+<link href="{% static 'css/vendor/quill.snow.css' %}" rel="stylesheet">
+<!-- Quill.js JS -->
+<script src="{% static 'js/vendor/quill.min.js' %}"></script>
+<!-- Quill Image Resize Module -->
+<script src="{% static 'js/vendor/quill-image-resize.min.js' %}"></script>
+{% endblock %}
+
+{% block autor_content %}
+<div class="space-y-6">
+    <!-- Cabeçalho -->
+    <div>
+        <div class="flex items-center gap-3 mb-2">
+            <h1 class="text-4xl font-black font-display text-text-light dark:text-text-dark">
+                {{ titulo_pagina }}
+            </h1>
+            <!-- Badge com ID do texto (mostrado quando texto já foi salvo) -->
+            <span id="badge-texto-id" class="{% if acao == 'criar' %}hidden{% endif %} inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full text-xs font-mono font-semibold text-gray-700 dark:text-gray-300">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5" />
+                </svg>
+                ID: <span id="texto-id-display">{% if acao == 'editar' %}{{ object.id }}{% endif %}</span>
+            </span>
+        </div>
+        <p class="text-placeholder-light dark:text-placeholder-dark">
+            {% if acao == 'criar' %}
+                Escreva seu texto e compartilhe com os leitores do LIVRE DIA.
+            {% else %}
+                Edite seu texto. {% if status_anterior == 'PUBLICADO' %}<span class="text-yellow-600 font-semibold">Atenção:</span> Ao salvar, o texto voltará para rascunho até você publicá-lo novamente.{% endif %}
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Formulário -->
+    <form method="post" id="form-editor-texto">
+        {% csrf_token %}
+
+        <!-- Container principal -->
+        <div class="flex flex-col gap-6">
+
+            <!-- ============================================ -->
+            <!-- EDITOR E CONFIGURAÇÕES -->
+            <!-- ============================================ -->
+            <div class="flex-1 space-y-6">
+
+                <!-- Input hidden para texto_id (usado pelo auto-save e submit do formulário) -->
+                <input type="hidden" id="texto-id-input" name="texto_id" value="{% if acao == 'editar' %}{{ object.id }}{% endif %}">
+
+                <!-- Input hidden para ação (salvar rascunho ou publicar) -->
+                <input type="hidden" name="acao" id="acao-input" value="rascunho">
+
+                <!-- Input hidden para notificar seguidores (true/false) -->
+                <input type="hidden" name="notificar_seguidores" id="notificar-seguidores-input" value="false">
+
+                <!-- Campo: Título -->
+                <div>
+                    <label for="{{ form.titulo.id_for_label }}" class="block text-text-light dark:text-text-dark text-base font-medium leading-normal mb-2">
+                        Título <span class="text-red-600">*</span>
+                    </label>
+                    {{ form.titulo }}
+                    {% if form.titulo.errors %}
+                        <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.titulo.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Campo: Subtítulo -->
+                <div>
+                    {{ form.subtitulo }}
+                    {% if form.subtitulo.errors %}
+                        <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.subtitulo.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Editor Quill.js -->
+                <div class="flex flex-col">
+                    <!-- Cabeçalho do Editor com Botões -->
+                    <div class="flex flex-col gap-2 pb-2">
+                        <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal">
+                            Conteúdo <span class="text-red-600">*</span>
+                        </p>
+                        <!-- Botões: Toggle HTML e Ajuda -->
+                        <div class="flex items-center gap-3">
+                            <!-- Botão Toggle HTML -->
+                            <button type="button" id="toggle-html-btn" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-text-light dark:text-text-dark bg-secondary-light dark:bg-secondary-dark hover:bg-border-light dark:hover:bg-border-dark rounded-lg transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+                                </svg>
+                                <span>Visualizar HTML</span>
+                            </button>
+
+                            <!-- Botão Ajuda (abre em nova aba) -->
+                            <a href="{% url 'painel_autor:guia_editor' %}" target="_blank" class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                                </svg>
+                                <span>AJUDA</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Container do Quill (WYSIWYG) -->
+                    <div id="quill-editor" class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg" style="min-height: 500px;">
+                        {# O conteúdo será carregado aqui pelo JavaScript #}
+                    </div>
+
+                    <!-- Editor de HTML (code editor) -->
+                    <textarea id="html-editor" class="hidden w-full min-h-[500px] p-4 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-text-light dark:text-text-dark font-mono text-sm focus:outline-0 focus:ring-2 focus:ring-primary/50" style="resize: vertical;"></textarea>
+
+                    <!-- Textarea hidden que armazena o HTML -->
+                    {{ form.conteudo }}
+
+                    {% if form.conteudo.errors %}
+                        <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.conteudo.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Input hidden para tags (ManyToMany) -->
+                {{ form.tags }}
+
+                <!-- Indicador de Auto-save -->
+                <div class="text-sm text-placeholder-light dark:text-placeholder-dark text-center">
+                    <div class="flex flex-col gap-1 items-center">
+                        <span id="autosave-ultima-vez" class="text-xs font-medium"></span>
+                        <span id="autosave-status">Salvamento automático a cada 60 segundos</span>
+                    </div>
+                </div>
+
+                <!-- Linha divisória -->
+                <hr class="border-border-light dark:border-border-dark">
+
+                <!-- ============================================ -->
+                <!-- SEÇÃO: CONFIGURAÇÕES -->
+                <!-- ============================================ -->
+                <div id="configuracoes-texto" x-data="{
+                    tagsSelecionadas: {{ tags_selecionadas|default:'[]' }},
+                    novaTema: '',
+                    mostrarTodasTags: false,
+
+                    toggleTag(tagId) {
+                        const index = this.tagsSelecionadas.indexOf(tagId);
+                        if (index > -1) {
+                            this.tagsSelecionadas.splice(index, 1);
+                        } else {
+                            if (this.tagsSelecionadas.length < 6) {
+                                this.tagsSelecionadas.push(tagId);
+                            } else {
+                                // Disparar modal customizado
+                                window.dispatchEvent(new CustomEvent('open-limite-tags-modal'));
+                                return;
+                            }
+                        }
+                        atualizarInputTags();
+                    },
+
+                    isTagSelecionada(tagId) {
+                        return this.tagsSelecionadas.includes(tagId);
+                    }
+                }" class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl p-6 space-y-6">
+
+                    <h2 class="text-2xl font-bold font-display text-text-light dark:text-text-dark">
+                        Configurações
+                    </h2>
+
+                    <!-- Selo Livre de IA -->
+                    <div
+                        x-data="{ seloMarcado: {{ form.selo_livre_ia.value|default:'true'|lower }} }"
+                        class="p-4 rounded-lg border transition-all duration-500 ease-in-out"
+                        :class="{
+                            'bg-green-50 dark:bg-green-900/20 border-green-500': seloMarcado,
+                            'bg-secondary-light dark:bg-secondary-dark border-border-light dark:border-border-dark': !seloMarcado
+                        }">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="{{ form.selo_livre_ia.name }}"
+                                id="{{ form.selo_livre_ia.id_for_label }}"
+                                class="form-checkbox h-5 w-5 rounded border-border-light dark:border-border-dark text-primary focus:ring-primary bg-transparent"
+                                :checked="seloMarcado"
+                                @change="seloMarcado = !seloMarcado"
+                                {% if form.selo_livre_ia.value %}checked{% endif %}>
+                            <div class="flex-1 flex items-start gap-2">
+                                <div class="flex-1">
+                                    <p class="font-bold text-text-light dark:text-text-dark">Selo Livre de IA</p>
+                                    <p class="text-sm mt-1 transition-colors duration-300"
+                                       :class="seloMarcado ? 'text-green-700 dark:text-green-300' : 'text-gray-600 dark:text-gray-400'">
+                                        <span x-show="seloMarcado">Declaro que este texto foi integralmente escrito por mim, sem apoio ou uso de I.A.</span>
+                                        <span x-show="!seloMarcado">Declaro que este texto foi integralmente ou parcialmente escrito com uso de I.A.</span>
+                                    </p>
+                                </div>
+                                <!-- Ícone de verificação -->
+                                <svg
+                                    x-show="seloMarcado"
+                                    x-transition:enter="transition ease-out duration-500"
+                                    x-transition:enter-start="opacity-0 scale-50"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-300"
+                                    x-transition:leave-start="opacity-100 scale-100"
+                                    x-transition:leave-end="opacity-0 scale-50"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    class="w-8 h-8 text-green-600 dark:text-green-400 flex-shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                                </svg>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Domínio Público -->
+                    <div
+                        x-data="{ dominioMarcado: {{ form.is_dominio_publico.value|default:'false'|lower }} }"
+                        class="p-4 rounded-lg border transition-all duration-500 ease-in-out"
+                        :class="{
+                            'bg-amber-50 dark:bg-amber-900/20 border-amber-600': dominioMarcado,
+                            'bg-secondary-light dark:bg-secondary-dark border-border-light dark:border-border-dark': !dominioMarcado
+                        }">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="{{ form.is_dominio_publico.name }}"
+                                id="{{ form.is_dominio_publico.id_for_label }}"
+                                class="form-checkbox h-5 w-5 rounded border-border-light dark:border-border-dark text-primary focus:ring-primary bg-transparent"
+                                :checked="dominioMarcado"
+                                @change="dominioMarcado = !dominioMarcado"
+                                {% if form.is_dominio_publico.value %}checked{% endif %}>
+                            <div class="flex-1 flex items-start gap-2">
+                                <div class="flex-1">
+                                    <p class="font-bold text-text-light dark:text-text-dark">Domínio Público</p>
+                                    <p class="text-sm mt-1 transition-colors duration-300"
+                                       :class="dominioMarcado ? 'text-amber-700 dark:text-amber-300' : 'text-gray-600 dark:text-gray-400'">
+                                        <span x-show="dominioMarcado">Declaro que este texto está em domínio público, livre para uso por qualquer pessoa.</span>
+                                        <span x-show="!dominioMarcado">Marque esta opção se o texto estiver em domínio público.</span>
+                                    </p>
+                                </div>
+                                <!-- Ícone de verificação -->
+                                <svg
+                                    x-show="dominioMarcado"
+                                    x-transition:enter="transition ease-out duration-500"
+                                    x-transition:enter-start="opacity-0 scale-50"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-300"
+                                    x-transition:leave-start="opacity-100 scale-100"
+                                    x-transition:leave-end="opacity-0 scale-50"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    class="w-8 h-8 text-amber-600 dark:text-amber-400 flex-shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                                </svg>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Conteúdo para Maiores de 18 anos -->
+                    <div
+                        x-data="{ maioridadeMarcado: {{ form.is_maioridade.value|default:'false'|lower }} }"
+                        class="p-4 rounded-lg border transition-all duration-500 ease-in-out"
+                        :class="{
+                            'bg-red-50 dark:bg-red-900/20 border-red-600': maioridadeMarcado,
+                            'bg-secondary-light dark:bg-secondary-dark border-border-light dark:border-border-dark': !maioridadeMarcado
+                        }">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="{{ form.is_maioridade.name }}"
+                                id="{{ form.is_maioridade.id_for_label }}"
+                                class="form-checkbox h-5 w-5 rounded border-border-light dark:border-border-dark text-primary focus:ring-primary bg-transparent mt-0.5"
+                                :checked="maioridadeMarcado"
+                                @change="maioridadeMarcado = !maioridadeMarcado"
+                                {% if form.is_maioridade.value %}checked{% endif %}>
+                            <div class="flex-1 flex items-start gap-2">
+                                <div class="flex-1">
+                                    <p class="font-bold text-text-light dark:text-text-dark">Conteúdo para maiores de 18 anos</p>
+                                    <p class="text-xs mt-2 leading-relaxed"
+                                       :class="maioridadeMarcado ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-400'">
+                                        A plataforma Livre Dia em seus termos de uso e responsabilidade <strong>NÃO PERMITE</strong> a publicação de qualquer forma de conteúdo violento, pornográfico, discurso de ódio, discriminação, apologia ao uso de drogas e outros que se configurem sob a lei do Brasil como crime. É sua responsabilidade como autor ter certeza de que o texto publicado está livre deste tipo de conteúdo. Outros conteúdos não explícitos, mas que você julgue inadequados para menores de 18 anos, como contos eróticos sem conteúdo que contenha sexo explícito e outros sensíveis, podem ser marcados como autorizados APENAS para leitores maiores de 18 anos. Se você deve indicar que seu texto é restrito, ele não será exibido para menores de 18 anos e, para maiores, haverá uma caixa de confirmação de idade.
+                                    </p>
+                                </div>
+                                <!-- Ícone de verificação/alerta -->
+                                <svg
+                                    x-show="maioridadeMarcado"
+                                    x-transition:enter="transition ease-out duration-500"
+                                    x-transition:enter-start="opacity-0 scale-50"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-300"
+                                    x-transition:leave-start="opacity-100 scale-100"
+                                    x-transition:leave-end="opacity-0 scale-50"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    class="w-8 h-8 text-red-600 dark:text-red-400 flex-shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                </svg>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Separador Discreto -->
+                    <hr class="border-border-light dark:border-border-dark opacity-30">
+
+                    <!-- Local de Escrita -->
+                    <div>
+                        <label class="block">
+                            <p class="text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                                Onde você estava quando escreveu este texto?
+                            </p>
+                            {{ form.local_escrita }}
+                        </label>
+                        {% if form.local_escrita.errors %}
+                            <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.local_escrita.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Separador -->
+                    <hr class="border-border-light dark:border-border-dark">
+
+                    <!-- Temas/Tags -->
+                    <div>
+                        <p class="text-base font-bold text-text-light dark:text-text-dark mb-3">
+                            Temas <span class="text-red-600">*</span>
+                            <span class="text-sm font-normal text-placeholder-light dark:text-placeholder-dark">(mín: 1, máx: 6)</span>
+                        </p>
+
+                        <!-- Tags Já Usadas (Todos) -->
+                        {% if tags_mais_usadas %}
+                            <div class="mb-3">
+                                <p class="text-xs font-medium text-placeholder-light dark:text-placeholder-dark mb-2">Seus temas já usados:</p>
+                                <div class="flex flex-wrap gap-2" id="tags-mais-usadas">
+                                    {% for tag in tags_mais_usadas %}
+                                    <div data-tag-id="{{ tag.id }}">
+                                        <button
+                                            type="button"
+                                            @click="toggleTag({{ tag.id }})"
+                                            class="px-2 py-1 rounded-md text-xs font-medium transition-all border whitespace-nowrap"
+                                            :class="isTagSelecionada({{ tag.id }}) ? 'bg-primary text-white border-primary' : 'bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border-border-light dark:border-border-dark hover:border-primary'"
+                                        >
+                                            <span class="tag-nome-{{ tag.id }}">{{ tag.nome }}</span> <span class="text-[10px] opacity-75">({{ tag.contador }})</span>
+                                        </button>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Todas as Tags (inicialmente oculto, exceto se não há tags mais usadas) -->
+                        <div x-show="mostrarTodasTags || {{ tags_mais_usadas|length }} === 0" x-collapse>
+                            <p class="text-xs font-medium text-placeholder-light dark:text-placeholder-dark mb-2">Todos os temas disponíveis:</p>
+
+                            <!-- Texto informativo sobre restrições -->
+                            <p class="text-[11px] text-placeholder-light dark:text-placeholder-dark mb-3 p-2 bg-secondary-light dark:bg-secondary-dark rounded-lg border border-border-light dark:border-border-dark">
+                                ℹ️ <span class="font-medium">Nota:</span> Apenas temas que não estão sendo usados por nenhum texto podem ser editados ou excluídos. O número entre parênteses indica quantos textos utilizam cada tema.
+                            </p>
+
+                            <div class="flex flex-wrap gap-2 mb-3" id="todas-tags-container">
+                                {% for tag in todas_tags %}
+                                <div class="relative group" data-tag-id="{{ tag.id }}">
+                                    <button
+                                        type="button"
+                                        @click="toggleTag({{ tag.id }})"
+                                        class="px-2 py-1 rounded-md text-xs font-medium transition-all border whitespace-nowrap"
+                                        :class="isTagSelecionada({{ tag.id }}) ? 'bg-primary text-white border-primary' : 'bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border-border-light dark:border-border-dark hover:border-primary'"
+                                    >
+                                        <span class="tag-nome-{{ tag.id }}">{{ tag.nome }}</span> <span class="text-[10px] opacity-75">({{ tag.total_usos }})</span>
+                                    </button>
+
+                                    {% if tag.id not in tags_em_uso %}
+                                    <!-- Botões de Editar/Excluir (apenas tags não usadas) -->
+                                    <div class="absolute -top-1 -right-1 hidden group-hover:flex items-center gap-0.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md shadow-lg p-0.5">
+                                        <button
+                                            type="button"
+                                            @click="abrirModalEditarTema({{ tag.id }}, '{{ tag.nome|escapejs }}')"
+                                            title="Editar tema"
+                                            class="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            @click="abrirModalExcluirTema({{ tag.id }}, '{{ tag.nome|escapejs }}')"
+                                            title="Excluir tema"
+                                            class="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 rounded transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Botão Ver Mais/Menos -->
+                        {% if tags_mais_usadas and total_tags > 15 %}
+                        <button
+                            type="button"
+                            @click="mostrarTodasTags = !mostrarTodasTags"
+                            class="w-full text-xs font-medium text-primary hover:text-primary/80 py-2 mb-3 transition-colors"
+                        >
+                            <span x-show="!mostrarTodasTags">▼ Ver todas as tags ({{ total_tags }})</span>
+                            <span x-show="mostrarTodasTags" x-cloak>▲ Ver menos</span>
+                        </button>
+                        {% endif %}
+
+                        <!-- Criar Nova Tag -->
+                        <div class="flex gap-2">
+                            <input
+                                type="text"
+                                x-model="novaTema"
+                                @keydown.enter.prevent="criarNovoTema()"
+                                placeholder="Adicionar novo tema..."
+                                class="flex-1 form-input px-3 py-2 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-lg text-xs focus:outline-0 focus:ring-2 focus:ring-primary/50"
+                            />
+                            <button
+                                type="button"
+                                @click="criarNovoTema()"
+                                class="px-4 py-2 bg-verde-floresta text-white rounded-lg font-bold text-sm hover:bg-verde-floresta/90 transition-colors"
+                            >
+                                +
+                            </button>
+                        </div>
+
+                        {% if form.tags.errors %}
+                            <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.tags.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Separador -->
+                    <hr class="border-border-light dark:border-border-dark">
+
+                    <!-- Comentários -->
+                    <div>
+                        <p class="text-base font-bold text-text-light dark:text-text-dark mb-3">Comentários</p>
+
+                        <!-- Permitir Comentários -->
+                        <label class="flex items-start gap-3 cursor-pointer mb-4">
+                            {{ form.permite_comentarios }}
+                            <div class="flex-1">
+                                <p class="font-medium text-text-light dark:text-text-dark">Permitir comentários</p>
+                            </div>
+                        </label>
+
+                        <!-- Moderação - Destacado -->
+                        <div class="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+                            <p class="text-sm font-bold text-primary mb-3 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                                </svg>
+                                Tipo de Moderação
+                            </p>
+                            <div class="space-y-3">
+                                {% for radio in form.moderacao_automatica %}
+                                    <label class="flex items-start gap-3 cursor-pointer p-2 rounded-lg hover:bg-background-light dark:hover:bg-background-dark transition-colors">
+                                        {{ radio.tag }}
+                                        <div class="flex-1">
+                                            <span class="text-sm font-medium text-text-light dark:text-text-dark">{{ radio.choice_label }}</span>
+                                            {% if forloop.first %}
+                                                <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">Comentários aparecem imediatamente sem revisão</p>
+                                            {% else %}
+                                                <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">Você precisa aprovar cada comentário antes de aparecer publicamente</p>
+                                            {% endif %}
+                                        </div>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Comentários Anônimos -->
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            {{ form.permite_comentarios_anonimos }}
+                            <div class="flex-1">
+                                <p class="font-medium text-text-light dark:text-text-dark">Permitir comentários anônimos</p>
+                                <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">(para usuários logados)</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Separador -->
+                    <hr class="border-border-light dark:border-border-dark">
+
+                    <!-- Autoria -->
+                    <div>
+                        <p class="text-base font-bold text-text-light dark:text-text-dark mb-3">Exibir Autoria Como:</p>
+                        <div class="space-y-2 ml-4">
+                            {% for radio in form.display_autoria %}
+                                <label class="flex items-center gap-3 {% if radio.data.value != 'REAL' and not user.pseudonimo %}cursor-not-allowed opacity-50{% else %}cursor-pointer{% endif %}">
+                                    {{ radio.tag }}
+                                    <span class="text-sm text-text-light dark:text-text-dark">
+                                        {{ radio.choice_label }}
+                                        {% if radio.data.value == 'REAL' %}
+                                            ({{ user.get_full_name|default:user.username }})
+                                        {% elif radio.data.value == 'PSEUDONIMO' %}
+                                            {% if user.pseudonimo %}
+                                                ({{ user.pseudonimo }})
+                                            {% endif %}
+                                        {% endif %}
+                                    </span>
+                                </label>
+                                {% if radio.data.value == 'PSEUDONIMO' and not user.pseudonimo %}
+                                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark ml-7">
+                                        Para usar pseudônimo, cadastre um em
+                                        <a href="{% url 'usuarios:minha_conta' %}" class="text-primary hover:underline font-medium" target="_blank">Minha Conta</a>.
+                                    </p>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="flex flex-col sm:flex-row flex-wrap gap-4 justify-between items-stretch sm:items-center pt-6 border-t border-border-light dark:border-border-dark">
+                    <!-- Voltar -->
+                    <a href="{% url 'painel_autor:meus_textos' %}" class="text-placeholder-light dark:text-placeholder-dark hover:text-primary transition-colors text-center sm:text-left order-last sm:order-first">
+                        ← Voltar para Meus Textos
+                    </a>
+
+                    <!-- Botões -->
+                    <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <!-- Pré-visualizar -->
+                        <button type="button" id="btn-preview" class="flex items-center justify-center gap-2 px-5 py-3 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg font-medium hover:bg-border-light dark:hover:bg-border-dark transition-colors w-full sm:w-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            Pré-visualizar
+                        </button>
+
+                        <!-- Salvar Rascunho -->
+                        <button type="button" id="btn-rascunho" class="flex items-center justify-center gap-2 px-5 py-3 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors w-full sm:w-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+                            </svg>
+                            {% if status_anterior == 'PUBLICADO' %}
+                                Reverter para Rascunho
+                            {% else %}
+                                Salvar Rascunho
+                            {% endif %}
+                        </button>
+
+                        {% if status_anterior == 'PUBLICADO' %}
+                        <!-- Aplicar Alterações (texto já publicado) -->
+                        <button type="button" id="btn-publicar" class="flex items-center justify-center gap-2 px-5 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors w-full sm:w-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                            </svg>
+                            Aplicar Alterações
+                        </button>
+                        {% else %}
+                        <!-- Publicar sem alarde -->
+                        <button type="button" id="btn-publicar-sem-alarde" class="flex items-center justify-center gap-2 px-5 py-3 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors w-full sm:w-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                            </svg>
+                            Publicar sem alarde
+                        </button>
+
+                        <!-- Publicar avisando meus seguidores -->
+                        <button type="button" id="btn-publicar-notificar" class="flex items-center justify-center gap-2 px-5 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors w-full sm:w-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                            </svg>
+                            Publicar avisando meus seguidores
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+    </div>  <!-- Fecha container principal -->
+</form>  <!-- Fecha formulário -->
+</div>
+
+<!-- ============================================================================ -->
+<!-- MODAIS (Link, Imagem, Vídeo, Publicação com Fogos) -->
+<!-- ============================================================================ -->
+
+<!-- Modal de Inserir Link (copiado do painel admin) -->
+{% include 'painel_autor/modals/_modal_link.html' %}
+
+<!-- Modal de Inserir Imagem (copiado do painel admin) -->
+{% include 'painel_autor/modals/_modal_imagem.html' %}
+
+<!-- Modal de Inserir Vídeo (copiado do painel admin) -->
+{% include 'painel_autor/modals/_modal_video.html' %}
+
+<!-- Modal de Publicação com Fogos de Artifício -->
+<!-- Modal de Publicação removida - usuário será redirecionado para página do texto publicado -->
+
+<!-- Modal de Validação de Erros -->
+<div x-data="{ modalErrosAberto: false, errosLista: [] }" @open-erros-modal.window="modalErrosAberto = true; errosLista = $event.detail.erros" x-cloak>
+    <!-- Overlay -->
+    <div x-show="modalErrosAberto"
+         @click="modalErrosAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalErrosAberto"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-lg w-full border-2 border-red-500">
+            <!-- Header do Modal -->
+            <div class="bg-red-600 text-white px-6 py-4 flex items-center gap-3 rounded-t-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <h2 class="text-2xl font-black">
+                    Corrija os erros antes de publicar
+                </h2>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6 space-y-4">
+                <p class="text-base text-text-light dark:text-text-dark">
+                    Por favor, corrija os seguintes problemas:
+                </p>
+
+                <ul class="space-y-2">
+                    <template x-for="(erro, index) in errosLista" :key="index">
+                        <li class="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                            <span class="text-sm text-red-800 dark:text-red-200" x-text="erro"></span>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-center">
+                <button @click="modalErrosAberto = false" class="px-6 py-2.5 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors">
+                    Entendi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Limite de Tags -->
+<div x-data="{ modalLimiteTagsAberto: false }" @open-limite-tags-modal.window="modalLimiteTagsAberto = true" x-cloak>
+    <!-- Overlay -->
+    <div x-show="modalLimiteTagsAberto"
+         @click="modalLimiteTagsAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalLimiteTagsAberto"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-md w-full border-2 border-primary">
+            <!-- Header do Modal -->
+            <div class="bg-primary text-white px-6 py-4 flex items-center gap-3 rounded-t-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+                </svg>
+                <h2 class="text-2xl font-black">
+                    Limite de temas atingido
+                </h2>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6 space-y-4">
+                <p class="text-base text-text-light dark:text-text-dark">
+                    Você pode selecionar no máximo <strong class="text-primary">6 temas</strong> para o seu texto.
+                </p>
+
+                <div class="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                    <p class="text-sm text-text-light dark:text-text-dark">
+                        <strong>💡 Dica:</strong> Para adicionar um novo tema, remova um dos temas já selecionados primeiro.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-center">
+                <button @click="modalLimiteTagsAberto = false" class="px-6 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                    Entendi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Tema Vazio -->
+<div x-data="{ modalTemaVazioAberto: false }" @open-tema-vazio-modal.window="modalTemaVazioAberto = true" x-cloak>
+    <!-- Overlay -->
+    <div x-show="modalTemaVazioAberto"
+         @click="modalTemaVazioAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalTemaVazioAberto"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-md w-full border-2 border-red-500">
+            <!-- Header do Modal -->
+            <div class="bg-red-600 text-white px-6 py-4 flex items-center gap-3 rounded-t-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <h2 class="text-2xl font-black">
+                    Campo vazio
+                </h2>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6 space-y-4">
+                <p class="text-base text-text-light dark:text-text-dark">
+                    Não é possível cadastrar um tema vazio.
+                </p>
+
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <p class="text-sm text-text-light dark:text-text-dark">
+                        <strong>💡 Dica:</strong> Digite o nome do tema (mínimo 2 caracteres) antes de clicar no botão <strong>+</strong>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-center">
+                <button @click="modalTemaVazioAberto = false" class="px-6 py-2.5 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors">
+                    Entendi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Editar Tema -->
+<div x-data="{ modalEditarTemaAberto: false, temaEditarId: null, temaEditarNomeAtual: '', temaEditarNovoNome: '' }"
+     @open-editar-tema-modal.window="modalEditarTemaAberto = true; temaEditarId = $event.detail.id; temaEditarNomeAtual = $event.detail.nome; temaEditarNovoNome = $event.detail.nome;"
+     x-cloak
+     style="display: none;"
+     x-show="modalEditarTemaAberto || false">
+    <!-- Overlay -->
+    <div x-show="modalEditarTemaAberto"
+         @click="modalEditarTemaAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalEditarTemaAberto"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-md w-full border-2 border-blue-500">
+            <!-- Header do Modal -->
+            <div class="bg-blue-600 text-white px-6 py-4 flex items-center gap-3 rounded-t-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                </svg>
+                <h2 class="text-2xl font-black">
+                    Editar tema
+                </h2>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-text-light dark:text-text-dark">
+                    Editando o tema: <strong class="text-primary" x-text="temaEditarNomeAtual"></strong>
+                </p>
+
+                <div>
+                    <label class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">Novo nome:</label>
+                    <input
+                        type="text"
+                        x-model="temaEditarNovoNome"
+                        @keydown.enter="editarTema()"
+                        class="w-full px-3 py-2 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-lg text-sm focus:outline-0 focus:ring-2 focus:ring-blue-500"
+                        placeholder="Digite o novo nome do tema..."
+                    />
+                </div>
+
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <p class="text-sm text-text-light dark:text-text-dark">
+                        <strong>ℹ️ Informação:</strong> Este tema não está sendo usado por nenhum texto, por isso pode ser editado.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalEditarTemaAberto = false" class="px-6 py-2.5 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark border border-border-light dark:border-border-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                    Cancelar
+                </button>
+                <button @click="editarTema()" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors">
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Excluir Tema -->
+<div x-data="{ modalExcluirTemaAberto: false, temaExcluirId: null, temaExcluirNome: '' }"
+     @open-excluir-tema-modal.window="modalExcluirTemaAberto = true; temaExcluirId = $event.detail.id; temaExcluirNome = $event.detail.nome;"
+     x-cloak
+     style="display: none;"
+     x-show="modalExcluirTemaAberto || false">
+    <!-- Overlay -->
+    <div x-show="modalExcluirTemaAberto"
+         @click="modalExcluirTemaAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalExcluirTemaAberto"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-md w-full border-2 border-red-500">
+            <!-- Header do Modal -->
+            <div class="bg-red-600 text-white px-6 py-4 flex items-center gap-3 rounded-t-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <h2 class="text-2xl font-black">
+                    Excluir tema
+                </h2>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6 space-y-4">
+                <p class="text-base text-text-light dark:text-text-dark">
+                    Tem certeza que deseja excluir o tema <strong class="text-red-600 dark:text-red-400" x-text="temaExcluirNome"></strong>?
+                </p>
+
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <p class="text-sm text-text-light dark:text-text-dark">
+                        <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita. O tema será removido permanentemente do sistema.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalExcluirTemaAberto = false" class="px-6 py-2.5 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark border border-border-light dark:border-border-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                    Cancelar
+                </button>
+                <button @click="excluirTema()" class="px-6 py-2.5 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors">
+                    Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ========================================
+    // VERIFICAR SE DEVE ABRIR PREVIEW APÓS SALVAR
+    // ========================================
+    const abrirPreview = sessionStorage.getItem('abrirPreview');
+    if (abrirPreview === 'true') {
+        sessionStorage.removeItem('abrirPreview'); // Limpar flag
+
+        // Pegar ID do texto da URL (formato: /autor/textos/123/editar/)
+        const urlParts = window.location.pathname.split('/');
+        const textoId = urlParts[urlParts.length - 3]; // Pega o ID
+
+        if (textoId && !isNaN(textoId)) {
+            // Abrir preview em nova aba
+            window.open(`/texto/preview/${textoId}/`, '_blank');
+        }
+    }
+
+    // ========================================
+    // CONFIGURAR QUILL.JS (COPIADO DO PAINEL ADMIN)
+    // ========================================
+
+    // Registrar módulo de redimensionamento de imagens
+    if (window.ImageResize) {
+        Quill.register('modules/imageResize', window.ImageResize.default);
+    }
+
+    // Configurar formato customizado de vídeo para aceitar URLs do YouTube
+    const BlockEmbed = Quill.import('blots/block/embed');
+
+    class VideoBlot extends BlockEmbed {
+        static create(value) {
+            const node = super.create();
+            const sanitizedUrl = this.sanitize(value);
+
+            node.setAttribute('frameborder', '0');
+            node.setAttribute('allowfullscreen', true);
+            node.setAttribute('src', sanitizedUrl);
+            node.setAttribute('width', '640');
+            node.setAttribute('height', '360');
+            node.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+            node.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+            node.style.maxWidth = '100%';
+            node.style.resize = 'both';
+            node.style.overflow = 'auto';
+
+            return node;
+        }
+
+        static sanitize(url) {
+            // Converter URLs do YouTube para formato embed
+            if (url.includes('youtube.com/watch')) {
+                const videoId = url.split('v=')[1]?.split('&')[0];
+                if (videoId) {
+                    return `https://www.youtube.com/embed/${videoId}`;
+                }
+            } else if (url.includes('youtu.be/')) {
+                const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+                if (videoId) {
+                    return `https://www.youtube.com/embed/${videoId}`;
+                }
+            } else if (url.includes('youtube.com/embed/') || url.includes('youtube-nocookie.com/embed/')) {
+                return url;
+            }
+            return url;
+        }
+
+        static value(node) {
+            return node.getAttribute('src');
+        }
+    }
+
+    VideoBlot.blotName = 'video';
+    VideoBlot.tagName = 'iframe';
+    Quill.register(VideoBlot);
+
+    // Inicializar Quill.js (COPIADO DO PAINEL ADMIN)
+    var quill = new Quill('#quill-editor', {
+        theme: 'snow',
+        modules: {
+            imageResize: {
+                displaySize: true,
+                modules: ['Resize', 'DisplaySize', 'Toolbar'],
+                handleSelector: 'img, iframe'
+            },
+            toolbar: {
+                container: [
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }],
+                    [{ 'align': [] }],
+                    ['blockquote', 'code-block'],
+                    ['link', 'image', 'video'],
+                    ['clean']
+                ],
+                handlers: {
+                    image: function() {
+                        window.dispatchEvent(new CustomEvent('open-image-modal'));
+                    },
+                    video: function() {
+                        window.dispatchEvent(new CustomEvent('open-video-modal'));
+                    },
+                    link: function(value) {
+                        const selection = this.quill.getSelection();
+                        const text = selection ? this.quill.getText(selection.index, selection.length) : '';
+                        window.dispatchEvent(new CustomEvent('open-link-modal', {
+                            detail: { texto: text }
+                        }));
+                    }
+                }
+            }
+        },
+        placeholder: 'Comece a escrever sua obra-prima aqui...'
+    });
+
+    // ========================================
+    // CARREGAR CONTEÚDO EXISTENTE (SE EDITANDO)
+    // ========================================
+
+    var textareaConteudo = document.getElementById('quill-editor-content');
+
+    if (textareaConteudo && textareaConteudo.value) {
+        try {
+            quill.clipboard.dangerouslyPasteHTML(textareaConteudo.value);
+        } catch (error) {
+            console.error('Erro ao carregar conteúdo:', error);
+            quill.root.innerHTML = textareaConteudo.value;
+        }
+    }
+
+    // ========================================
+    // LISTENERS PARA INSERIR LINK, IMAGEM, VÍDEO
+    // ========================================
+
+    window.addEventListener('inserir-link', function(event) {
+        const url = event.detail.url;
+        const texto = event.detail.texto;
+
+        if (url) {
+            const range = quill.getSelection() || { index: quill.getLength() };
+
+            if (range.length > 0) {
+                quill.formatText(range.index, range.length, 'link', url);
+                quill.setSelection(range.index + range.length);
+            } else if (texto && texto.trim() !== '') {
+                quill.insertText(range.index, texto);
+                quill.formatText(range.index, texto.length, 'link', url);
+                quill.setSelection(range.index + texto.length);
+            } else {
+                quill.insertText(range.index, url);
+                quill.formatText(range.index, url.length, 'link', url);
+                quill.setSelection(range.index + url.length);
+            }
+        }
+    });
+
+    window.addEventListener('inserir-imagem', function(event) {
+        const url = event.detail.url;
+        if (url) {
+            const range = quill.getSelection() || { index: quill.getLength() };
+            quill.insertEmbed(range.index, 'image', url);
+            quill.setSelection(range.index + 1);
+        }
+    });
+
+    window.addEventListener('inserir-video', function(event) {
+        const url = event.detail.url;
+        if (url) {
+            const range = quill.getSelection() || { index: quill.getLength() };
+            quill.insertEmbed(range.index, 'video', url);
+            quill.setSelection(range.index + 1);
+        }
+    });
+
+    // ========================================
+    // SISTEMA DE TAGS
+    // ========================================
+
+    // Função global para atualizar input hidden de tags
+    window.atualizarInputTags = function() {
+        // Procurar pelo elemento específico que contém as configurações
+        const configElement = document.getElementById('configuracoes-texto');
+        const alpineData = configElement ? Alpine.$data(configElement) : null;
+        const tagsSelecionadas = (alpineData && alpineData.tagsSelecionadas) ? alpineData.tagsSelecionadas : [];
+        const selectElement = document.getElementById('id_tags');
+
+        if (selectElement) {
+            Array.from(selectElement.options).forEach(option => option.selected = false);
+            if (tagsSelecionadas && Array.isArray(tagsSelecionadas)) {
+                tagsSelecionadas.forEach(tagId => {
+                    const option = selectElement.querySelector(`option[value="${tagId}"]`);
+                    if (option) option.selected = true;
+                });
+            }
+        }
+    };
+
+    // Função global para criar novo tema via AJAX
+    window.criarNovoTema = function() {
+        const configElement = document.getElementById('configuracoes-texto');
+        const alpineData = configElement ? Alpine.$data(configElement) : null;
+
+        // Verificar se Alpine.js está disponível
+        if (!alpineData) {
+            console.error('Alpine.js data não disponível');
+            return;
+        }
+
+        // Obter o nome do tema (pode ser undefined, null ou string vazia)
+        const nome = (alpineData.novaTema || '').trim();
+
+        // Validar se está vazio
+        if (!nome || nome.length === 0) {
+            // Abrir modal de campo vazio
+            window.dispatchEvent(new CustomEvent('open-tema-vazio-modal'));
+            return;
+        }
+
+        // Validar tamanho mínimo (2 caracteres)
+        if (nome.length < 2) {
+            // Feedback visual ao invés de alert
+            const inputNovaTema = document.querySelector('input[x-model="novaTema"]');
+            if (inputNovaTema) {
+                const mensagemOriginal = inputNovaTema.placeholder;
+                inputNovaTema.placeholder = '⚠️ Mínimo 2 caracteres';
+                inputNovaTema.classList.add('border-red-500', 'bg-red-50', 'dark:bg-red-900/20');
+                inputNovaTema.focus();
+                setTimeout(() => {
+                    inputNovaTema.placeholder = mensagemOriginal;
+                    inputNovaTema.classList.remove('border-red-500', 'bg-red-50', 'dark:bg-red-900/20');
+                }, 3000);
+            }
+            return;
+        }
+
+        fetch("{% url 'painel_autor:criar_tag_ajax' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `nome=${encodeURIComponent(nome)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (!data.ja_existia) {
+                    // Adicionar ao container de "todas as tags" usando insertAdjacentHTML
+                    // para que o Alpine.js processe as diretivas corretamente
+                    const todasTagsContainer = document.getElementById('todas-tags-container');
+
+                    const tagHTML = `
+                        <div class="relative group" data-tag-id="${data.tag_id}">
+                            <button
+                                type="button"
+                                @click="toggleTag(${data.tag_id})"
+                                class="px-2 py-1 rounded-md text-xs font-medium transition-all border whitespace-nowrap"
+                                :class="isTagSelecionada(${data.tag_id}) ? 'bg-primary text-white border-primary' : 'bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border-border-light dark:border-border-dark hover:border-primary'"
+                            >
+                                <span class="tag-nome-${data.tag_id}">${data.tag_nome}</span> <span class="text-[10px] opacity-75">(${data.total_usos || 0})</span>
+                            </button>
+
+                            <!-- Botões de Editar/Excluir (apenas tags não usadas) -->
+                            <div class="absolute -top-1 -right-1 hidden group-hover:flex items-center gap-0.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md shadow-lg p-0.5">
+                                <button
+                                    type="button"
+                                    @click="abrirModalEditarTema(${data.tag_id}, '${data.tag_nome.replace(/'/g, "\\'")}')"
+                                    title="Editar tema"
+                                    class="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                                    </svg>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="abrirModalExcluirTema(${data.tag_id}, '${data.tag_nome.replace(/'/g, "\\'")}')"
+                                    title="Excluir tema"
+                                    class="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 rounded transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    todasTagsContainer.insertAdjacentHTML('beforeend', tagHTML);
+
+                    // Adicionar ao select de tags
+                    const selectElement = document.getElementById('id_tags');
+                    const newOption = new Option(data.tag_nome, data.tag_id, false, false);
+                    selectElement.add(newOption);
+                }
+
+                // Selecionar automaticamente a tag criada/encontrada
+                if (alpineData && typeof alpineData.toggleTag === 'function') {
+                    alpineData.toggleTag(data.tag_id);
+                    alpineData.novaTema = '';
+                }
+
+                if (data.ja_existia) {
+                    // Mostrar feedback visual ao invés de alert
+                    const inputNovaTema = document.querySelector('input[x-model="novaTema"]');
+                    if (inputNovaTema) {
+                        const mensagemOriginal = inputNovaTema.placeholder;
+                        inputNovaTema.placeholder = '✓ Tema já existe e foi selecionado';
+                        inputNovaTema.classList.add('border-verde-floresta');
+                        setTimeout(() => {
+                            inputNovaTema.placeholder = mensagemOriginal;
+                            inputNovaTema.classList.remove('border-verde-floresta');
+                        }, 3000);
+                    }
+                }
+            } else {
+                alert(data.mensagem || 'Erro ao criar tema.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao criar tema. Tente novamente.');
+        });
+    };
+
+    // ========================================
+    // AUTO-SAVE (A CADA 60 SEGUNDOS)
+    // ========================================
+
+    let autoSaveInterval;
+    let ultimoTextoSalvo = '';
+
+    function autoSave() {
+        textareaConteudo.value = quill.root.innerHTML;
+
+        const titulo = document.querySelector('input[name="titulo"]').value;
+        const subtitulo = document.querySelector('input[name="subtitulo"]').value;
+        const conteudo = textareaConteudo.value;
+        const textoId = document.getElementById('texto-id-input').value;
+
+        if (!titulo || conteudo === ultimoTextoSalvo) {
+            return;
+        }
+
+        // Buscar especificamente o elemento de configurações
+        const configElement = document.getElementById('configuracoes-texto');
+        const alpineData = configElement ? Alpine.$data(configElement) : null;
+        const tagsSelecionadas = (alpineData && alpineData.tagsSelecionadas) ? alpineData.tagsSelecionadas : [];
+
+        const formData = new FormData();
+        if (textoId) formData.append('texto_id', textoId);
+        formData.append('titulo', titulo);
+        formData.append('subtitulo', subtitulo);
+        formData.append('conteudo', conteudo);
+
+        // Garantir que tagsSelecionadas é um array antes de iterar
+        if (Array.isArray(tagsSelecionadas)) {
+            tagsSelecionadas.forEach(tagId => {
+                formData.append('tags[]', tagId);
+            });
+        }
+
+        fetch("{% url 'painel_autor:auto_save_texto' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.texto_id && !textoId) {
+                    document.getElementById('texto-id-input').value = data.texto_id;
+                    document.getElementById('btn-preview').disabled = false;
+
+                    // Mostrar badge com ID do texto
+                    const badge = document.getElementById('badge-texto-id');
+                    const idDisplay = document.getElementById('texto-id-display');
+                    badge.classList.remove('hidden');
+                    idDisplay.textContent = data.texto_id;
+                }
+
+                // Atualizar status de auto-save
+                const statusElement = document.getElementById('autosave-status');
+                const ultimaVezElement = document.getElementById('autosave-ultima-vez');
+
+                // Obter data e hora atual formatada
+                const agora = new Date();
+                const dataFormatada = agora.toLocaleDateString('pt-BR');
+                const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                // Mostrar mensagem de sucesso temporária
+                statusElement.textContent = `✓ Salvo automaticamente às ${data.timestamp}`;
+                statusElement.classList.add('text-verde-floresta');
+
+                // Atualizar "Salvo pela última vez"
+                ultimaVezElement.textContent = `Salvo pela última vez em: ${dataFormatada} às ${horaFormatada}`;
+                ultimaVezElement.classList.add('text-verde-floresta');
+
+                setTimeout(() => {
+                    statusElement.textContent = 'Salvamento automático a cada 60 segundos';
+                    statusElement.classList.remove('text-verde-floresta');
+                    ultimaVezElement.classList.remove('text-verde-floresta');
+                }, 3000);
+
+                ultimoTextoSalvo = conteudo;
+            }
+        })
+        .catch(error => {
+            console.error('Erro no auto-save:', error);
+        });
+    }
+
+    autoSaveInterval = setInterval(autoSave, 60000);
+
+    // ========================================
+    // GARANTIR QUE "NOME REAL" SEJA SELECIONADO POR PADRÃO
+    // ========================================
+    const radiosAutoria = document.querySelectorAll('input[name="display_autoria"]');
+    const algumMarcado = Array.from(radiosAutoria).some(radio => radio.checked);
+
+    if (!algumMarcado) {
+        // Se nenhum está marcado, marcar o primeiro (REAL) por padrão
+        const radioReal = document.querySelector('input[name="display_autoria"][value="REAL"]');
+        if (radioReal) {
+            radioReal.checked = true;
+        }
+    }
+
+    // ========================================
+    // BOTÕES DE AÇÃO
+    // ========================================
+
+    const form = document.getElementById('form-editor-texto');
+
+    form.addEventListener('submit', function(e) {
+        textareaConteudo.value = quill.root.innerHTML;
+        atualizarInputTags();
+    });
+
+    document.getElementById('btn-rascunho').addEventListener('click', async function(e) {
+        e.preventDefault();
+
+        // Sincronizar conteúdo do Quill antes de salvar
+        if (!modoHtml) {
+            textareaConteudo.value = quill.root.innerHTML;
+        }
+
+        // Sincronizar tags
+        atualizarInputTags();
+
+        // Definir ação como rascunho
+        document.getElementById('acao-input').value = 'rascunho';
+
+        // Preparar dados do formulário
+        const formData = new FormData(form);
+
+        try {
+            // Submeter via AJAX
+            const response = await fetch(form.action || window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            // Verificar se a resposta é JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Resposta não é JSON. Provavelmente erro de validação do formulário.');
+
+                // Mostrar toast de erro
+                window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                    detail: {
+                        mensagem: 'Preencha todos os campos obrigatórios (título, conteúdo e pelo menos 1 tema)',
+                        tipo: 'error'
+                    }
+                }));
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Mostrar toast de sucesso
+                window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                    detail: { mensagem: 'Rascunho salvo! Recarregando...', tipo: 'warning' }
+                }));
+
+                // Aguardar um momento para o usuário ver o toast, depois recarregar
+                setTimeout(() => {
+                    window.location.reload();
+                }, 800);
+            } else {
+                // Mostrar toast de erro
+                window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                    detail: { mensagem: 'Erro ao salvar rascunho', tipo: 'error' }
+                }));
+            }
+        } catch (error) {
+            console.error('Erro na requisição:', error);
+            window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                detail: { mensagem: 'Verifique os campos obrigatórios (título, conteúdo e temas)', tipo: 'error' }
+            }));
+        }
+    });
+
+    // Função reutilizável para publicar texto
+    function publicarTexto(notificarSeguidores, isAplicarAlteracoes = false) {
+        // Sincronizar conteúdo do Quill para o campo hidden antes de validar
+        if (!modoHtml) {
+            const conteudo = quill.root.innerHTML;
+            document.getElementById('quill-editor-content').value = conteudo;
+        }
+
+        // IMPORTANTE: Sincronizar tags ANTES de validar
+        atualizarInputTags();
+
+        // Validar formulário
+        const form = document.getElementById('form-editor-texto');
+
+        // Verificar validação HTML5 nativa
+        if (!form.checkValidity()) {
+            // Focar no primeiro campo inválido e mostrar mensagem
+            const firstInvalid = form.querySelector(':invalid');
+            if (firstInvalid) {
+                firstInvalid.focus();
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            form.reportValidity(); // Mostra mensagens de validação do navegador
+            return;
+        }
+
+        // Validações customizadas
+        const titulo = document.querySelector('[name="titulo"]').value.trim();
+        const conteudo = document.getElementById('quill-editor-content').value.trim();
+        const tagsInput = document.getElementById('id_tags'); // CORRIGIDO: ID correto do campo select
+        const tagsSelected = Array.from(tagsInput.selectedOptions);
+
+        let erros = [];
+
+        // Validar título (mínimo 1 caractere - apenas não-vazio)
+        if (!titulo || titulo.trim().length < 1) {
+            erros.push('O título é obrigatório.');
+        }
+
+        // Validar conteúdo (mínimo 1 caractere - apenas não-vazio)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = conteudo;
+        const textoPuro = tempDiv.textContent || tempDiv.innerText || '';
+        const textoPuroLimpo = textoPuro.replace(/\s+/g, ' ').trim();
+
+        if (!textoPuroLimpo || textoPuroLimpo.length < 1) {
+            erros.push('O conteúdo não pode estar vazio.');
+        }
+
+        // Validar tags (mínimo 1, máximo 6)
+        if (tagsSelected.length === 0) {
+            erros.push('Selecione pelo menos 1 tema para o texto.');
+        } else if (tagsSelected.length > 6) {
+            erros.push('Selecione no máximo 6 temas para o texto.');
+        }
+
+        // Se houver erros, mostrar modal
+        if (erros.length > 0) {
+            window.dispatchEvent(new CustomEvent('open-erros-modal', {
+                detail: { erros: erros }
+            }));
+            return;
+        }
+
+        // Se passou em todas as validações, submeter via AJAX para abrir em nova aba
+        document.getElementById('acao-input').value = 'publicar';
+        document.getElementById('notificar-seguidores-input').value = notificarSeguidores ? 'true' : 'false';
+
+        // Submeter via fetch para capturar resposta JSON
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.open_in_new_tab) {
+                // CRÍTICO: Atualizar campo hidden com ID do texto (se foi criado agora)
+                if (data.texto_id) {
+                    const textoIdInput = document.getElementById('texto-id-input');
+                    if (!textoIdInput.value) {
+                        textoIdInput.value = data.texto_id;
+
+                        // Mostrar badge com ID do texto
+                        const badge = document.getElementById('badge-texto-id');
+                        const idDisplay = document.getElementById('texto-id-display');
+                        badge.classList.remove('hidden');
+                        idDisplay.textContent = data.texto_id;
+                    }
+                }
+
+                if (isAplicarAlteracoes) {
+                    // Se for "Aplicar Alterações", apenas mostrar toast
+                    window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                        detail: {
+                            mensagem: 'Texto alterado com sucesso.',
+                            tipo: 'success'
+                        }
+                    }));
+                } else {
+                    // Se for "Publicar", abrir em nova aba
+                    window.open(data.url, '_blank');
+
+                    // Mostrar toast informando sobre notificação (se aplicável)
+                    if (notificarSeguidores) {
+                        window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                            detail: {
+                                mensagem: 'Texto publicado! Seus seguidores serão notificados.',
+                                tipo: 'success'
+                            }
+                        }));
+                    }
+                }
+
+                // Recarregar a página após breve delay para atualizar o status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 800);
+            } else if (data.success) {
+                // Redirecionamento normal (não deveria acontecer, mas por segurança)
+                window.location.href = data.url || data.redirect_url;
+            } else {
+                alert('Erro ao publicar texto. Tente novamente.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao publicar texto. Tente novamente.');
+        });
+    }
+
+    // Handler para "Aplicar Alterações" (texto já publicado)
+    const btnPublicar = document.getElementById('btn-publicar');
+    if (btnPublicar) {
+        btnPublicar.addEventListener('click', function(e) {
+            e.preventDefault();
+            publicarTexto(false, true); // Não notifica, é aplicar alterações
+        });
+    }
+
+    // Handler para "Publicar sem alarde"
+    const btnPublicarSemAlarde = document.getElementById('btn-publicar-sem-alarde');
+    if (btnPublicarSemAlarde) {
+        btnPublicarSemAlarde.addEventListener('click', function(e) {
+            e.preventDefault();
+            publicarTexto(false, false); // Não notifica
+        });
+    }
+
+    // Handler para "Publicar avisando meus seguidores"
+    const btnPublicarNotificar = document.getElementById('btn-publicar-notificar');
+    if (btnPublicarNotificar) {
+        btnPublicarNotificar.addEventListener('click', function(e) {
+            e.preventDefault();
+            publicarTexto(true, false); // Notifica seguidores
+        });
+    }
+
+    const btnPreview = document.getElementById('btn-preview');
+    if (btnPreview) {
+        btnPreview.addEventListener('click', async function(e) {
+            e.preventDefault();
+
+            // Verificar se já existe ID do texto
+            const textoIdInput = document.getElementById('texto-id-input');
+            const textoId = textoIdInput.value;
+
+            // (b) Se já tem ID, apenas abrir em nova aba SEM salvar
+            if (textoId) {
+                const previewUrl = `/texto/${textoId}/`;
+                window.open(previewUrl, '_blank');
+                console.log('✓ Preview: Abrindo texto existente (ID: ' + textoId + ')');
+                return; // Não prosseguir com salvamento
+            }
+
+            // (a) Se NÃO tem ID, salvar como rascunho primeiro
+            // Sincronizar conteúdo e tags antes de salvar
+            if (!modoHtml) {
+                textareaConteudo.value = quill.root.innerHTML;
+            }
+            atualizarInputTags();
+
+            // Preparar dados do formulário
+            const formData = new FormData(form);
+            formData.set('acao', 'rascunho');
+            formData.set('preview', 'true'); // Indicar que é preview
+
+            try {
+                // Submeter via AJAX
+                const response = await fetch(form.action || window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                // Verificar se a resposta é JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Resposta não é JSON. Provavelmente erro de validação do formulário.');
+
+                    // Mostrar toast de erro
+                    window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                        detail: {
+                            mensagem: 'Preencha todos os campos obrigatórios (título, conteúdo e pelo menos 1 tema)',
+                            tipo: 'error'
+                        }
+                    }));
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // CRÍTICO: Atualizar campo hidden com ID do texto
+                    if (data.texto_id) {
+                        textoIdInput.value = data.texto_id;
+
+                        // Mostrar badge com ID do texto
+                        const badge = document.getElementById('badge-texto-id');
+                        const idDisplay = document.getElementById('texto-id-display');
+                        badge.classList.remove('hidden');
+                        idDisplay.textContent = data.texto_id;
+                    }
+
+                    // Abrir preview em nova aba
+                    window.open(data.url, '_blank');
+
+                    // Mostrar mensagem de sucesso (opcional)
+                    console.log('✓ Preview: Rascunho criado (ID: ' + data.texto_id + ')');
+                } else {
+                    console.error('Erro ao salvar preview:', data.error || 'Erro desconhecido');
+                    window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                        detail: { mensagem: 'Erro ao salvar rascunho para preview', tipo: 'error' }
+                    }));
+                }
+            } catch (error) {
+                console.error('Erro na requisição:', error);
+                window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                    detail: { mensagem: 'Erro ao processar preview. Verifique os campos obrigatórios.', tipo: 'error' }
+                }));
+            }
+        });
+    }
+
+    window.addEventListener('beforeunload', function() {
+        if (autoSaveInterval) {
+            clearInterval(autoSaveInterval);
+        }
+    });
+
+    // ========================================
+    // TOGGLE ENTRE WYSIWYG E HTML
+    // ========================================
+
+    const toggleHtmlBtn = document.getElementById('toggle-html-btn');
+    const quillEditorDiv = document.getElementById('quill-editor');
+    const htmlEditorTextarea = document.getElementById('html-editor');
+    let modoHtml = false;
+
+    toggleHtmlBtn.addEventListener('click', function() {
+        if (!modoHtml) {
+            // Mudar para modo HTML
+            const htmlContent = quill.root.innerHTML;
+            htmlEditorTextarea.value = htmlContent;
+
+            quillEditorDiv.classList.add('hidden');
+            htmlEditorTextarea.classList.remove('hidden');
+            toggleHtmlBtn.querySelector('span').textContent = 'Visualizar WYSIWYG';
+
+            modoHtml = true;
+        } else {
+            // Voltar para modo WYSIWYG
+            const htmlContent = htmlEditorTextarea.value;
+            quill.root.innerHTML = htmlContent;
+
+            htmlEditorTextarea.classList.add('hidden');
+            quillEditorDiv.classList.remove('hidden');
+            toggleHtmlBtn.querySelector('span').textContent = 'Visualizar HTML';
+
+            modoHtml = false;
+        }
+    });
+
+    // ========================================
+    // FUNÇÕES GLOBAIS PARA GERENCIAR TEMAS
+    // ========================================
+
+    // Abrir modal de editar tema
+    window.abrirModalEditarTema = function(tagId, tagNome) {
+        window.dispatchEvent(new CustomEvent('open-editar-tema-modal', {
+            detail: { id: tagId, nome: tagNome }
+        }));
+    };
+
+    // Abrir modal de excluir tema
+    window.abrirModalExcluirTema = function(tagId, tagNome) {
+        window.dispatchEvent(new CustomEvent('open-excluir-tema-modal', {
+            detail: { id: tagId, nome: tagNome }
+        }));
+    };
+
+    // Editar tema via AJAX
+    window.editarTema = function() {
+        const modalElement = document.querySelector('[x-data*="modalEditarTemaAberto"]');
+        const alpineData = modalElement ? Alpine.$data(modalElement) : null;
+
+        if (!alpineData) {
+            console.error('Alpine.js data não disponível para modal de editar');
+            return;
+        }
+
+        const tagId = alpineData.temaEditarId;
+        const novoNome = (alpineData.temaEditarNovoNome || '').trim();
+
+        // Validar
+        if (!novoNome || novoNome.length < 2) {
+            window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                detail: { mensagem: 'O nome do tema deve ter no mínimo 2 caracteres.', tipo: 'error' }
+            }));
+            return;
+        }
+
+        // Enviar requisição AJAX
+        fetch("{% url 'painel_autor:editar_tag_ajax' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `tag_id=${tagId}&novo_nome=${encodeURIComponent(novoNome)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Fechar modal
+                alpineData.modalEditarTemaAberto = false;
+
+                // Atualizar o nome do tema no DOM em todos os lugares
+                const tagNomeElements = document.querySelectorAll(`.tag-nome-${tagId}`);
+                tagNomeElements.forEach(elem => {
+                    elem.textContent = data.tag_nome;
+                });
+
+                // Atualizar o option no select
+                const selectElement = document.getElementById('id_tags');
+                const option = selectElement.querySelector(`option[value="${tagId}"]`);
+                if (option) {
+                    option.textContent = data.tag_nome;
+                }
+
+                // Não é necessário atualizar os atributos @click dos botões
+                // Os botões já buscam o nome atualizado do DOM quando são clicados
+
+                // Não mostrar toast de sucesso - fechar modal é suficiente
+            } else {
+                // Mostrar toast apenas para erros (ex: nome duplicado)
+                window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                    detail: { mensagem: data.mensagem || 'Erro ao editar tema.', tipo: 'error' }
+                }));
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao editar tema:', error);
+            window.dispatchEvent(new CustomEvent('mostrar-toast', {
+                detail: { mensagem: 'Erro ao editar tema. Tente novamente.', tipo: 'error' }
+            }));
+        });
+    };
+
+    // Excluir tema via AJAX
+    window.excluirTema = function() {
+        const modalElement = document.querySelector('[x-data*="modalExcluirTemaAberto"]');
+        const alpineData = modalElement ? Alpine.$data(modalElement) : null;
+
+        if (!alpineData) {
+            console.error('Alpine.js data não disponível para modal de excluir');
+            return;
+        }
+
+        const tagId = alpineData.temaExcluirId;
+
+        // Enviar requisição AJAX
+        fetch("{% url 'painel_autor:excluir_tag_ajax' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `tag_id=${tagId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Fechar modal
+                alpineData.modalExcluirTemaAberto = false;
+
+                // Remover o tema do select
+                const selectElement = document.getElementById('id_tags');
+                const option = selectElement.querySelector(`option[value="${tagId}"]`);
+                if (option) option.remove();
+
+                // Remover o tema da interface (desselecionar se estava selecionado)
+                const configElement = document.getElementById('configuracoes-texto');
+                const alpineData = configElement ? Alpine.$data(configElement) : null;
+                if (alpineData && alpineData.tagsSelecionadas) {
+                    const index = alpineData.tagsSelecionadas.indexOf(parseInt(tagId));
+                    if (index > -1) {
+                        alpineData.tagsSelecionadas.splice(index, 1);
+                    }
+                }
+
+                // Remover o elemento visual do tema do DOM
+                const tagContainer = document.querySelector(`[data-tag-id="${tagId}"]`);
+                if (tagContainer) {
+                    // Animação de fade out antes de remover
+                    tagContainer.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                    tagContainer.style.opacity = '0';
+                    tagContainer.style.transform = 'scale(0.8)';
+
+                    setTimeout(() => {
+                        tagContainer.remove();
+                    }, 300);
+                }
+            } else {
+                alert(data.mensagem || 'Erro ao excluir tema.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao excluir tema. Tente novamente.');
+        });
+    };
+
+});
+</script>
+
+<!-- CSS customizado para Quill.js (COPIADO DO PAINEL ADMIN) -->
+<style>
+.ql-editor {
+    min-height: 500px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.ql-editor ol,
+.ql-editor ul {
+    padding-left: 1.5em !important;
+    margin: 1em 0 !important;
+}
+
+.ql-editor ol li,
+.ql-editor ul li {
+    list-style-position: outside !important;
+}
+
+.ql-editor ol {
+    list-style-type: decimal !important;
+}
+
+.ql-editor ul {
+    list-style-type: disc !important;
+}
+
+.ql-editor iframe {
+    max-width: 100%;
+    margin: 1em auto;
+    border: 2px solid #e69019;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
+.ql-editor iframe:hover {
+    outline: 2px solid #e69019;
+    outline-offset: 2px;
+}
+
+.ql-editor a {
+    color: #e69019;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.ql-editor a:hover {
+    color: #c57a15;
+}
+
+.ql-editor h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
+.ql-editor h2 { font-size: 1.5em; font-weight: bold; margin: 0.75em 0; }
+.ql-editor h3 { font-size: 1.17em; font-weight: bold; margin: 0.83em 0; }
+.ql-editor h4 { font-size: 1em; font-weight: bold; margin: 1em 0; }
+.ql-editor h5 { font-size: 0.83em; font-weight: bold; margin: 1.17em 0; }
+.ql-editor h6 { font-size: 0.67em; font-weight: bold; margin: 1.33em 0; }
+
+.ql-editor blockquote {
+    border-left: 4px solid #3A4D39;
+    padding-left: 1em;
+    margin: 1em 0;
+    font-style: italic;
+    color: #4F4A45;
+}
+
+.ql-editor pre {
+    background-color: #f4f4f4;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1em 0;
+}
+
+.ql-editor p {
+    margin: 1em 0;
+}
+
+.ql-editor .ql-indent-1 { padding-left: 3em; }
+.ql-editor .ql-indent-2 { padding-left: 6em; }
+.ql-editor .ql-indent-3 { padding-left: 9em; }
+.ql-editor .ql-indent-4 { padding-left: 12em; }
+.ql-editor .ql-indent-5 { padding-left: 15em; }
+.ql-editor .ql-indent-6 { padding-left: 18em; }
+.ql-editor .ql-indent-7 { padding-left: 21em; }
+.ql-editor .ql-indent-8 { padding-left: 24em; }
+
+.ql-editor img {
+    cursor: pointer;
+    transition: opacity 0.2s, box-shadow 0.2s;
+    border-radius: 4px;
+    max-width: 100%;
+    height: auto;
+}
+
+.ql-editor img:hover {
+    opacity: 0.9;
+    box-shadow: 0 0 0 3px rgba(230, 144, 25, 0.3);
+}
+
+.ql-editor img.ql-selected {
+    box-shadow: 0 0 0 3px #e69019;
+}
+
+.ql-tooltip {
+    display: none !important;
+}
+
+/* Dark mode para Quill.js */
+.dark .ql-toolbar {
+    background-color: #374151;
+    border-color: #4b5563;
+}
+
+.dark .ql-toolbar .ql-stroke {
+    stroke: #e5e7eb;
+}
+
+.dark .ql-toolbar .ql-fill {
+    fill: #e5e7eb;
+}
+
+.dark .ql-toolbar .ql-picker {
+    color: #e5e7eb;
+}
+
+.dark .ql-toolbar .ql-picker-label {
+    color: #e5e7eb;
+}
+
+.dark .ql-toolbar .ql-picker-options {
+    background-color: #374151;
+    border-color: #4b5563;
+}
+
+.dark .ql-toolbar .ql-picker-item {
+    color: #e5e7eb;
+}
+
+.dark .ql-toolbar .ql-picker-item:hover {
+    color: #e69019;
+}
+
+.dark .ql-toolbar button:hover .ql-stroke,
+.dark .ql-toolbar .ql-picker-label:hover .ql-stroke {
+    stroke: #e69019;
+}
+
+.dark .ql-toolbar button:hover .ql-fill,
+.dark .ql-toolbar .ql-picker-label:hover .ql-fill {
+    fill: #e69019;
+}
+
+.dark .ql-toolbar button.ql-active .ql-stroke,
+.dark .ql-toolbar .ql-picker-label.ql-active .ql-stroke {
+    stroke: #e69019;
+}
+
+.dark .ql-toolbar button.ql-active .ql-fill,
+.dark .ql-toolbar .ql-picker-label.ql-active .ql-fill {
+    fill: #e69019;
+}
+
+.dark .ql-container {
+    border-color: #4b5563;
+}
+
+.dark .ql-editor {
+    color: #e5e7eb;
+}
+
+.dark .ql-editor.ql-blank::before {
+    color: rgba(156, 163, 175, 0.6);
+}
+
+.dark .ql-editor blockquote {
+    border-left-color: #6b7280;
+    color: #9ca3af;
+}
+
+.dark .ql-editor pre {
+    background-color: #1f2937;
+}
+</style>
+{% endblock %}

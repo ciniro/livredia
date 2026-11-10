@@ -1,0 +1,153 @@
+{
+  "metadata": {
+    "descricao": "Catálogo de fontes para textos clássicos brasileiros e portugueses em domínio público",
+    "data_criacao": "2025-11-23",
+    "versao": "1.0"
+  },
+  "fontes_textos": [
+    {
+      "nome": "Portal Domínio Público",
+      "url": "http://www.dominiopublico.gov.br/",
+      "tipo": "api",
+      "descricao": "Biblioteca digital do Ministério da Educação com mais de 174 mil obras em domínio público",
+      "idioma": "português",
+      "formatos_disponiveis": ["PDF", "HTML", "TXT"],
+      "conteudo": ["livros", "textos", "poesias", "contos", "romances"],
+      "quantidade_obras": 174000,
+      "oficial": true,
+      "requer_autenticacao": false,
+      "observacoes": "Maior biblioteca digital brasileira. Contém obras completas de autores como Machado de Assis, Castro Alves, Cecília Meireles, etc."
+    },
+    {
+      "nome": "Livros Domínio Público",
+      "url": "https://livrosdominiopublico.com.br/",
+      "tipo": "scraping",
+      "descricao": "Biblioteca digital especializada em obras clássicas brasileiras e internacionais",
+      "idioma": "português",
+      "formatos_disponiveis": ["PDF", "EPUB", "MOBI"],
+      "conteudo": ["livros", "romances", "contos", "poesias"],
+      "quantidade_obras": null,
+      "oficial": false,
+      "requer_autenticacao": false,
+      "observacoes": "Download gratuito em vários formatos. Foco em literatura clássica."
+    },
+    {
+      "nome": "Projeto Adamastor",
+      "url": "https://projectoadamastor.org/",
+      "tipo": "download",
+      "descricao": "Biblioteca digital de obras literárias em domínio público sem restrições",
+      "idioma": "português",
+      "formatos_disponiveis": ["EPUB", "MOBI"],
+      "conteudo": ["literatura", "poesia", "contos"],
+      "quantidade_obras": null,
+      "oficial": false,
+      "requer_autenticacao": false,
+      "observacoes": "Obras disponibilizadas gratuitamente sem qualquer tipo de restrição."
+    },
+    {
+      "nome": "Machado de Assis - Site Oficial",
+      "url": "https://machado.mec.gov.br/",
+      "tipo": "scraping",
+      "descricao": "Portal oficial com obras completas de Machado de Assis",
+      "idioma": "português",
+      "formatos_disponiveis": ["HTML", "PDF"],
+      "conteudo": ["romances", "contos", "crônicas", "poesias", "teatro"],
+      "quantidade_obras": 300,
+      "oficial": true,
+      "requer_autenticacao": false,
+      "observacoes": "Parceria entre Portal Domínio Público e NUPILL (UFSC). Mais de 300 obras de Machado de Assis."
+    },
+    {
+      "nome": "Biblioteca Digital Luso-Brasileira",
+      "url": "https://bdlb.bn.gov.br/",
+      "tipo": "api",
+      "descricao": "Acervo digital da Biblioteca Nacional com obras luso-brasileiras",
+      "idioma": "português",
+      "formatos_disponiveis": ["PDF", "JPEG"],
+      "conteudo": ["livros", "manuscritos", "periódicos", "mapas"],
+      "quantidade_obras": 2000000,
+      "oficial": true,
+      "requer_autenticacao": false,
+      "observacoes": "Mais de 2 milhões de documentos em domínio público. Inclui primeira edição de Os Lusíadas (1572)."
+    },
+    {
+      "nome": "Project Gutenberg - Português",
+      "url": "https://www.gutenberg.org/browse/languages/pt",
+      "tipo": "download",
+      "descricao": "Biblioteca digital internacional com seção em português",
+      "idioma": "português",
+      "formatos_disponiveis": ["HTML", "EPUB", "KINDLE", "TXT"],
+      "conteudo": ["livros", "literatura"],
+      "quantidade_obras": 1000,
+      "oficial": false,
+      "requer_autenticacao": false,
+      "observacoes": "Biblioteca internacional com obras em português. Mais de 70 mil livros no total."
+    }
+  ],
+  "fontes_fotos": [
+    {
+      "nome": "Wikimedia Commons",
+      "url": "https://commons.wikimedia.org/",
+      "tipo": "api",
+      "descricao": "Repositório de mídia livre da Wikimedia Foundation",
+      "idioma": "multilíngue",
+      "formatos_disponiveis": ["JPG", "PNG", "SVG"],
+      "conteudo": ["fotografias", "retratos", "pinturas"],
+      "quantidade_obras": 100000000,
+      "oficial": false,
+      "requer_autenticacao": false,
+      "licenca": "domínio público / creative commons",
+      "observacoes": "Maior repositório de imagens livres do mundo. Contém fotos históricas de autores clássicos brasileiros."
+    },
+    {
+      "nome": "Portal Domínio Público - Imagens",
+      "url": "http://www.dominiopublico.gov.br/pesquisa/PesquisaPeriodicoForm.do?select_action=&co_midia=2",
+      "tipo": "download",
+      "descricao": "Seção de imagens do Portal Domínio Público",
+      "idioma": "português",
+      "formatos_disponiveis": ["JPG", "PNG"],
+      "conteudo": ["fotografias", "pinturas", "ilustrações"],
+      "quantidade_obras": 10000,
+      "oficial": true,
+      "requer_autenticacao": false,
+      "observacoes": "Inclui retratos de autores clássicos brasileiros e portugueses."
+    },
+    {
+      "nome": "Biblioteca Nacional Digital",
+      "url": "https://bndigital.bn.gov.br/",
+      "tipo": "scraping",
+      "descricao": "Acervo iconográfico da Biblioteca Nacional",
+      "idioma": "português",
+      "formatos_disponiveis": ["JPG", "TIFF"],
+      "conteudo": ["fotografias", "gravuras", "retratos"],
+      "quantidade_obras": 50000,
+      "oficial": true,
+      "requer_autenticacao": false,
+      "observacoes": "Acervo histórico com retratos de escritores brasileiros do século XIX e XX."
+    },
+    {
+      "nome": "Wikisource - Autores",
+      "url": "https://pt.wikisource.org/wiki/Portal:Autores",
+      "tipo": "scraping",
+      "descricao": "Portal de autores do Wikisource em português",
+      "idioma": "português",
+      "formatos_disponiveis": ["JPG", "PNG"],
+      "conteudo": ["biografias", "fotos", "obras"],
+      "quantidade_obras": 1000,
+      "oficial": false,
+      "requer_autenticacao": false,
+      "observacoes": "Páginas de autores com fotos e biografias. Links para Wikimedia Commons."
+    }
+  ],
+  "estrategia_coleta": {
+    "prioridade": "diversidade",
+    "descricao": "Coletar textos de VÁRIOS autores diferentes ao invés de muitos textos de poucos autores",
+    "limite_textos_por_autor": 3,
+    "criterios": [
+      "Buscar autores diferentes em cada fonte",
+      "Garantir variedade de gêneros (romance, conto, poesia, crônica)",
+      "Priorizar autores clássicos brasileiros do século XIX e XX",
+      "Incluir autores de diferentes movimentos literários"
+    ]
+  }
+}

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Link de Ativação Expirado - LIVRE DIA{% endblock %}
+
+{% block content %}
+<div class="layout-content-container flex flex-col w-full max-w-2xl flex-1 px-4">
+    <div class="flex flex-wrap justify-between gap-3 p-4 text-center">
+        <div class="flex w-full flex-col gap-3">
+            <!-- Ícone de Erro -->
+            <div class="flex justify-center">
+                <div class="w-24 h-24 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-red-600 dark:text-red-400">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                    </svg>
+                </div>
+            </div>
+
+            <p class="text-text-light dark:text-text-dark text-4xl font-black leading-tight tracking-[-0.033em] font-display">
+                Link de Ativação Expirado
+            </p>
+            <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal">
+                Este link de ativação expirou e não pode mais ser utilizado.
+            </p>
+        </div>
+    </div>
+
+    <!-- Informações Detalhadas -->
+    <div class="p-4">
+        <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-800 rounded-lg p-6">
+            <div class="flex items-start gap-4 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <div>
+                    <h3 class="text-lg font-bold text-red-800 dark:text-red-300 mb-2">
+                        Por que o link expirou?
+                    </h3>
+                    <p class="text-red-700 dark:text-red-300 text-sm leading-relaxed">
+                        Por motivos de segurança, os links de ativação de conta de autor têm validade de <strong>7 dias</strong>.
+                        Este link foi gerado em <strong>{{ convite.data_criacao|date:"d/m/Y \à\s H:i" }}</strong> e
+                        expirou em <strong>{{ convite.data_expiracao|date:"d/m/Y \à\s H:i" }}</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <!-- O que fazer agora -->
+            <div class="bg-white dark:bg-background-dark rounded-lg p-6 mt-4">
+                <h4 class="text-base font-bold text-text-light dark:text-text-dark mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-primary">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                    </svg>
+                    O que fazer agora?
+                </h4>
+
+                <div class="space-y-3">
+                    <div class="flex items-start gap-3">
+                        <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                            1
+                        </div>
+                        <p class="text-sm text-text-light dark:text-text-dark">
+                            Entre em contato com o administrador da plataforma LIVRE DIA
+                        </p>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                            2
+                        </div>
+                        <p class="text-sm text-text-light dark:text-text-dark">
+                            Solicite um novo link de ativação
+                        </p>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                            3
+                        </div>
+                        <p class="text-sm text-text-light dark:text-text-dark">
+                            Use o novo link dentro do prazo de 7 dias
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dados da Conta -->
+    <div class="p-4">
+        <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6">
+            <h4 class="text-base font-bold text-text-light dark:text-text-dark mb-3">
+                Informações da Sua Conta
+            </h4>
+
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-placeholder-light dark:text-placeholder-dark">Nome:</span>
+                    <span class="text-text-light dark:text-text-dark font-semibold">{{ convite.autor.get_full_name }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-placeholder-light dark:text-placeholder-dark">E-mail:</span>
+                    <span class="text-text-light dark:text-text-dark font-semibold">{{ convite.autor.email }}</span>
+                </div>
+                {% if convite.autor.pseudonimo %}
+                <div class="flex justify-between">
+                    <span class="text-placeholder-light dark:text-placeholder-dark">Pseudônimo:</span>
+                    <span class="text-text-light dark:text-text-dark font-semibold">{{ convite.autor.pseudonimo }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="p-4 flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+            href="{% url 'core:fale_conosco' %}"
+            class="inline-flex items-center justify-center gap-2 px-6 h-12 bg-verde-floresta text-white rounded-lg font-bold hover:bg-verde-floresta-hover transition-colors"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+            </svg>
+            Fale Conosco
+        </a>
+
+        <a
+            href="{% url 'core:home' %}"
+            class="inline-flex items-center justify-center gap-2 px-6 h-12 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+            </svg>
+            Voltar para Home
+        </a>
+    </div>
+</div>
+{% endblock %}

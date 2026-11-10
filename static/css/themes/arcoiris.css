@@ -1,0 +1,28 @@
+/* Tema Arco-Íris - Celebração da diversidade com tons suaves LGBT+ */
+.tema-arcoiris {
+    /* Gradiente vertical sutil com as cores da bandeira LGBT+ */
+    background: linear-gradient(
+        180deg,
+        #ffe5e5 0%,     /* Vermelho suave */
+        #fff0e0 16.66%, /* Laranja suave */
+        #fffce0 33.33%, /* Amarelo suave */
+        #e8f5e8 50%,    /* Verde suave */
+        #e5f0ff 66.66%, /* Azul suave */
+        #f0e5f5 100%    /* Roxo suave */
+    );
+    color: #2d1a3d; /* Roxo escuro para ótimo contraste */
+}
+
+.dark .tema-arcoiris {
+    /* Gradiente noturno: cores mais profundas mantendo a essência LGBT+ */
+    background: linear-gradient(
+        180deg,
+        #3d1a1a 0%,     /* Vermelho profundo */
+        #3d2a1a 16.66%, /* Laranja profundo */
+        #3d3a1a 33.33%, /* Amarelo profundo */
+        #1a3d1a 50%,    /* Verde profundo */
+        #1a2a3d 66.66%, /* Azul profundo */
+        #2a1a3d 100%    /* Roxo profundo */
+    );
+    color: #f5e5ff; /* Lavanda claro para contraste suave */
+}

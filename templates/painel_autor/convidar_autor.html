@@ -1,0 +1,718 @@
+{% extends 'base_autor.html' %}
+{% load static %}
+
+{% block title %}Convidar Novo Autor - Área {% if user.sexo == 'M' %}do Autor{% elif user.sexo == 'F' %}da Autora{% elif user.sexo == 'O' %}de Autore{% else %}de Escrita{% endif %} - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<!-- Cropper.js CSS -->
+<link rel="stylesheet" href="{% static 'css/vendor/cropper.min.css' %}">
+<!-- Cropper.js JS -->
+<script src="{% static 'js/vendor/cropper.min.js' %}"></script>
+<!-- Image Cropper Custom Script -->
+<script src="{% static 'js/image-cropper.js' %}"></script>
+{% endblock %}
+
+{% block autor_content %}
+<div class="space-y-8">
+    <!-- Cabeçalho -->
+    <div class="flex flex-wrap justify-between items-center gap-3">
+        <h1 class="text-text-light dark:text-text-dark text-4xl sm:text-5xl font-black leading-tight tracking-[-0.033em] font-display">
+            Convidar Novo Autor
+        </h1>
+    </div>
+
+    <!-- Box de Convites Restantes -->
+    {% if sem_convites %}
+    <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-xl p-6">
+        <div class="flex items-center gap-4">
+            <div class="flex-shrink-0 w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-red-500 dark:text-red-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-red-700 dark:text-red-400 font-bold text-lg">
+                    Você já usou todos os seus convites
+                </h3>
+                <p class="text-sm text-red-600/80 dark:text-red-400/80">
+                    {% if user.sexo == 'M' %}Obrigado{% elif user.sexo == 'F' %}Obrigada{% elif user.sexo == 'O' %}Obrigade{% else %}Gratidão{% endif %} por ajudar a comunidade a crescer! Você enviou {{ limite_convites }} convites.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-gradient-to-r from-primary/10 to-verde-floresta/10 dark:from-primary/20 dark:to-verde-floresta/20 border-2 border-primary/30 dark:border-primary/40 rounded-xl p-6">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div class="flex items-center gap-4">
+                <div class="flex-shrink-0 w-14 h-14 rounded-full bg-primary/20 dark:bg-primary/30 flex items-center justify-center">
+                    <!-- Ícone de presente -->
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-primary">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-text-light dark:text-text-dark font-bold text-lg">
+                        {% if convites_restantes == 1 %}
+                            Você ainda tem <span class="text-primary">1 convite</span> especial!
+                        {% else %}
+                            Você tem <span class="text-primary">{{ convites_restantes }} convites</span> para presentear!
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                        Conhece alguém que escreve textos incríveis? Convide para fazer parte da nossa comunidade!
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-white/50 dark:bg-black/20 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-verde-floresta">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <span class="text-xs text-text-light dark:text-text-dark font-medium">
+                    {{ convites_restantes }} de {{ limite_convites }} disponíveis
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Autores que Aceitaram o Convite -->
+    {% if convites_aceitos %}
+    <div class="bg-white dark:bg-secondary-dark/30 rounded-xl border border-border-light dark:border-border-dark overflow-hidden">
+        <div class="px-6 py-4 bg-verde-floresta/10 dark:bg-verde-floresta/20 border-b border-border-light dark:border-border-dark">
+            <h3 class="font-bold text-text-light dark:text-text-dark flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-verde-floresta">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+                </svg>
+                Autores que Aceitaram seu Convite ({{ convites_aceitos|length }})
+            </h3>
+        </div>
+        <div class="divide-y divide-border-light dark:divide-border-dark">
+            {% for convite in convites_aceitos %}
+            <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-secondary-light/30 dark:hover:bg-secondary-dark/30 transition-colors">
+                <div class="flex items-center gap-3 min-w-0">
+                    <!-- Avatar -->
+                    {% if convite.autor.foto %}
+                    <img src="{{ convite.autor.foto.url }}" alt="" class="w-10 h-10 rounded-full object-cover border-2 border-verde-floresta flex-shrink-0">
+                    {% else %}
+                    <div class="w-10 h-10 rounded-full bg-verde-floresta text-white flex items-center justify-center font-bold text-sm border-2 border-verde-floresta/50 flex-shrink-0">
+                        {{ convite.autor.username|slice:":1"|upper }}
+                    </div>
+                    {% endif %}
+                    <!-- Info -->
+                    <div class="min-w-0">
+                        <a href="/@{{ convite.autor.username }}/" target="_blank" class="font-medium text-text-light dark:text-text-dark hover:text-verde-floresta dark:hover:text-verde-floresta transition-colors truncate block">
+                            {{ convite.autor.get_display_name }}
+                        </a>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark">
+                            @{{ convite.autor.username }}
+                        </p>
+                    </div>
+                </div>
+                <!-- Badge de aceito -->
+                <div class="flex-shrink-0 self-start sm:self-center flex items-center gap-2 px-3 py-1.5 bg-verde-floresta/10 dark:bg-verde-floresta/20 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-verde-floresta">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    <span class="text-xs font-medium text-verde-floresta">Ativo</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Convites Pendentes -->
+    {% if convites_pendentes %}
+    <div class="bg-white dark:bg-secondary-dark/30 rounded-xl border border-border-light dark:border-border-dark overflow-hidden">
+        <div class="px-6 py-4 bg-primary/10 dark:bg-primary/20 border-b border-border-light dark:border-border-dark">
+            <h3 class="font-bold text-text-light dark:text-text-dark flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-primary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                Convites Pendentes ({{ convites_pendentes|length }})
+            </h3>
+        </div>
+        <div class="divide-y divide-border-light dark:divide-border-dark">
+            {% for convite in convites_pendentes %}
+            <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-secondary-light/30 dark:hover:bg-secondary-dark/30 transition-colors">
+                <div class="flex items-center gap-3 min-w-0">
+                    <!-- Avatar -->
+                    {% if convite.autor.foto %}
+                    <img src="{{ convite.autor.foto.url }}" alt="" class="w-10 h-10 rounded-full object-cover border-2 border-primary/50 flex-shrink-0">
+                    {% else %}
+                    <div class="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm border-2 border-primary/30 flex-shrink-0">
+                        {{ convite.autor.username|slice:":1"|upper }}
+                    </div>
+                    {% endif %}
+                    <!-- Info -->
+                    <div class="min-w-0">
+                        <p class="font-medium text-text-light dark:text-text-dark truncate">
+                            {{ convite.autor.get_display_name }}
+                        </p>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark truncate">
+                            {{ convite.autor.email }}
+                        </p>
+                    </div>
+                </div>
+                <!-- Status -->
+                <div class="flex-shrink-0 self-start sm:self-center">
+                    {% if convite.expirado %}
+                    <span class="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-red-500">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
+                        <span class="text-xs font-medium text-red-600 dark:text-red-400">Expirado</span>
+                    </span>
+                    {% else %}
+                    <span class="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 dark:bg-primary/20 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                        </svg>
+                        <span class="text-xs font-medium text-primary">Aguardando</span>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Descrição -->
+    <div class="bg-verde-floresta/10 border border-verde-floresta/30 rounded-xl p-6">
+        <div class="flex items-start gap-4">
+            <div class="flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-verde-floresta">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-verde-floresta font-bold text-lg mb-2">Ajude a plataforma a crescer!</h3>
+                <p class="text-text-light dark:text-text-dark text-sm leading-relaxed">
+                    Convide novos autores para a plataforma LIVRE DIA. Preencha os dados básicos do autor
+                    e um convite será enviado automaticamente para o e-mail informado. O novo autor receberá
+                    um link exclusivo para ativar sua conta e começar a publicar textos autênticos.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulário -->
+    <form method="post" enctype="multipart/form-data" class="space-y-8">
+        {% csrf_token %}
+
+        <!-- Username (ID de Usuário) - Campo Destacado -->
+        <div class="bg-primary/5 dark:bg-primary/10 p-6 rounded-xl border-2 border-primary/30">
+            <label class="flex flex-col">
+                <p class="text-primary dark:text-primary text-lg font-bold leading-normal pb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                    {{ form.username.label }} <span class="text-red-600">*</span>
+                </p>
+                <div class="relative">
+                    <!-- Símbolo @ na frente -->
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                        <span class="text-primary dark:text-primary text-xl font-bold">@</span>
+                    </div>
+                    <!-- Input -->
+                    {{ form.username }}
+                    <!-- Ícone de validação (check ou X) -->
+                    <div id="username-validation-icon" class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none" style="display: none;">
+                        <!-- Check (sucesso) -->
+                        <svg id="username-check" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-green-600 dark:text-green-400" style="display: none;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <!-- X (erro) -->
+                        <svg id="username-error" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-red-600 dark:text-red-400" style="display: none;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </div>
+                </div>
+                <!-- Mensagens de erro do backend -->
+                {% if form.username.errors %}
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-2">{{ form.username.errors.0 }}</p>
+                {% else %}
+                    <!-- Mensagem de erro em tempo real (JavaScript) -->
+                    <p id="username-error-message" class="text-sm text-red-600 dark:text-red-400 mt-2" style="display: none;"></p>
+                {% endif %}
+                <!-- Mensagem de ajuda -->
+                <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                    {{ form.username.help_text }}
+                </p>
+            </label>
+        </div>
+
+        <!-- Nome Completo e E-mail -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Nome Completo -->
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    Nome Real <span class="text-red-600">*</span>
+                </p>
+                {{ form.nome_completo }}
+                {% if form.nome_completo.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.nome_completo.errors.0 }}</p>
+                {% endif %}
+            </label>
+
+            <!-- E-mail -->
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    E-mail (Login) <span class="text-red-600">*</span>
+                </p>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.email.errors.0 }}</p>
+                {% endif %}
+            </label>
+        </div>
+
+        <!-- Foto de Perfil -->
+        <div>
+            <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                {{ form.foto.label }}
+            </p>
+            <div class="flex items-center gap-4">
+                <div id="current-photo-display">
+                    <!-- Avatar com iniciais (placeholder antes de ter nome) -->
+                    <div class="w-20 h-20 rounded-full bg-verde-floresta text-white flex items-center justify-center text-2xl font-bold border-2 border-primary">
+                        ?
+                    </div>
+                </div>
+                <div id="photo-preview-container" class="flex-1">
+                    <label class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border-light dark:border-border-dark rounded-lg cursor-pointer hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors" for="dropzone-file">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-placeholder-light dark:text-placeholder-dark">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                        </svg>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">Clique para adicionar foto (opcional)</p>
+                    </label>
+                </div>
+            </div>
+            {{ form.foto }}
+
+            <!-- Checkbox para remover foto (aparece quando foto é upada na sessão) -->
+            <div id="remove-photo-section" class="mt-3 flex items-center gap-2 p-3 bg-secondary-light/30 dark:bg-secondary-dark/20 rounded-lg border border-border-light dark:border-border-dark" style="display: none;">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    {{ form.remover_foto }}
+                    <span class="text-sm text-text-light dark:text-text-dark">
+                        {{ form.remover_foto.label }}
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Cidade e País -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    Cidade <span class="text-red-600">*</span>
+                </p>
+                {{ form.cidade }}
+                {% if form.cidade.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.cidade.errors.0 }}</p>
+                {% endif %}
+            </label>
+
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    País <span class="text-red-600">*</span>
+                </p>
+                {{ form.pais }}
+                {% if form.pais.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.pais.errors.0 }}</p>
+                {% endif %}
+            </label>
+        </div>
+
+        <!-- Identificação de Gênero e Data de Nascimento -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Identificação de Gênero -->
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    Identificação de Gênero <span class="text-red-600">*</span>
+                </p>
+                {{ form.sexo }}
+                {% if form.sexo.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.sexo.errors.0 }}</p>
+                {% else %}
+                    <p class="text-xs text-primary dark:text-primary font-medium mt-2">
+                        A plataforma usará esta informação para se comunicar de forma respeitosa (ex: "Bem-vindo/a"). A pessoa poderá alterar depois.
+                    </p>
+                {% endif %}
+            </label>
+
+            <!-- Tipo de Autor (ocultar, sempre será contemporâneo para convites de autores) -->
+            <input type="hidden" name="tipo_autor" value="contemporaneo">
+
+            <!-- Data de Nascimento -->
+            <div class="min-w-0">
+                <label class="flex flex-col min-w-0">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        {{ form.data_nascimento.label }} <span class="text-red-600">*</span>
+                    </p>
+                    <div class="min-w-0 max-w-full [&>input]:max-w-full">
+                        {{ form.data_nascimento }}
+                    </div>
+                    {% if form.data_nascimento.errors %}
+                        <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.data_nascimento.errors.0 }}</p>
+                    {% else %}
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                            {{ form.data_nascimento.help_text }}
+                        </p>
+                    {% endif %}
+                </label>
+            </div>
+        </div>
+
+        <!-- Telefone -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    Telefone
+                </p>
+                {{ form.telefone }}
+                {% if form.telefone.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.telefone.errors.0 }}</p>
+                {% endif %}
+            </label>
+        </div>
+
+        <!-- Pseudônimo e E-mail de Contato -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Pseudônimo -->
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    Pseudônimo
+                </p>
+                {{ form.pseudonimo }}
+                <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                    {{ form.pseudonimo.help_text }}
+                </p>
+                {% if form.pseudonimo.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.pseudonimo.errors.0 }}</p>
+                {% endif %}
+            </label>
+
+            <!-- E-mail de Contato -->
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    E-mail de Contato
+                </p>
+                {{ form.email_contato }}
+                <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                    {{ form.email_contato.help_text }}
+                </p>
+                {% if form.email_contato.errors %}
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.email_contato.errors.0 }}</p>
+                {% endif %}
+            </label>
+        </div>
+
+        <!-- Bio -->
+        <label class="flex flex-col">
+            <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                Bio (Resumo)
+            </p>
+            {{ form.bio }}
+            {% if form.bio.errors %}
+                <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.bio.errors.0 }}</p>
+            {% endif %}
+        </label>
+
+        <!-- Aviso sobre o convite -->
+        <div class="bg-primary/10 border border-primary/30 rounded-xl p-6">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-primary font-bold text-lg mb-2">O que acontece após gerar o convite?</h3>
+                    <ul class="text-text-light dark:text-text-dark text-sm leading-relaxed space-y-1">
+                        <li>• Um e-mail de convite será enviado automaticamente para o endereço informado</li>
+                        <li>• O novo autor receberá um link exclusivo válido por 7 dias</li>
+                        <li>• Ao acessar o link, ele poderá confirmar/editar seus dados e definir uma senha</li>
+                        <li>• Após ativar a conta, terá acesso completo ao painel do autor</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex flex-col sm:flex-row justify-end gap-4 pt-4">
+            <a
+                href="{% url 'painel_autor:dashboard' %}"
+                class="flex items-center justify-center h-12 px-6 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors"
+            >
+                Cancelar
+            </a>
+            <button
+                type="submit"
+                class="flex items-center justify-center h-12 px-6 bg-verde-floresta text-white rounded-lg font-bold hover:bg-verde-floresta/90 transition-colors"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                </svg>
+                Gerar Convite para Novo Autor
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Script para máscara de telefone -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const telefoneInput = document.getElementById('id_telefone');
+
+    if (telefoneInput) {
+        telefoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+            let formattedValue = '';
+
+            // Limita a 11 dígitos
+            value = value.substring(0, 11);
+
+            // Adiciona formatação progressivamente
+            if (value.length > 0) {
+                formattedValue = '(' + value.substring(0, 2);
+            }
+            if (value.length >= 3) {
+                formattedValue += ') ' + value.substring(2, 7);
+            }
+            if (value.length >= 8) {
+                // Só adiciona hífen se tiver 8 ou mais dígitos
+                formattedValue += '-' + value.substring(7, 11);
+            }
+
+            e.target.value = formattedValue;
+        });
+    }
+});
+</script>
+
+<!-- Validação de Username em Tempo Real -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameInput = document.getElementById('id_username');
+    const validationIcon = document.getElementById('username-validation-icon');
+    const checkIcon = document.getElementById('username-check');
+    const errorIcon = document.getElementById('username-error');
+    const errorMessage = document.getElementById('username-error-message');
+
+    // Verificar se elementos existem
+    if (!usernameInput || !validationIcon) return;
+
+    let typingTimer;
+    const doneTypingInterval = 500; // 500ms após parar de digitar
+
+    // Função para mostrar check (sucesso)
+    function showSuccess(message) {
+        validationIcon.style.display = 'flex';
+        checkIcon.style.display = 'block';
+        errorIcon.style.display = 'none';
+        errorMessage.style.display = 'none';
+        // Adicionar borda verde
+        usernameInput.classList.remove('border-red-500', 'dark:border-red-400');
+        usernameInput.classList.add('border-green-500', 'dark:border-green-400');
+    }
+
+    // Função para mostrar erro
+    function showError(message) {
+        validationIcon.style.display = 'flex';
+        checkIcon.style.display = 'none';
+        errorIcon.style.display = 'block';
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        // Adicionar borda vermelha
+        usernameInput.classList.remove('border-green-500', 'dark:border-green-400');
+        usernameInput.classList.add('border-red-500', 'dark:border-red-400');
+    }
+
+    // Função para esconder validação
+    function hideValidation() {
+        validationIcon.style.display = 'none';
+        errorMessage.style.display = 'none';
+        // Remover bordas coloridas
+        usernameInput.classList.remove('border-green-500', 'dark:border-green-400', 'border-red-500', 'dark:border-red-400');
+    }
+
+    // Converter para minúsculas automaticamente
+    usernameInput.addEventListener('input', function(e) {
+        this.value = this.value.toLowerCase();
+
+        // Limpar timer anterior
+        clearTimeout(typingTimer);
+
+        // Esconder validação enquanto digita
+        hideValidation();
+
+        // Iniciar novo timer
+        const username = this.value.trim();
+        if (username.length > 0) {
+            typingTimer = setTimeout(function() {
+                validarUsername(username);
+            }, doneTypingInterval);
+        }
+    });
+
+    // Validar ao sair do campo
+    usernameInput.addEventListener('blur', function() {
+        const username = this.value.trim();
+        if (username.length > 0) {
+            clearTimeout(typingTimer);
+            validarUsername(username);
+        }
+    });
+
+    // Função de validação AJAX
+    function validarUsername(username) {
+        // Fazer requisição AJAX
+        fetch(`/contas/api/verificar-username/?username=${encodeURIComponent(username)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.available) {
+                    showSuccess(data.message);
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao validar username:', error);
+                showError('Erro ao validar. Tente novamente.');
+            });
+    }
+});
+</script>
+
+<!-- Modal para exibir link de convite quando e-mail falhar -->
+{% if mostrar_modal_link %}
+<div x-data="{ aberto: true, copiado: false }"
+     x-show="aberto"
+     x-cloak
+     class="fixed inset-0 z-50 overflow-y-auto"
+     aria-labelledby="modal-title"
+     role="dialog"
+     aria-modal="true">
+    <!-- Backdrop -->
+    <div x-show="aberto"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/50 backdrop-blur-sm"
+         @click="aberto = false">
+    </div>
+
+    <!-- Modal -->
+    <div class="flex min-h-full items-center justify-center p-4">
+        <div x-show="aberto"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="relative w-full max-w-lg bg-background-light dark:bg-background-dark rounded-2xl shadow-xl border border-border-light dark:border-border-dark overflow-hidden"
+             @click.stop>
+
+            <!-- Cabeçalho -->
+            <div class="bg-primary/10 dark:bg-primary/20 px-6 py-4 border-b border-border-light dark:border-border-dark">
+                <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="modal-title" class="text-lg font-bold text-text-light dark:text-text-dark">
+                            Problema no Envio do E-mail
+                        </h3>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                            Mas o convite foi criado com sucesso!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo -->
+            <div class="px-6 py-5 space-y-4">
+                <p class="text-text-light dark:text-text-dark text-sm leading-relaxed">
+                    O autor <strong>{{ nome_autor_convidado }}</strong> foi cadastrado, mas houve um problema
+                    ao enviar o e-mail de convite para <strong>{{ email_autor_convidado }}</strong>.
+                </p>
+
+                <p class="text-text-light dark:text-text-dark text-sm leading-relaxed">
+                    Por favor, copie o link abaixo e envie manualmente para o novo autor:
+                </p>
+
+                <!-- Campo com link e botão copiar -->
+                <div class="flex items-center gap-2">
+                    <input
+                        type="text"
+                        id="link-convite-input"
+                        value="{{ link_convite }}"
+                        readonly
+                        class="flex-1 h-12 px-4 rounded-lg border border-border-light dark:border-border-dark bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                    <button
+                        type="button"
+                        @click="
+                            navigator.clipboard.writeText(document.getElementById('link-convite-input').value).then(() => {
+                                copiado = true;
+                                setTimeout(() => copiado = false, 2000);
+                            });
+                        "
+                        :class="copiado ? 'bg-green-600 hover:bg-green-700' : 'bg-primary hover:bg-primary/90'"
+                        class="flex items-center justify-center h-12 px-4 text-white rounded-lg font-medium transition-colors"
+                    >
+                        <template x-if="!copiado">
+                            <span class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+                                </svg>
+                                Copiar
+                            </span>
+                        </template>
+                        <template x-if="copiado">
+                            <span class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                                Copiado!
+                            </span>
+                        </template>
+                    </button>
+                </div>
+
+                <!-- Aviso sobre validade -->
+                <div class="flex items-start gap-2 p-3 bg-primary/5 dark:bg-primary/10 rounded-lg border border-primary/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-primary flex-shrink-0 mt-0.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    <p class="text-sm text-text-light dark:text-text-dark">
+                        Este link é válido por <strong>7 dias</strong>. Após esse período, será necessário gerar um novo convite.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Rodapé -->
+            <div class="px-6 py-4 bg-secondary-light/30 dark:bg-secondary-dark/30 border-t border-border-light dark:border-border-dark flex justify-end">
+                <button
+                    type="button"
+                    @click="aberto = false"
+                    class="flex items-center justify-center h-10 px-6 bg-verde-floresta text-white rounded-lg font-bold hover:bg-verde-floresta/90 transition-colors"
+                >
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

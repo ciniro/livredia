@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tempo_filters %}
+
+{% block title %}LIVRE DIA - Um Oásis de Conteúdo Humano{% endblock %}
+
+{% block content %}
+<main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+
+    <!-- ========== ITEM 12.2: BLOCO HERO NO TOPO (Largura Total) ========== -->
+    {% if pagina_proposito %}
+    <div class="flex min-w-72 flex-col gap-6 p-6 rounded-lg bg-secondary-light/50 dark:bg-secondary-dark/10 mb-8">
+        <p class="text-accent-light dark:text-accent-dark text-4xl md:text-5xl font-black leading-tight tracking-[-0.033em] font-display">
+            {{ pagina_proposito.titulo }}
+        </p>
+        <p class="text-gray-600 dark:text-gray-300 text-lg font-normal leading-relaxed">
+            {{ pagina_proposito.conteudo }}
+        </p>
+        <!-- Botões de ação -->
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'acervo_textos' %}"
+               class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-[#3A4D39] text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-[#2d3d2d] transition-colors">
+                <span class="truncate">Acesse nosso acervo</span>
+            </a>
+            <a href="{% url 'core:pagina_manifesto' %}"
+               class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-opacity-90 transition-colors">
+                <span class="truncate">Leia o Manifesto</span>
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="flex min-w-72 flex-col gap-6 p-6 rounded-lg bg-secondary-light/50 dark:bg-secondary-dark/10 mb-8">
+        <p class="text-accent-light dark:text-accent-dark text-4xl md:text-5xl font-black leading-tight tracking-[-0.033em] font-display">
+            Um Oásis de Conteúdo Humano.
+        </p>
+        <p class="text-gray-600 dark:text-gray-300 text-lg font-normal leading-relaxed">
+            LIVRE DIA é uma plataforma de curadoria de conteúdo 100% escrito por humanos,
+            conectando autores verificados a leitores que valorizam a autenticidade e a
+            profundidade da escrita genuína.
+        </p>
+        <!-- Botões de ação -->
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'acervo_textos' %}"
+               class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-[#3A4D39] text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-[#2d3d2d] transition-colors">
+                <span class="truncate">Acesse nosso acervo</span>
+            </a>
+            <a href="{% url 'core:pagina_manifesto' %}"
+               class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-opacity-90 transition-colors">
+                <span class="truncate">Leia o Manifesto</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ========== ITEM 12.6: ÚLTIMOS TEXTOS (3 linhas × 4 colunas) ========== -->
+    <div class="mb-16">
+        <h2 class="text-accent-light dark:text-accent-dark text-3xl font-bold font-display leading-tight tracking-[-0.015em] pb-6">
+            Últimos Textos
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {% for texto in ultimos_textos %}
+            <div class="flex flex-col gap-3 group">
+                <!-- Título do texto (link) -->
+                <a class="font-display text-xl font-bold text-text-light dark:text-text-dark group-hover:text-primary transition-colors line-clamp-2"
+                   href="{% url 'textos:leitura_texto' texto.pk %}">
+                    {{ texto.titulo }}
+                </a>
+
+                <!-- Autor e data -->
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <span class="font-bold text-text-light dark:text-text-dark">
+                        {{ texto.autor.get_display_name }}
+                    </span>
+                    -
+                    {% if texto.data_publicacao %}
+                        {{ texto.data_publicacao|date:"d/m/Y" }}
+                    {% else %}
+                        Sem data
+                    {% endif %}
+                </p>
+
+                <!-- Subtítulo/Descrição -->
+                {% if texto.subtitulo %}
+                <p class="text-gray-600 dark:text-gray-400 text-base font-normal leading-relaxed line-clamp-3">
+                    {{ texto.subtitulo }}
+                </p>
+                {% endif %}
+
+                <!-- Tags -->
+                <div class="flex flex-wrap gap-2 mt-2">
+                    {% for tag in texto.tags.all|slice:":3" %}
+                    <span class="text-xs font-semibold bg-secondary-light dark:bg-secondary-dark/50 text-accent-light dark:text-accent-dark px-2 py-1 rounded-full">
+                        {{ tag.nome }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center py-12">
+                <p class="text-gray-500 dark:text-gray-400 text-lg">
+                    Nenhum texto publicado ainda. Em breve teremos conteúdo incrível para você!
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Linha divisória -->
+    <div class="border-t border-border-light dark:border-border-dark mb-16"></div>
+
+    <!-- ========== ITEM 12.4 [CONCLUÍDO]: TEMÁTICAS (Nuvem de Tags Colorida) ========== -->
+    <div class="mb-16">
+        <h3 class="text-accent-light dark:text-accent-dark text-2xl font-bold font-display leading-tight tracking-[-0.015em] pb-6">
+            Temáticas
+        </h3>
+
+        <div class="flex flex-wrap gap-3 items-center">
+            {% for tag in tags_populares %}
+                {% comment %}
+                Sistema de cores rotativo (8 cores):
+                0: Laranja (Primary)
+                1: Verde Floresta
+                2: Azul Oceano
+                3: Roxo Uva
+                4: Vermelho Vinho
+                5: Azul Petróleo
+                6: Marrom Terra
+                7: Rosa Rosé
+                {% endcomment %}
+
+                {% if tag.num_textos > 10 %}
+                    {# Tags muito usadas: 2xl, cores vibrantes em rotação #}
+                    {% if forloop.counter0|divisibleby:8 == 0 %}
+                        <a class="text-2xl font-bold text-[#e69019] dark:text-[#f5a84a] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 1 %}
+                        <a class="text-2xl font-bold text-[#3A4D39] dark:text-[#5a7d59] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 2 %}
+                        <a class="text-2xl font-bold text-[#2563eb] dark:text-[#60a5fa] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 3 %}
+                        <a class="text-2xl font-bold text-[#7c3aed] dark:text-[#a78bfa] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 4 %}
+                        <a class="text-2xl font-bold text-[#b91c1c] dark:text-[#f87171] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 5 %}
+                        <a class="text-2xl font-bold text-[#0891b2] dark:text-[#22d3ee] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 6 %}
+                        <a class="text-2xl font-bold text-[#92400e] dark:text-[#d97706] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% else %}
+                        <a class="text-2xl font-bold text-[#be185d] dark:text-[#f472b6] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% endif %}
+
+                {% elif tag.num_textos > 7 %}
+                    {# Tags populares: xl, cores vibrantes em rotação #}
+                    {% if forloop.counter0|divisibleby:8 == 0 %}
+                        <a class="text-xl font-semibold text-[#ea580c] dark:text-[#fb923c] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 1 %}
+                        <a class="text-xl font-semibold text-[#16a34a] dark:text-[#4ade80] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 2 %}
+                        <a class="text-xl font-semibold text-[#1d4ed8] dark:text-[#93c5fd] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 3 %}
+                        <a class="text-xl font-semibold text-[#6d28d9] dark:text-[#c4b5fd] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 4 %}
+                        <a class="text-xl font-semibold text-[#dc2626] dark:text-[#fca5a5] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 5 %}
+                        <a class="text-xl font-semibold text-[#0e7490] dark:text-[#67e8f9] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:8 == 6 %}
+                        <a class="text-xl font-semibold text-[#a16207] dark:text-[#fbbf24] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% else %}
+                        <a class="text-xl font-semibold text-[#be123c] dark:text-[#fb7185] hover:underline transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% endif %}
+
+                {% elif tag.num_textos > 5 %}
+                    {# Tags médias: lg, cores médias em rotação #}
+                    {% if forloop.counter0|divisibleby:6 == 0 %}
+                        <a class="text-lg font-medium text-[#ea580c] dark:text-[#fdba74] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:6 == 1 %}
+                        <a class="text-lg font-medium text-[#16a34a] dark:text-[#86efac] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:6 == 2 %}
+                        <a class="text-lg font-medium text-[#2563eb] dark:text-[#93c5fd] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:6 == 3 %}
+                        <a class="text-lg font-medium text-[#7c3aed] dark:text-[#c4b5fd] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:6 == 4 %}
+                        <a class="text-lg font-medium text-[#0891b2] dark:text-[#67e8f9] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% else %}
+                        <a class="text-lg font-medium text-[#be185d] dark:text-[#f9a8d4] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% endif %}
+
+                {% elif tag.num_textos > 3 %}
+                    {# Tags médias-baixas: base, cores suaves em rotação #}
+                    {% if forloop.counter0|divisibleby:5 == 0 %}
+                        <a class="text-base text-[#f97316] dark:text-[#fed7aa] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:5 == 1 %}
+                        <a class="text-base text-[#15803d] dark:text-[#bbf7d0] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:5 == 2 %}
+                        <a class="text-base text-[#3b82f6] dark:text-[#bfdbfe] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:5 == 3 %}
+                        <a class="text-base text-[#8b5cf6] dark:text-[#ddd6fe] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% else %}
+                        <a class="text-base text-[#06b6d4] dark:text-[#a5f3fc] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% endif %}
+
+                {% else %}
+                    {# Tags raras: sm, cores claras em rotação #}
+                    {% if forloop.counter0|divisibleby:4 == 0 %}
+                        <a class="text-sm text-gray-700 dark:text-gray-300 hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:4 == 1 %}
+                        <a class="text-sm text-[#f97316] dark:text-[#fed7aa] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% elif forloop.counter0|divisibleby:4 == 2 %}
+                        <a class="text-sm text-[#3b82f6] dark:text-[#bfdbfe] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% else %}
+                        <a class="text-sm text-[#8b5cf6] dark:text-[#ddd6fe] hover:text-primary transition-colors" href="{% url 'acervo_textos' %}?tag={{ tag.slug }}">{{ tag.nome }}</a>
+                    {% endif %}
+                {% endif %}
+            {% empty %}
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                Nenhuma tag disponível ainda.
+            </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Linha divisória -->
+    <div class="border-t border-border-light dark:border-border-dark mb-16"></div>
+
+    <!-- ========== ITEM 12.3: GRID DE 4 RANKINGS (Top 6 cada) ========== -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+
+        <!-- (a) Autores Mais Vistos -->
+        <div class="flex flex-col gap-6 h-full">
+            <h3 class="font-display text-2xl font-bold text-accent-light dark:text-accent-dark text-center">
+                Autores Mais Vistos
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+                {% for autor in autores_mais_vistos %}
+                <a href="{% url 'acervo_textos' %}?{% if autor.usar_filtro_pseudonimo %}pseudonimo{% else %}autor{% endif %}={{ autor.id }}"
+                   class="flex flex-col items-center gap-2 bg-background-light dark:bg-background-dark p-3 rounded-lg hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors cursor-pointer">
+                    <!-- Avatar -->
+                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-16 w-16 flex-shrink-0"
+                         style="background-image: url('{{ autor.get_avatar_url }}');">
+                    </div>
+                    <!-- Nome -->
+                    <p class="text-text-light dark:text-text-dark text-sm font-bold text-center line-clamp-2 hover:text-primary transition-colors">
+                        {% if autor.usar_filtro_pseudonimo and autor.pseudonimo %}
+                            {{ autor.pseudonimo }}
+                        {% else %}
+                            {{ autor.get_full_name }}
+                        {% endif %}
+                    </p>
+                    <!-- Métrica: Visualizações -->
+                    <p class="text-gray-500 dark:text-gray-400 text-xs text-center">
+                        {% if autor.total_visualizacoes %}
+                            Os textos deste autor foram vistos {{ autor.total_visualizacoes }} vez{{ autor.total_visualizacoes|pluralize:"es" }}
+                        {% else %}
+                            Sem visualizações
+                        {% endif %}
+                    </p>
+                </a>
+                {% empty %}
+                <div class="col-span-2 text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Nenhum autor disponível.
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+            <a class="text-sm font-bold text-primary hover:underline text-center" href="{% url 'galeria_autores' %}">
+                Ver todos os autores
+            </a>
+        </div>
+
+        <!-- (b) Autores Mais Lidos -->
+        <div class="flex flex-col gap-6 h-full">
+            <h3 class="font-display text-2xl font-bold text-accent-light dark:text-accent-dark text-center">
+                Autores Mais Lidos
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+                {% for autor in autores_mais_lidos %}
+                <a href="{% url 'acervo_textos' %}?{% if autor.usar_filtro_pseudonimo %}pseudonimo{% else %}autor{% endif %}={{ autor.id }}"
+                   class="flex flex-col items-center gap-2 bg-background-light dark:bg-background-dark p-3 rounded-lg hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors cursor-pointer">
+                    <!-- Avatar -->
+                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-16 w-16 flex-shrink-0"
+                         style="background-image: url('{{ autor.get_avatar_url }}');">
+                    </div>
+                    <!-- Nome -->
+                    <p class="text-text-light dark:text-text-dark text-sm font-bold text-center line-clamp-2 hover:text-primary transition-colors">
+                        {% if autor.usar_filtro_pseudonimo and autor.pseudonimo %}
+                            {{ autor.pseudonimo }}
+                        {% else %}
+                            {{ autor.get_full_name }}
+                        {% endif %}
+                    </p>
+                    <!-- Métrica: Tempo total -->
+                    <p class="text-gray-500 dark:text-gray-400 text-xs text-center">
+                        {% if autor.total_tempo %}
+                            Leitores passaram {{ autor.total_tempo|formatar_tempo }} lendo este autor
+                        {% else %}
+                            Sem tempo de leitura
+                        {% endif %}
+                    </p>
+                </a>
+                {% empty %}
+                <div class="col-span-2 text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Nenhum autor disponível.
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+            <a class="text-sm font-bold text-primary hover:underline text-center" href="{% url 'galeria_autores' %}">
+                Ver todos os autores
+            </a>
+        </div>
+
+        <!-- (c) Textos Mais Vistos -->
+        <div class="flex flex-col gap-6 h-full">
+            <h3 class="font-display text-2xl font-bold text-accent-light dark:text-accent-dark text-center">
+                Textos Mais Vistos
+            </h3>
+            <div class="flex flex-col gap-4 flex-1">
+                {% for texto in textos_mais_vistos %}
+                <a href="{% url 'textos:leitura_texto' texto.pk %}"
+                   class="flex flex-col gap-2 bg-background-light dark:bg-background-dark p-3 rounded-lg hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors cursor-pointer">
+                    <!-- Título -->
+                    <p class="text-text-light dark:text-text-dark text-sm font-bold line-clamp-2 hover:text-primary transition-colors">
+                        {{ texto.titulo }}
+                    </p>
+                    <!-- Autor -->
+                    <p class="text-gray-600 dark:text-gray-400 text-xs">
+                        {{ texto.autor.get_display_name }}
+                    </p>
+                    <!-- Métrica: Visualizações -->
+                    <p class="text-gray-500 dark:text-gray-400 text-xs">
+                        {% if texto.total_visualizacoes %}
+                            Esse texto foi visualizado {{ texto.total_visualizacoes }} vez{{ texto.total_visualizacoes|pluralize:"es" }}
+                        {% else %}
+                            Sem visualizações
+                        {% endif %}
+                    </p>
+                </a>
+                {% empty %}
+                <div class="text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Nenhum texto disponível.
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+            <a class="text-sm font-bold text-primary hover:underline text-center" href="{% url 'acervo_textos' %}">
+                Ver todos os textos
+            </a>
+        </div>
+
+        <!-- (d) Textos Mais Lidos -->
+        <div class="flex flex-col gap-6 h-full">
+            <h3 class="font-display text-2xl font-bold text-accent-light dark:text-accent-dark text-center">
+                Textos Mais Lidos
+            </h3>
+            <div class="flex flex-col gap-4 flex-1">
+                {% for texto in textos_mais_lidos %}
+                <a href="{% url 'textos:leitura_texto' texto.pk %}"
+                   class="flex flex-col gap-2 bg-background-light dark:bg-background-dark p-3 rounded-lg hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors cursor-pointer">
+                    <!-- Título -->
+                    <p class="text-text-light dark:text-text-dark text-sm font-bold line-clamp-2 hover:text-primary transition-colors">
+                        {{ texto.titulo }}
+                    </p>
+                    <!-- Autor -->
+                    <p class="text-gray-600 dark:text-gray-400 text-xs">
+                        {{ texto.autor.get_display_name }}
+                    </p>
+                    <!-- Métrica: Tempo total -->
+                    <p class="text-gray-500 dark:text-gray-400 text-xs">
+                        {% if texto.total_tempo %}
+                            Leitores passaram {{ texto.total_tempo|formatar_tempo }} neste texto
+                        {% else %}
+                            Sem tempo de leitura
+                        {% endif %}
+                    </p>
+                </a>
+                {% empty %}
+                <div class="text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Nenhum texto disponível.
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+            <a class="text-sm font-bold text-primary hover:underline text-center" href="{% url 'acervo_textos' %}">
+                Ver todos os textos
+            </a>
+        </div>
+    </div>
+</main>
+{% endblock %}

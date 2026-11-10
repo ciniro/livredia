@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex flex-1 w-full" x-data="{ sidebarOpen: localStorage.getItem('adminSidebarOpen') === 'true' || localStorage.getItem('adminSidebarOpen') === null }" x-init="$watch('sidebarOpen', value => localStorage.setItem('adminSidebarOpen', value))">
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'w-64' : 'w-20'" class="flex-shrink-0 border-r border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark transition-all duration-300 ease-in-out">
+        <div class="flex h-full flex-col p-4">
+            <!-- Header da Sidebar -->
+            <div class="flex items-center justify-between mb-6">
+                <div x-show="sidebarOpen" x-transition class="flex flex-col">
+                    <h1 class="text-base font-bold leading-normal font-display text-text-light dark:text-text-dark">
+                        {% if 'painel_autor' in request.path %}
+                            Área do Autor
+                        {% else %}
+                            Área Administrativa
+                        {% endif %}
+                    </h1>
+                    <p class="text-sm font-normal leading-normal text-placeholder-light dark:text-placeholder-dark">Painel de Controle</p>
+                </div>
+                <!-- Botão Toggle -->
+                <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-lg hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors" :class="!sidebarOpen && 'mx-auto'">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-text-light dark:text-text-dark transition-transform duration-300" :class="!sidebarOpen && 'rotate-180'">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Menu de Navegação -->
+            <nav class="flex flex-col gap-2">
+                <!-- Dashboard (com submenu) -->
+                <div x-data="{ dashboardOpen: false }">
+                    <!-- Botão Principal -->
+                    <button @click="dashboardOpen = !dashboardOpen" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                        </svg>
+                        <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal flex-1 text-left">Dashboard</p>
+                        <svg x-show="sidebarOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0 transition-transform" :class="dashboardOpen && 'rotate-180'">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </button>
+
+                    <!-- Submenu -->
+                    <div x-show="dashboardOpen && sidebarOpen" x-transition class="ml-8 mt-1 space-y-1">
+                        <!-- Painel Administrativo (apenas para admins e autores-admin) -->
+                        {% if user.pode_acessar_painel_admin %}
+                        <a href="{% url 'painel_admin:dashboard' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm {% if request.resolver_match.url_name == 'dashboard' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                            </svg>
+                            Painel Administrativo
+                        </a>
+                        {% endif %}
+
+                        <!-- Painel do Autor (apenas para autores-admin) -->
+                        {% if user.pode_acessar_painel_autor %}
+                        <a href="{% url 'painel_autor:dashboard' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                            </svg>
+                            Painel do Autor
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Gestão de Autores (com submenu) -->
+                <div x-data="{ autoresOpen: false }">
+                    <!-- Botão Principal -->
+                    <button @click="autoresOpen = !autoresOpen" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'gestao_autores' or request.resolver_match.url_name == 'novo_autor' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                        </svg>
+                        <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal flex-1 text-left">Gestão de Autores</p>
+                        <svg x-show="sidebarOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0 transition-transform" :class="autoresOpen && 'rotate-180'">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </button>
+
+                    <!-- Submenu -->
+                    <div x-show="autoresOpen && sidebarOpen" x-transition class="ml-8 mt-1 space-y-1">
+                        <a href="{% url 'painel_admin:gestao_autores' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm {% if request.resolver_match.url_name == 'gestao_autores' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                            </svg>
+                            Listar Autores
+                        </a>
+                        <a href="{% url 'painel_admin:novo_autor' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm {% if request.resolver_match.url_name == 'novo_autor' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                            </svg>
+                            Novo Autor
+                        </a>
+                        <a href="{% url 'painel_admin:configuracao_convites' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm {% if request.resolver_match.url_name == 'configuracao_convites' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            Configuração de Convites
+                        </a>
+                        <a href="{% url 'painel_admin:gestao_autores_classicos' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm {% if request.resolver_match.url_name == 'gestao_autores_classicos' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                            </svg>
+                            Autores Clássicos
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Gestão de Obras -->
+                <a href="{% url 'painel_admin:gestao_obras' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'gestao_obras' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                    </svg>
+                    <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal">Gestão de Obras</p>
+                </a>
+
+                <!-- Gestão de Temas -->
+                <a href="{% url 'painel_admin:gestao_temas' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'gestao_temas' or request.resolver_match.url_name == 'novo_tema' or request.resolver_match.url_name == 'editar_tema' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3" />
+                    </svg>
+                    <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal">Gestão de Temas</p>
+                </a>
+
+                <!-- Moderação de Comentários -->
+                <a href="{% url 'painel_admin:moderacao_global' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'moderacao_global' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                    </svg>
+                    <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal">Moderação de Comentários</p>
+                </a>
+
+                <!-- Gestão de Leitores -->
+                <a href="{% url 'painel_admin:gestao_leitores' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'gestao_leitores' or request.resolver_match.url_name == 'editar_leitor' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                    <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal">Gestão de Leitores</p>
+                </a>
+
+                <!-- Gestão de Administradores -->
+                <a href="{% url 'painel_admin:gestao_administradores' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'gestao_administradores' or request.resolver_match.url_name == 'novo_admin' or request.resolver_match.url_name == 'editar_admin' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                    <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal">Gestão de Administradores</p>
+                </a>
+
+                <!-- Contatos Administrativos -->
+                <a href="{% url 'painel_admin:contatos_administrativos' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'contatos_administrativos' or request.resolver_match.url_name == 'novo_contato' or request.resolver_match.url_name == 'editar_contato' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                    </svg>
+                    <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal">Contatos Administrativos</p>
+                </a>
+
+                <!-- Temas de Leitura -->
+                <a href="{% url 'painel_admin:temas_leitura' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'temas_leitura' or request.resolver_match.url_name == 'novo_tema_leitura' or request.resolver_match.url_name == 'editar_tema_leitura' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
+                    </svg>
+                    <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal">Temas de Leitura</p>
+                </a>
+
+                <!-- Gestão de Páginas (com submenu) -->
+                <div x-data="{ paginasOpen: false }">
+                    <!-- Botão Principal -->
+                    <button @click="paginasOpen = !paginasOpen" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if request.resolver_match.url_name == 'cms' or request.resolver_match.url_name == 'editar_pagina' %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                        </svg>
+                        <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal flex-1 text-left">Gestão de Páginas</p>
+                        <svg x-show="sidebarOpen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0 transition-transform" :class="paginasOpen && 'rotate-180'">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </button>
+
+                    <!-- Submenu -->
+                    <div x-show="paginasOpen && sidebarOpen" x-transition class="ml-8 mt-1 space-y-1">
+                        <!-- Manifesto -->
+                        <a href="{% url 'painel_admin:editar_pagina' slug='manifesto' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                            Manifesto
+                        </a>
+
+                        <!-- Selo Livre de IA -->
+                        <a href="{% url 'painel_admin:editar_pagina' slug='selo-livre-de-ia' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                            Selo Livre de IA
+                        </a>
+
+                        <!-- Quem Somos -->
+                        <a href="{% url 'painel_admin:editar_pagina' slug='quem-somos' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                            Quem Somos
+                        </a>
+
+                        <!-- Termos de Uso -->
+                        <a href="{% url 'painel_admin:editar_pagina' slug='termos-de-uso' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                            Termos de Uso
+                        </a>
+
+                        <!-- Transparência Algorítmica -->
+                        <a href="{% url 'painel_admin:editar_pagina' slug='transparencia-algoritmica' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                            Transparência Algorítmica
+                        </a>
+
+                        <!-- Home Propósito -->
+                        <a href="{% url 'painel_admin:editar_pagina' slug='home-proposito' %}" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm hover:bg-secondary-light dark:hover:bg-secondary-dark text-placeholder-light dark:text-placeholder-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                            </svg>
+                            Home Propósito
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Comunicação Geral (E-mail Marketing) -->
+                <a href="{% url 'painel_admin:comunicacao_geral_lista' %}" class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors {% if 'comunicacao_geral' in request.resolver_match.url_name %}bg-primary/10 text-primary{% else %}hover:bg-secondary-light dark:hover:bg-secondary-dark text-text-light dark:text-text-dark{% endif %}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                    </svg>
+                    <p x-show="sidebarOpen" x-transition class="text-sm font-medium leading-normal">Comunicação Geral</p>
+                </a>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Área de Conteúdo Principal -->
+    <main class="flex-1 overflow-x-hidden">
+        <div class="p-6 md:p-10">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </main>
+</div>
+{% endblock %}

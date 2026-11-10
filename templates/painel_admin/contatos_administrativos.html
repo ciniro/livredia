@@ -1,0 +1,114 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Contatos Administrativos - Painel Admin{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col h-full">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-border-light dark:border-border-dark">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-bold leading-tight text-text-light dark:text-text-dark font-display">
+                Contatos Administrativos
+            </h1>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Gerenciar e-mails que recebem mensagens do formulário de contato
+            </p>
+        </div>
+
+        <a href="{% url 'painel_admin:novo_contato' %}"
+           class="flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Novo Contato
+        </a>
+    </div>
+
+    <!-- Listagem -->
+    <div class="flex-1 overflow-auto px-6 py-6">
+        {% if contatos %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for contato in contatos %}
+            <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-5 hover:shadow-md transition-shadow">
+                <!-- Status e Nome -->
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-text-light dark:text-text-dark mb-1">
+                            {{ contato.nome }}
+                        </h3>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark break-all">
+                            {{ contato.email }}
+                        </p>
+                    </div>
+
+                    {% if contato.ativo %}
+                    <span class="ml-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold rounded">
+                        ATIVO
+                    </span>
+                    {% else %}
+                    <span class="ml-2 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-bold rounded">
+                        INATIVO
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Data de Cadastro -->
+                <div class="flex items-center gap-2 mb-4 text-xs text-placeholder-light dark:text-placeholder-dark">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                    </svg>
+                    <span>Cadastrado em: {{ contato.data_criacao|date:"d/m/Y H:i" }}</span>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="flex gap-2">
+                    <a href="{% url 'painel_admin:editar_contato' contato.pk %}"
+                       class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                        </svg>
+                        Editar
+                    </a>
+
+                    <form method="post" action="{% url 'painel_admin:excluir_contato' contato.pk %}"
+                          onsubmit="return confirm('Tem certeza que deseja excluir o contato {{ contato.nome }}?');"
+                          class="flex-1">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="w-full flex items-center justify-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            </svg>
+                            Excluir
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- Estado vazio -->
+        <div class="flex flex-col items-center justify-center py-16 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-20 h-20 text-placeholder-light dark:text-placeholder-dark mb-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+            </svg>
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">
+                Nenhum contato cadastrado
+            </h3>
+            <p class="text-placeholder-light dark:text-placeholder-dark mb-6 max-w-md">
+                Cadastre e-mails que receberão mensagens do formulário de contato público do site.
+            </p>
+            <a href="{% url 'painel_admin:novo_contato' %}"
+               class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Cadastrar Primeiro Contato
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

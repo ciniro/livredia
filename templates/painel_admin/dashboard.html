@@ -1,0 +1,130 @@
+{% extends 'base_admin.html' %}
+
+{% block title %}Painel Admin - LIVRE DIA{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col w-full">
+    <!-- Mensagem de Boas-Vindas -->
+    <div class="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-4">
+        <!-- Foto do Administrador -->
+        <div class="flex-shrink-0">
+            <img src="{{ user.get_avatar_url }}" alt="Foto de {{ admin_nome }}" class="w-20 h-20 rounded-full object-cover border-2 border-primary">
+        </div>
+
+        <!-- Textos de Boas-Vindas -->
+        <div class="flex-1">
+            <h1 class="font-display text-2xl font-bold text-primary mb-1">
+                Bem-vindo, {{ admin_nome }}! É muito bom ter você conosco!
+            </h1>
+            <p class="text-sm text-text-light dark:text-text-dark">
+                Obrigado por participar do LIVRE DIA desde <strong>{{ data_cadastro }}</strong>.
+            </p>
+        </div>
+    </div>
+
+    <!-- Estatísticas Globais da Plataforma -->
+    <div class="mb-6 p-6 bg-secondary-light/30 dark:bg-secondary-dark/30 border border-border-light dark:border-border-dark rounded-lg">
+        <h2 class="font-display text-xl font-bold text-text-light dark:text-text-dark mb-4">📊 Estatísticas Gerais da Plataforma</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div class="flex flex-col">
+                <span class="text-placeholder-light dark:text-placeholder-dark mb-1">👁️ Visualizações Totais</span>
+                <span class="font-display text-2xl font-bold text-primary">{{ total_visualizacoes_plataforma }}</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-placeholder-light dark:text-placeholder-dark mb-1">📊 Média de Visualizações por Texto</span>
+                <span class="font-display text-2xl font-bold text-primary">{{ media_visualizacoes_plataforma }}</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-placeholder-light dark:text-placeholder-dark mb-1">⏱️ Tempo Total de Leitura</span>
+                <span class="font-display text-2xl font-bold text-primary">{{ tempo_total_leitura_plataforma }}</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-placeholder-light dark:text-placeholder-dark mb-1">⏱️ Tempo Médio de Leitura por Texto</span>
+                <span class="font-display text-2xl font-bold text-primary">{{ tempo_medio_leitura_plataforma }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de Métricas -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card: Total de Autores (clicável) -->
+        <a href="{% url 'painel_admin:gestao_autores' %}" class="flex flex-col gap-3 rounded-xl p-6 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark shadow-sm hover:shadow-md transition-all hover:border-primary/50 cursor-pointer">
+            <p class="text-base font-medium leading-normal text-text-light dark:text-text-dark">Total de Autores</p>
+            <p class="font-display tracking-tight text-3xl font-bold text-primary">{{ total_autores }}</p>
+            <div class="border-t border-border-light dark:border-border-dark pt-3 space-y-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">
+                <p>✓ <span class="font-semibold">{{ autores_ativos }}</span> ativos (ativaram a conta)</p>
+                <p>⏳ <span class="font-semibold">{{ autores_pendentes }}</span> pendentes (aguardando ativação)</p>
+                <p>✓ <span class="font-semibold">{{ autores_nao_suspensos }}</span> não suspensos (visíveis na plataforma)</p>
+                <p>🚫 <span class="font-semibold">{{ autores_suspensos }}</span> suspensos (ocultos da plataforma)</p>
+            </div>
+        </a>
+
+        <!-- Card: Total de Leitores (clicável) -->
+        <a href="{% url 'painel_admin:gestao_leitores' %}" class="flex flex-col gap-3 rounded-xl p-6 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark shadow-sm hover:shadow-md transition-all hover:border-primary/50 cursor-pointer">
+            <p class="text-base font-medium leading-normal text-text-light dark:text-text-dark">Total de Leitores</p>
+            <p class="font-display tracking-tight text-3xl font-bold text-primary">{{ total_leitores }}</p>
+            <div class="border-t border-border-light dark:border-border-dark pt-3 space-y-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">
+                <p>📧 <span class="font-semibold">{{ leitores_verificados }}</span> verificados (email confirmado)</p>
+                <p>⏳ <span class="font-semibold">{{ leitores_nao_verificados }}</span> não verificados (email pendente)</p>
+                <p>✓ <span class="font-semibold">{{ leitores_nao_suspensos }}</span> não suspensos (acesso normal)</p>
+                <p>🚫 <span class="font-semibold">{{ leitores_suspensos }}</span> suspensos (sem acesso)</p>
+            </div>
+        </a>
+
+        <!-- Card: Textos Publicados (clicável) -->
+        <a href="{% url 'painel_admin:gestao_obras' %}" class="flex flex-col gap-3 rounded-xl p-6 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark shadow-sm hover:shadow-md transition-all hover:border-primary/50 cursor-pointer">
+            <p class="text-base font-medium leading-normal text-text-light dark:text-text-dark">Total de Textos</p>
+            <p class="font-display tracking-tight text-3xl font-bold text-primary">{{ textos_publicados }}</p>
+            <div class="border-t border-border-light dark:border-border-dark pt-3 space-y-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">
+                <p>📖 <span class="font-semibold">{{ textos_publicados }}</span> publicados (status publicado)</p>
+                <p>✓ <span class="font-semibold">{{ textos_ativos }}</span> ativos (visíveis na plataforma)</p>
+                <p>📝 <span class="font-semibold">{{ textos_rascunho }}</span> rascunhos (não publicados ainda)</p>
+                <p>🚫 <span class="font-semibold">{{ textos_suspensos }}</span> suspensos (ocultos da plataforma)</p>
+            </div>
+        </a>
+
+        <!-- Card: Total de Comentários (clicável) -->
+        <a href="{% url 'painel_admin:moderacao_global' %}" class="flex flex-col gap-3 rounded-xl p-6 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark shadow-sm hover:shadow-md transition-all hover:border-primary/50 cursor-pointer">
+            <div class="flex items-center justify-between">
+                <p class="text-base font-medium leading-normal text-text-light dark:text-text-dark">Total de Comentários</p>
+                {% if comentarios_pendentes > 0 %}
+                    <!-- Indicador de Ping Animado -->
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-primary/80"></span>
+                    </span>
+                {% endif %}
+            </div>
+            <p class="font-display tracking-tight text-3xl font-bold text-primary">{{ total_comentarios }}</p>
+            <div class="border-t border-border-light dark:border-border-dark pt-3 space-y-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">
+                <p>⏳ <span class="font-semibold {% if comentarios_pendentes > 0 %}text-primary{% endif %}">{{ comentarios_pendentes }}</span> pendentes (aguardando moderação)</p>
+                <p>✓ <span class="font-semibold">{{ comentarios_aprovados }}</span> aprovados (visíveis na plataforma)</p>
+                <p>🚫 <span class="font-semibold">{{ comentarios_rejeitados }}</span> rejeitados (não aparecem)</p>
+                <p>👤 <span class="font-semibold">{{ comentarios_anonimos }}</span> anônimos (comentador oculto)</p>
+            </div>
+        </a>
+    </div>
+
+    <!-- Informações Adicionais (opcional) -->
+    {% if comentarios_pendentes > 0 %}
+    <div class="mt-8 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+        <div class="flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-primary flex-shrink-0 mt-0.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            <div>
+                <h3 class="text-base font-bold text-primary mb-1">Ação Opcional</h3>
+                <p class="text-sm text-text-light dark:text-text-dark">
+                    Existem <strong>{{ comentarios_pendentes }}</strong> comentário{{ comentarios_pendentes|pluralize }} pendente{{ comentarios_pendentes|pluralize }}.
+                    Enquanto os autores não fazem a moderação, se desejar, você mesmo pode avaliar e moderar.
+                    Entenda que essa ação tira do autor a decisão de moderar um comentário que ele recebeu no próprio texto.
+                    Haja com sabedoria.
+                    <br><br>
+                    <a href="{% url 'painel_admin:moderacao_global' %}" class="underline font-bold hover:text-primary">Acessar Moderação de Comentários →</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

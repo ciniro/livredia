@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ pagina.titulo }} - LIVRE DIA{% endblock %}
+
+{% block content %}
+<main class="flex flex-1 justify-center py-10 sm:py-16 px-4">
+  <div class="layout-content-container flex flex-col max-w-[750px] flex-1">
+    <div class="flex flex-col gap-8">
+      <!-- Título da Página -->
+      <div class="flex flex-wrap justify-between gap-3 p-4">
+        <h1 class="text-text-light dark:text-text-dark text-4xl sm:text-5xl md:text-6xl font-display font-bold leading-tight tracking-[-0.033em] text-center w-full">
+          {{ pagina.titulo }}
+        </h1>
+      </div>
+
+      <!-- Conteúdo da Página -->
+      <article class="conteudo-pagina text-text-light dark:text-text-dark leading-relaxed px-4">
+        {{ pagina.conteudo|safe }}
+      </article>
+    </div>
+  </div>
+</main>
+
+<!-- CSS para renderização fiel do conteúdo do Quill -->
+<style>
+/* Estilos base para o conteúdo */
+.conteudo-pagina {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Listas ordenadas e não-ordenadas */
+.conteudo-pagina ol,
+.conteudo-pagina ul {
+    padding-left: 1.5em;
+    margin: 1em 0;
+}
+
+.conteudo-pagina ol li,
+.conteudo-pagina ul li {
+    list-style-position: outside;
+    margin: 0.5em 0;
+}
+
+.conteudo-pagina ol {
+    list-style-type: decimal;
+}
+
+.conteudo-pagina ul {
+    list-style-type: disc;
+}
+
+/* Listas aninhadas */
+.conteudo-pagina ol ol {
+    list-style-type: lower-alpha;
+}
+
+.conteudo-pagina ol ol ol {
+    list-style-type: lower-roman;
+}
+
+.conteudo-pagina ul ul {
+    list-style-type: circle;
+}
+
+.conteudo-pagina ul ul ul {
+    list-style-type: square;
+}
+
+/* Links */
+.conteudo-pagina a {
+    color: #e69019;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.conteudo-pagina a:hover {
+    color: #c57a15;
+}
+
+/* Cabeçalhos */
+.conteudo-pagina h1 {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 0.67em 0;
+    line-height: 1.2;
+}
+
+.conteudo-pagina h2 {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 0.75em 0;
+    line-height: 1.3;
+}
+
+.conteudo-pagina h3 {
+    font-size: 1.17em;
+    font-weight: bold;
+    margin: 0.83em 0;
+    line-height: 1.4;
+}
+
+.conteudo-pagina h4 {
+    font-size: 1em;
+    font-weight: bold;
+    margin: 1em 0;
+    line-height: 1.5;
+}
+
+.conteudo-pagina h5 {
+    font-size: 0.83em;
+    font-weight: bold;
+    margin: 1.17em 0;
+}
+
+.conteudo-pagina h6 {
+    font-size: 0.67em;
+    font-weight: bold;
+    margin: 1.33em 0;
+}
+
+/* Blockquotes - Light mode */
+.conteudo-pagina blockquote {
+    border-left: 4px solid #3A4D39;
+    padding-left: 1em;
+    margin: 1em 0;
+    font-style: italic;
+    color: #4F4A45;
+}
+
+/* Blockquotes - Dark mode */
+.dark .conteudo-pagina blockquote {
+    border-left-color: #6b8f6a;
+    color: #a18a6c;
+}
+
+/* Code blocks - Light mode */
+.conteudo-pagina pre {
+    background-color: #f4f4f4;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1em 0;
+    font-family: monospace;
+    color: #1A1A1A;
+}
+
+.conteudo-pagina code {
+    background-color: #f4f4f4;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #1A1A1A;
+}
+
+/* Code blocks - Dark mode */
+.dark .conteudo-pagina pre {
+    background-color: #32291e;
+    color: #f3eee7;
+}
+
+.dark .conteudo-pagina code {
+    background-color: #32291e;
+    color: #f3eee7;
+}
+
+.conteudo-pagina pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+/* Parágrafos */
+.conteudo-pagina p {
+    margin: 1em 0;
+}
+
+/* Strong e enfatizados */
+.conteudo-pagina strong {
+    font-weight: bold;
+}
+
+.conteudo-pagina em {
+    font-style: italic;
+}
+
+.conteudo-pagina u {
+    text-decoration: underline;
+}
+
+.conteudo-pagina s {
+    text-decoration: line-through;
+}
+
+/* Indentação (classes geradas pelo Quill) */
+.conteudo-pagina .ql-indent-1 { padding-left: 3em; }
+.conteudo-pagina .ql-indent-2 { padding-left: 6em; }
+.conteudo-pagina .ql-indent-3 { padding-left: 9em; }
+.conteudo-pagina .ql-indent-4 { padding-left: 12em; }
+.conteudo-pagina .ql-indent-5 { padding-left: 15em; }
+.conteudo-pagina .ql-indent-6 { padding-left: 18em; }
+.conteudo-pagina .ql-indent-7 { padding-left: 21em; }
+.conteudo-pagina .ql-indent-8 { padding-left: 24em; }
+
+/* Alinhamento (classes geradas pelo Quill) */
+.conteudo-pagina .ql-align-center {
+    text-align: center;
+}
+
+.conteudo-pagina .ql-align-right {
+    text-align: right;
+}
+
+.conteudo-pagina .ql-align-justify {
+    text-align: justify;
+}
+
+/* Direção de texto */
+.conteudo-pagina .ql-direction-rtl {
+    direction: rtl;
+    text-align: inherit;
+}
+
+/* Imagens */
+.conteudo-pagina img {
+    max-width: 100%;
+    height: auto;
+    margin: 1em 0;
+}
+
+/* Vídeos */
+.conteudo-pagina iframe {
+    max-width: 100%;
+    margin: 1em 0;
+}
+
+/* Tamanhos de fonte (classes geradas pelo Quill) */
+.conteudo-pagina .ql-size-small {
+    font-size: 0.75em;
+}
+
+.conteudo-pagina .ql-size-large {
+    font-size: 1.5em;
+}
+
+.conteudo-pagina .ql-size-huge {
+    font-size: 2.5em;
+}
+
+/* Subscript e Superscript */
+.conteudo-pagina sub {
+    vertical-align: sub;
+    font-size: smaller;
+}
+
+.conteudo-pagina sup {
+    vertical-align: super;
+    font-size: smaller;
+}
+</style>
+{% endblock %}

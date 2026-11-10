@@ -1,0 +1,23 @@
+{% extends 'base_autor.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Moderação de Comentários - Área {% if user.sexo == 'M' %}do Autor{% elif user.sexo == 'F' %}da Autora{% elif user.sexo == 'O' %}de Autore{% else %}de Escrita{% endif %} - LIVRE DIA{% endblock %}
+
+{% block autor_content %}
+<div class="space-y-8">
+    <!-- Cabeçalho -->
+    <div class="flex flex-wrap justify-between items-center gap-4">
+        <div>
+            <h1 class="text-text-light dark:text-text-dark text-4xl sm:text-5xl font-black leading-tight tracking-[-0.033em] font-display">
+                Moderação de Comentários
+            </h1>
+            <p class="text-placeholder-light dark:text-placeholder-dark text-sm mt-2">
+                Gestão de comentários nos seus textos
+            </p>
+        </div>
+    </div>
+
+    {% include 'painel_autor/partials/_tabs_container.html' %}
+</div>
+{% endblock %}

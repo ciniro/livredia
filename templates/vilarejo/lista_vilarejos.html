@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vilarejos Literários - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Background da página de vilarejos - cobre toda a área entre header e footer */
+    main {
+        background-image: url('{% static "img/banner_vilarejo_m.png" %}');
+        background-size: cover;
+        background-position: center top;
+        background-repeat: no-repeat;
+        position: relative;
+    }
+    main::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: rgba(255, 255, 255, 0.7);
+    }
+    .dark main::before {
+        background-color: rgba(33, 26, 17, 0.8);
+    }
+    main > * {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <!-- Container principal -->
+    <div class="px-4 py-8 sm:px-6 lg:px-8">
+            <!-- Cabeçalho -->
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center gap-3 mb-4">
+                    <img src="{% static 'img/village.png' %}" alt="Vilarejo" class="w-12 h-12 sm:w-16 sm:h-16">
+                    <h1 class="text-3xl sm:text-4xl font-bold text-stone-800 dark:text-stone-100">
+                        Vilarejos Literários
+                    </h1>
+                </div>
+
+                <!-- Texto explicativo -->
+                <div class="max-w-5xl mx-auto space-y-4 text-justify bg-white/90 dark:bg-stone-900 backdrop-blur-sm rounded-xl p-5 shadow-md border border-stone-200 dark:border-stone-700">
+                    <p class="text-stone-700 dark:text-stone-200">
+                        <strong class="text-emerald-700 dark:text-emerald-400">Vilarejos Literários</strong> são espaços de conversa entre leitores com gostos semelhantes. Cada pessoa no Livre Dia tem seu próprio vilarejo, onde é o <strong>anfitrião</strong>.
+                    </p>
+                    <p class="text-stone-700 dark:text-stone-200">
+                        Seus <strong class="text-emerald-700 dark:text-emerald-400">vizinhos</strong> são outros leitores com preferências literárias parecidas com as suas. O percentual de <strong>similaridade</strong> indica o quanto seus gostos se alinham - quanto maior, mais livros e gêneros vocês têm em comum!
+                    </p>
+                    <p class="text-stone-700 dark:text-stone-200">
+                        Comece explorando <strong>seu próprio vilarejo</strong> para conhecer seus vizinhos e trocar ideias. Depois, visite os vilarejos deles para ampliar suas conexões literárias.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Grid de cards -->
+            <div class="max-w-6xl mx-auto">
+                {% if vilarejos %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for item in vilarejos %}
+                    <div class="bg-white dark:bg-stone-800 rounded-xl shadow-lg dark:shadow-stone-950/50 overflow-hidden border border-stone-200 dark:border-stone-700/50 hover:shadow-xl transition-shadow">
+                        <!-- Cabeçalho do card -->
+                        <div class="p-4 border-b border-stone-100 dark:border-stone-700/50">
+                            <h2 class="text-xl font-bold text-stone-800 dark:text-stone-100 mb-2">
+                                {{ item.vilarejo.nome }}
+                            </h2>
+                            <!-- Badge de tipo de acesso -->
+                            {% if item.tipo_acesso == 'dono' %}
+                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                Seu vilarejo
+                            </span>
+                            {% elif item.tipo_acesso == 'morador_permanente' %}
+                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                Morador permanente
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 rounded-full text-xs font-medium">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/>
+                                </svg>
+                                Vizinho
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Informações do anfitrião -->
+                        <div class="p-4">
+                            <div class="flex items-center gap-3 mb-4">
+                                <!-- Foto do anfitrião -->
+                                <a href="{% url 'perfil_publico' item.anfitriao.username %}" class="flex-shrink-0">
+                                    {% if item.anfitriao.foto %}
+                                    <img src="{{ item.anfitriao.foto.url }}" alt="{{ item.anfitriao.username }}" class="w-14 h-14 rounded-full object-cover border-2 border-emerald-200 dark:border-emerald-600/50">
+                                    {% else %}
+                                    <div class="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center border-2 border-emerald-200 dark:border-emerald-700/50">
+                                        <span class="text-emerald-600 dark:text-emerald-400 font-bold text-lg">{{ item.anfitriao.username|slice:":1"|upper }}</span>
+                                    </div>
+                                    {% endif %}
+                                </a>
+
+                                <!-- Nome do anfitrião -->
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm text-stone-500 dark:text-stone-400">Anfitrião</p>
+                                    <a href="{% url 'perfil_publico' item.anfitriao.username %}" class="font-medium text-stone-800 dark:text-stone-200 hover:text-emerald-600 dark:hover:text-emerald-400 truncate block">
+                                        {{ item.anfitriao.get_display_name }}
+                                    </a>
+                                    <p class="text-xs text-stone-400 dark:text-stone-500">@{{ item.anfitriao.username }}</p>
+                                </div>
+
+                                <!-- Percentual de afinidade (apenas para outros usuários) -->
+                                {% if item.tipo_acesso != 'dono' %}
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="text-2xl font-bold {% if item.similaridade >= 70 %}text-emerald-600 dark:text-emerald-400{% elif item.similaridade >= 40 %}text-amber-600 dark:text-amber-400{% else %}text-stone-500 dark:text-stone-400{% endif %}">
+                                        {{ item.similaridade }}%
+                                    </span>
+                                    <span class="text-xs text-stone-400 dark:text-stone-500">similaridade</span>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Botao de acesso -->
+                            <a href="{% url 'vilarejo:vilarejo_detalhe' item.vilarejo.id %}"
+                               class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-colors shadow-md">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                                </svg>
+                                {% if item.tipo_acesso == 'dono' %}Ir para o meu vilarejo{% else %}Ir para o vilarejo{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <!-- Estado vazio -->
+                <div class="bg-white dark:bg-stone-800 rounded-xl shadow-lg p-8 text-center max-w-md mx-auto">
+                    <img src="{% static 'img/village.png' %}" alt="Vilarejo" class="w-20 h-20 mx-auto mb-4 opacity-50">
+                    <h2 class="text-xl font-bold text-stone-800 dark:text-stone-100 mb-2">Nenhum vilarejo encontrado</h2>
+                    <p class="text-stone-600 dark:text-stone-400 mb-4">
+                        Parece que você ainda não tem acesso a nenhum vilarejo. Complete seu perfil para encontrar vizinhos literários!
+                    </p>
+                    <a href="{% url 'vilarejo:meu_vilarejo' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-colors">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Criar meu vilarejo
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+    </div>
+</div>
+{% endblock %}

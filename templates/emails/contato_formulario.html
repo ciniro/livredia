@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Mensagem de Contato - LIVRE DIA</title>
+    <style>
+        /* Reset básico */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #4F4A45;
+            line-height: 1.6;
+        }
+
+        /* Container principal */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #FDFBF6;
+            border: 1px solid #e0ddd5;
+        }
+
+        /* Cabeçalho */
+        .header {
+            background-color: #e69019;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            margin: 8px 0 0;
+            color: #ffffff;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        /* Conteúdo */
+        .content {
+            padding: 40px 30px;
+        }
+
+        .intro {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0ddd5;
+        }
+
+        .intro p {
+            margin: 0;
+            font-size: 15px;
+            color: #4F4A45;
+        }
+
+        /* Campos de dados */
+        .field {
+            margin-bottom: 25px;
+        }
+
+        .field-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #3A4D39;
+        }
+
+        .field-value {
+            display: block;
+            padding: 12px 15px;
+            background-color: #ffffff;
+            border-left: 3px solid #e69019;
+            font-size: 15px;
+            color: #4F4A45;
+            word-wrap: break-word;
+        }
+
+        .field-value.message {
+            padding: 15px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+
+        /* Rodapé */
+        .footer {
+            background-color: #3A4D39;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 13px;
+            color: #ffffff;
+            opacity: 0.9;
+        }
+
+        .footer a {
+            color: #e69019;
+            text-decoration: none;
+        }
+
+        /* Responsividade */
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .footer {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1>📬 LIVRE DIA</h1>
+            <p>Nova mensagem recebida via formulário de contato</p>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="content">
+            <div class="intro">
+                <p>Você recebeu uma nova mensagem de contato através do site LIVRE DIA. Confira os detalhes abaixo:</p>
+            </div>
+
+            <!-- Nome do Remetente -->
+            <div class="field">
+                <span class="field-label">Nome do Remetente</span>
+                <span class="field-value">{{ nome }}</span>
+            </div>
+
+            <!-- E-mail do Remetente -->
+            <div class="field">
+                <span class="field-label">E-mail do Remetente</span>
+                <span class="field-value">{{ email }}</span>
+            </div>
+
+            <!-- Assunto -->
+            <div class="field">
+                <span class="field-label">Assunto</span>
+                <span class="field-value">{{ assunto }}</span>
+            </div>
+
+            <!-- Mensagem -->
+            <div class="field">
+                <span class="field-label">Mensagem</span>
+                <span class="field-value message">{{ mensagem }}</span>
+            </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="footer">
+            <p>
+                Este e-mail foi enviado por um usuário do <strong>LIVRE DIA</strong> através do Fale Conosco.<br>
+                Para responder use o e-mail informado pelo usuário.<br>
+                <a href="https://livredia.com.br">livredia.com.br</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

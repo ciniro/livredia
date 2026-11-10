@@ -1,0 +1,499 @@
+{% extends 'base_autor.html' %}
+{% load static %}
+
+{% block title %}Monetização - Área {% if user.sexo == 'M' %}do Autor{% elif user.sexo == 'F' %}da Autora{% elif user.sexo == 'O' %}de Autore{% else %}de Escrita{% endif %} - LIVRE DIA{% endblock %}
+
+{% block autor_content %}
+<div class="flex flex-col w-full max-w-4xl">
+    <!-- Título e Descrição -->
+    <h1 class="font-display text-3xl font-bold tracking-tight text-text-light dark:text-text-dark pb-2">
+        Monetização via PIX
+    </h1>
+    <p class="text-sm text-placeholder-light dark:text-placeholder-dark pb-6">
+        Receba doações voluntárias dos seus leitores. A plataforma Livre Dia não fica com nenhum centavo do valor doado.
+    </p>
+
+    <!-- Alerta de Sucesso/Status -->
+    {% if tem_chave_cadastrada %}
+    <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
+        <div class="flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            <div>
+                <h3 class="font-bold text-green-800 dark:text-green-300 mb-1">Chave PIX Ativa</h3>
+                <p class="text-sm text-green-700 dark:text-green-400">
+                    Você tem uma chave {{ tipo_chave_atual }} cadastrada: <span class="font-mono font-semibold">{{ chave_atual }}</span>
+                </p>
+                <p class="text-xs text-green-600 dark:text-green-500 mt-2">
+                    Seus leitores podem fazer doações voluntárias ao ler seus textos.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Seção Educacional (só se não tem chave cadastrada) -->
+    {% if not tem_chave_cadastrada %}
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
+        <h2 class="font-display text-xl font-bold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+            </svg>
+            Como Funciona?
+        </h2>
+        <div class="space-y-3 text-sm text-blue-800 dark:text-blue-300">
+            <p>
+                <strong>PIX</strong> é o sistema de pagamentos instantâneos do Banco Central do Brasil.
+                Ao cadastrar sua chave PIX, seus leitores poderão fazer doações voluntárias diretamente para você,
+                de qualquer valor (ou valor fixo, se preferir).
+            </p>
+            <p>
+                <strong>100% do valor doado vai para você.</strong> A plataforma Livre Dia não cobra nenhuma taxa
+                ou comissão. O dinheiro vai direto da conta do leitor para a sua conta.
+            </p>
+        </div>
+    </div>
+
+    <!-- Informação Legal: Lei 12.772/2012 -->
+    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 mb-6">
+        <h2 class="font-display text-xl font-bold text-yellow-900 dark:text-yellow-200 mb-3 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            Professores Federais em Dedicação Exclusiva
+        </h2>
+        <div class="space-y-3 text-sm text-yellow-800 dark:text-yellow-300">
+            <p>
+                De acordo com a <strong>Lei nº 12.772/2012, Artigo 21, Inciso VI</strong>, professores federais em regime de
+                dedicação exclusiva <strong>podem receber remuneração</strong> pela produção intelectual, artística e
+                cultural (livros, textos, artigos, etc.), desde que não configure conflito de interesse.
+            </p>
+            <p class="text-xs">
+                Fonte: <a href="https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12772.htm" target="_blank" rel="noopener" class="underline hover:text-yellow-600">
+                    Lei 12.772/2012 - Planalto
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Alerta de Privacidade -->
+    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 mb-6">
+        <h2 class="font-display text-xl font-bold text-red-900 dark:text-red-200 mb-3 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            Atenção: Coleta de Dados Pessoais
+        </h2>
+        <div class="space-y-2 text-sm text-red-800 dark:text-red-300">
+            <p class="font-semibold">
+                É necessário coletar alguns dados pessoais e sensíveis para gerar o QR Code PIX e código copia e cola.
+            </p>
+            <p>
+                <strong>A plataforma Livre Dia NUNCA usará esses dados para nenhum outro propósito.</strong>
+                Eles servirão apenas para gerar o QR Code e código copia e cola que serão exibidos aos leitores.
+            </p>
+            <p class="mt-3 font-semibold">Dependendo do tipo de chave escolhida, você precisará fornecer:</p>
+            <ul class="list-disc list-inside space-y-1 ml-2">
+                <li><strong>CPF:</strong> Seu número de CPF (dado sensível)</li>
+                <li><strong>CNPJ:</strong> Seu número de CNPJ (dado empresarial)</li>
+                <li><strong>E-mail:</strong> Seu endereço de e-mail</li>
+                <li><strong>Telefone:</strong> Seu número de telefone</li>
+                <li><strong>Chave Aleatória (EVP):</strong> Não requer dados pessoais identificáveis (mais segura)</li>
+            </ul>
+            <p class="font-semibold mt-3">
+                <strong>O que será exibido publicamente:</strong> Apenas o QR Code e o código copia e cola.
+                Os dados sensíveis (CPF, telefone, etc.) não serão exibidos diretamente na página.
+            </p>
+            <p class="font-semibold mt-3">
+                Recomendamos usar <span class="text-red-600 dark:text-red-400">Chave Aleatória (EVP)</span>
+                se você se preocupa com privacidade.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Formulário -->
+    <form method="post" class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-6" x-data="{
+        mostrarValor: {% if monetizacao and monetizacao.pix_valor_padrao_informado %}true{% else %}false{% endif %},
+        tipoChave: '{{ monetizacao.tipo_chave_pix|default:"CPF" }}',
+
+        // Retorna o placeholder apropriado para cada tipo de chave
+        getPlaceholder() {
+            const placeholders = {
+                'CPF': '12345678901',
+                'CNPJ': '12345678000190',
+                'EMAIL': 'seuemail@exemplo.com',
+                'TELEFONE': 'DDD + Número (ex: 61912345678)',
+                'ALEATORIA': '123e4567-e89b-12d3-a456-426614174000'
+            };
+            return placeholders[this.tipoChave] || 'Digite sua chave PIX';
+        },
+
+        // Função para validar e filtrar input baseado no tipo de chave
+        validarChavePix(event) {
+            let value = event.target.value;
+            const tipo = this.tipoChave;
+
+            // CPF, CNPJ, TELEFONE: apenas números
+            if (tipo === 'CPF' || tipo === 'CNPJ' || tipo === 'TELEFONE') {
+                value = value.replace(/\D/g, ''); // Remove tudo que não é número
+
+                // Limites de caracteres
+                if (tipo === 'CPF' && value.length > 11) value = value.substring(0, 11);
+                if (tipo === 'CNPJ' && value.length > 14) value = value.substring(0, 14);
+                if (tipo === 'TELEFONE' && value.length > 11) value = value.substring(0, 11);
+            }
+            // EMAIL e ALEATORIA: alfanumérico + caracteres especiais permitidos
+            else if (tipo === 'EMAIL' || tipo === 'ALEATORIA') {
+                // Permite letras, números, @, ., -, _
+                value = value.replace(/[^a-zA-Z0-9@.\-_]/g, '');
+            }
+
+            event.target.value = value;
+        }
+    }">
+        {% csrf_token %}
+
+        <h2 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6">
+            {% if tem_chave_cadastrada %}Atualizar Chave PIX{% else %}Cadastrar Chave PIX{% endif %}
+        </h2>
+
+        <!-- Tipo de Chave PIX -->
+        <div class="mb-6">
+            <label for="{{ form.tipo_chave_pix.id_for_label }}" class="block text-sm font-semibold text-text-light dark:text-text-dark mb-2">
+                {{ form.tipo_chave_pix.label }}
+            </label>
+            {{ form.tipo_chave_pix }}
+            {% if form.tipo_chave_pix.help_text %}
+            <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">{{ form.tipo_chave_pix.help_text }}</p>
+            {% endif %}
+            {% if form.tipo_chave_pix.errors %}
+            <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.tipo_chave_pix.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Chave PIX -->
+        <div class="mb-6">
+            <label for="{{ form.chave_pix.id_for_label }}" class="block text-sm font-semibold text-text-light dark:text-text-dark mb-2">
+                {{ form.chave_pix.label }}
+            </label>
+            {{ form.chave_pix }}
+
+            <!-- Mensagens dinâmicas baseadas no tipo de chave -->
+            <div class="mt-2 text-xs text-placeholder-light dark:text-placeholder-dark">
+                <!-- CPF -->
+                <p x-show="tipoChave === 'CPF'" x-transition>
+                    💡 Digite apenas os <strong>11 números</strong> do CPF (sem pontos ou traços). Exemplo: <span class="font-mono">12345678901</span>
+                </p>
+
+                <!-- CNPJ -->
+                <p x-show="tipoChave === 'CNPJ'" x-transition>
+                    💡 Digite apenas os <strong>14 números</strong> do CNPJ (sem pontos, traços ou barra). Exemplo: <span class="font-mono">12345678000190</span>
+                </p>
+
+                <!-- EMAIL -->
+                <p x-show="tipoChave === 'EMAIL'" x-transition>
+                    💡 Digite o <strong>endereço de e-mail completo</strong> cadastrado como chave PIX. Exemplo: <span class="font-mono">seuemail@exemplo.com</span>
+                </p>
+
+                <!-- TELEFONE -->
+                <p x-show="tipoChave === 'TELEFONE'" x-transition>
+                    💡 Digite apenas os <strong>números do telefone</strong> (DDD + número). Exemplo: <span class="font-mono">61912345678</span>
+                </p>
+
+                <!-- ALEATORIA (EVP) -->
+                <p x-show="tipoChave === 'ALEATORIA'" x-transition>
+                    💡 Digite a <strong>chave aleatória (EVP)</strong> gerada pelo seu banco. É uma sequência de letras, números e traços. Exemplo: <span class="font-mono">123e4567-e89b-12d3-a456-426614174000</span>
+                </p>
+            </div>
+
+            {% if form.chave_pix.errors %}
+            <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.chave_pix.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Nome Completo -->
+        <div class="mb-6">
+            <label for="{{ form.pix_nome_completo.id_for_label }}" class="block text-sm font-semibold text-text-light dark:text-text-dark mb-2">
+                {{ form.pix_nome_completo.label }}
+            </label>
+            {{ form.pix_nome_completo }}
+            {% if form.pix_nome_completo.help_text %}
+            <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">{{ form.pix_nome_completo.help_text }}</p>
+            {% endif %}
+            {% if form.pix_nome_completo.errors %}
+            <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.pix_nome_completo.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Nome do Banco (Autocomplete) -->
+        <div class="mb-6"
+            x-data="{
+                bancos: [],
+                buscaBanco: '{{ form.pix_nome_banco.value|default:'' }}',
+                codigoBanco: '{{ form.pix_codigo_banco.value|default:'' }}',
+                nomeBanco: '{{ form.pix_nome_banco.value|default:'' }}',
+                showDropdown: false,
+                bancoSelecionado: false,
+
+                async carregarBancos() {
+                    try {
+                        const response = await fetch('{% static 'json/bancos.json' %}');
+                        this.bancos = await response.json();
+                    } catch (error) {
+                        console.error('Erro ao carregar bancos:', error);
+                    }
+                },
+
+                get bancosFiltrados() {
+                    if (!this.buscaBanco || this.buscaBanco.length < 1) {
+                        return [];
+                    }
+
+                    const termo = this.buscaBanco.toLowerCase();
+
+                    return this.bancos
+                        .filter(banco => {
+                            // Buscar por código COMPE ou nome
+                            return banco.COMPE.includes(termo) ||
+                                   banco.ShortName.toLowerCase().includes(termo) ||
+                                   banco.LongName.toLowerCase().includes(termo);
+                        })
+                        .slice(0, 10); // Limitar a 10 resultados
+                },
+
+                selecionarBanco(banco) {
+                    this.codigoBanco = banco.COMPE;
+                    this.nomeBanco = banco.ShortName;
+                    this.buscaBanco = banco.ShortName;
+                    this.showDropdown = false;
+                    this.bancoSelecionado = true;
+
+                    // Atualizar campos do formulário
+                    document.getElementById('pix_codigo_banco').value = banco.COMPE;
+                    document.getElementById('pix_nome_banco').value = banco.ShortName;
+                },
+
+                limparSelecao() {
+                    this.codigoBanco = '';
+                    this.nomeBanco = '';
+                    this.buscaBanco = '';
+                    this.bancoSelecionado = false;
+                    document.getElementById('pix_codigo_banco').value = '';
+                    document.getElementById('pix_nome_banco').value = '';
+                }
+            }"
+            x-init="
+                carregarBancos();
+                // Se já existem valores (edição), marcar como selecionado
+                if (nomeBanco && nomeBanco.length > 0) {
+                    bancoSelecionado = true;
+                }
+            "
+            @click.outside="showDropdown = false"
+        >
+            <label for="{{ form.pix_nome_banco.id_for_label }}" class="block text-sm font-semibold text-text-light dark:text-text-dark mb-2">
+                {{ form.pix_nome_banco.label }}
+            </label>
+
+            <!-- Campo de busca -->
+            <div class="relative">
+                <input
+                    type="text"
+                    x-model="buscaBanco"
+                    @input="showDropdown = true; bancoSelecionado = false"
+                    @focus="showDropdown = true"
+                    class="form-input w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 p-3"
+                    placeholder="Digite o código ou nome do banco..."
+                    autocomplete="off"
+                >
+
+                <!-- Dropdown de resultados -->
+                <div
+                    x-show="showDropdown && bancosFiltrados.length > 0"
+                    x-transition
+                    class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-border-light dark:border-border-dark rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                >
+                    <template x-for="banco in bancosFiltrados" :key="banco.COMPE">
+                        <button
+                            type="button"
+                            @click="selecionarBanco(banco)"
+                            class="w-full text-left px-4 py-3 hover:bg-primary/10 transition-colors border-b border-border-light dark:border-border-dark last:border-b-0"
+                        >
+                            <span class="font-mono font-bold text-primary" x-text="banco.COMPE"></span>
+                            <span class="text-text-light dark:text-text-dark"> - </span>
+                            <span class="text-text-light dark:text-text-dark" x-text="banco.ShortName"></span>
+                        </button>
+                    </template>
+                </div>
+
+                <!-- Mensagem se não encontrar resultados -->
+                <div
+                    x-show="showDropdown && buscaBanco.length > 0 && bancosFiltrados.length === 0"
+                    x-transition
+                    class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-border-light dark:border-border-dark rounded-lg shadow-lg p-4"
+                >
+                    <p class="text-sm text-placeholder-light dark:text-placeholder-dark italic">
+                        Nenhum banco encontrado. Tente buscar pelo código COMPE ou nome.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Campos hidden do formulário Django -->
+            {{ form.pix_codigo_banco }}
+            <input type="hidden" id="pix_nome_banco" name="pix_nome_banco" x-model="nomeBanco">
+
+            <!-- Exibição do banco selecionado -->
+            <div
+                x-show="bancoSelecionado"
+                x-transition
+                class="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
+            >
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-green-800 dark:text-green-200 mb-1">
+                            Banco selecionado:
+                        </p>
+                        <p class="text-xs text-green-700 dark:text-green-300">
+                            <span class="font-bold">CÓDIGO:</span> <span x-text="codigoBanco"></span>
+                        </p>
+                        <p class="text-xs text-green-700 dark:text-green-300">
+                            <span class="font-bold">BANCO:</span> <span x-text="nomeBanco"></span>
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="limparSelecao()"
+                        class="ml-3 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium"
+                    >
+                        Alterar
+                    </button>
+                </div>
+            </div>
+
+            {% if form.pix_nome_banco.help_text %}
+            <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">{{ form.pix_nome_banco.help_text }}</p>
+            {% endif %}
+            {% if form.pix_nome_banco.errors %}
+            <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.pix_nome_banco.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Valor Sugerido (Opcional) - Controlado por campo do modelo -->
+        <div class="mb-6">
+            <!-- Checkbox para mostrar campo de valor (campo do formulário) -->
+            <label class="flex items-center gap-2 cursor-pointer mb-3">
+                <input
+                    type="checkbox"
+                    name="pix_valor_padrao_informado"
+                    id="id_pix_valor_padrao_informado"
+                    class="form-checkbox h-5 w-5 rounded border-border-light dark:border-border-dark text-primary focus:ring-primary bg-transparent"
+                    {% if monetizacao and monetizacao.pix_valor_padrao_informado %}checked{% endif %}
+                    @change="mostrarValor = $event.target.checked"
+                >
+                <span class="text-sm font-semibold text-text-light dark:text-text-dark">
+                    Definir valor sugerido de doação
+                </span>
+            </label>
+
+            <!-- Mensagem de ajuda fixa -->
+            <p class="text-xs text-placeholder-light dark:text-placeholder-dark mb-3">
+                Se você não definir um valor sugerido, o leitor verá apenas a opção para doar qualquer quantia. Caso um valor seja definido, ele será apresentado como sugestão de doação mínima. Em ambos os casos, o leitor sempre decide quanto deseja doar.
+            </p>
+
+            <!-- Campo de valor (só aparece se checkbox marcada) -->
+            <div x-show="mostrarValor" x-transition>
+                <label for="{{ form.pix_valor_padrao.id_for_label }}" class="block text-sm font-semibold text-text-light dark:text-text-dark mb-2">
+                    {{ form.pix_valor_padrao.label }}
+                </label>
+                {{ form.pix_valor_padrao }}
+                {% if form.pix_valor_padrao.errors %}
+                <p class="text-xs text-red-600 dark:text-red-400 mt-2">{{ form.pix_valor_padrao.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="my-6 border-border-light dark:border-border-dark">
+
+        <!-- Checkboxes de Aceite (só aparecem se ainda não foram aceitos) -->
+        {% if not monetizacao or not monetizacao.pix_aceite_termos or not monetizacao.pix_aceite_responsabilidade %}
+        <div class="mb-6">
+            <h3 class="font-display text-lg font-bold text-text-light dark:text-text-dark mb-4">
+                Termos e Responsabilidade
+            </h3>
+
+            <!-- Checkbox 1: Aceite dos Termos (só aparece se ainda não foi aceito) -->
+            {% if not monetizacao or not monetizacao.pix_aceite_termos %}
+            <label class="flex items-start gap-3 cursor-pointer p-3 hover:bg-background-light/50 dark:hover:bg-background-dark/50 rounded-lg transition mb-3">
+                {{ form.aceite_termos }}
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-text-light dark:text-text-dark">
+                        Li e aceito os <a href="{% url 'core:pagina_termos' %}" target="_blank" rel="noopener" class="text-primary underline hover:text-primary/80">termos de uso e responsabilidade</a>
+                    </p>
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                        Declaro que li e compreendi todas as informações educacionais acima sobre PIX,
+                        coleta de dados pessoais e legislação aplicável.
+                    </p>
+                </div>
+            </label>
+            {% if form.aceite_termos.errors %}
+            <p class="text-xs text-red-600 dark:text-red-400 mb-3">{{ form.aceite_termos.errors.0 }}</p>
+            {% endif %}
+            {% endif %}
+
+            <!-- Checkbox 2: Declaro que a chave é minha (só aparece se ainda não foi declarado) -->
+            {% if not monetizacao or not monetizacao.pix_aceite_responsabilidade %}
+            <label class="flex items-start gap-3 cursor-pointer p-3 hover:bg-background-light/50 dark:hover:bg-background-dark/50 rounded-lg transition">
+                {{ form.aceite_responsabilidade }}
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-text-light dark:text-text-dark">
+                        {{ form.aceite_responsabilidade.label }}
+                    </p>
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                        Confirmo que esta chave PIX é de minha titularidade e autorizo a plataforma Livre Dia
+                        a exibi-la publicamente para que leitores possam fazer doações voluntárias.
+                    </p>
+                </div>
+            </label>
+            {% if form.aceite_responsabilidade.errors %}
+            <p class="text-xs text-red-600 dark:text-red-400 mt-3">{{ form.aceite_responsabilidade.errors.0 }}</p>
+            {% endif %}
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- Mensagem informando que os termos já foram aceitos -->
+        <div class="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <p class="text-sm text-green-800 dark:text-green-300">
+                ✓ Você já aceitou os termos de uso e declarou que a chave PIX é sua. Não é necessário marcar novamente ao editar.
+            </p>
+        </div>
+        {% endif %}
+
+        <hr class="my-6 border-border-light dark:border-border-dark">
+
+        <!-- Botões -->
+        <div class="flex flex-col sm:flex-row justify-end gap-3">
+            {% if tem_chave_cadastrada %}
+            <!-- Botão Remover Chave (se já cadastrada) -->
+            <button
+                type="submit"
+                name="remover_chave"
+                value="true"
+                class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition order-2 sm:order-1"
+            >
+                Remover Chave PIX
+            </button>
+            {% endif %}
+
+            <!-- Botão Salvar/Atualizar -->
+            <button
+                type="submit"
+                class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 font-bold transition order-1 sm:order-2"
+            >
+                {% if tem_chave_cadastrada %}Atualizar Chave PIX{% else %}Cadastrar Chave PIX{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,1200 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ perfil_usuario.get_display_name }} (@{{ perfil_usuario.username}}) - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Previne flash de conteúdo não estilizado (FOUC) com Alpine.js */
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Alpine.js data para gerenciar estado do botão seguir (Item 3.2 do ROADMAP) -->
+<div x-data="{
+          seguindoAutor: {{ seguindo_autor|lower }},
+          usuarioLogado: {{ user.is_authenticated|lower }},
+          modalLoginNecessario: false,
+          async toggleSeguirAutor() {
+              if (!this.usuarioLogado) {
+                  this.modalLoginNecessario = true;
+                  return;
+              }
+              try {
+                  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                  const response = await fetch('/texto/autor/{{ perfil_usuario.pk }}/toggle-seguir/', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRFToken': csrftoken
+                      }
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                      this.seguindoAutor = data.seguindo;
+                  } else if (data.requires_login) {
+                      this.modalLoginNecessario = true;
+                  } else {
+                      alert(data.message || 'Erro ao seguir autor');
+                  }
+              } catch (error) {
+                  console.error('Erro:', error);
+                  alert('Ocorreu um erro. Tente novamente.');
+              }
+          }
+      }" class="w-full -mt-10 sm:-mt-20">
+    {% csrf_token %}
+
+    {% if perfil_privado %}
+    <!-- Perfil Privado -->
+    <div class="layout-content-container flex flex-col max-w-4xl w-full px-4 py-8 mt-10 sm:mt-20 mx-auto">
+        <!-- Mensagem de Perfil Privado -->
+        <div class="flex flex-col items-center gap-6 py-16">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-24 h-24 text-text-light/30 dark:text-text-dark/30">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+            <div class="text-center">
+                <h1 class="text-3xl font-bold font-display text-text-light dark:text-text-dark mb-2">Perfil Privado</h1>
+                <p class="text-base text-text-light/70 dark:text-text-dark/70">Este perfil está configurado como privado.</p>
+            </div>
+            <a href="{% url 'core:home' %}" class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                </svg>
+                Voltar para Home
+            </a>
+        </div>
+    {% else %}
+        <!-- Perfil Público do Autor -->
+        <!-- Item 1.1 do ROADMAP: Banner/Capa Personalizado -->
+        <!-- Banner com Capa (Full Width) -->
+        <div class="relative w-screen h-[32rem] overflow-hidden" style="margin-left: calc(-50vw + 50%);">
+                <!-- Imagem de Capa -->
+                {% if capa_escolhida %}
+                <div class="absolute inset-0 w-full h-full bg-cover"
+                     style="background-image: url('{% load static %}{% static capa_escolhida.caminho_imagem %}'); background-position: center {{ alinhamento_vertical_capa }}; aspect-ratio: 21/9;">
+                </div>
+                {% else %}
+                <!-- Fallback se não tiver capa -->
+                <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-primary/40"></div>
+                {% endif %}
+
+                <!-- Botão "Alterar capa" (só aparece se for o próprio usuário) -->
+                {% if user.is_authenticated and user == perfil_usuario %}
+                <div class="absolute top-4 right-4 z-20">
+                    <a href="{% url 'usuarios:configuracoes' %}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-gray-800/90 text-text-light dark:text-text-dark rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg text-sm font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                        </svg>
+                        Alterar capa
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- Conteúdo sobreposto no banner -->
+                <div class="absolute inset-0 flex flex-col items-center justify-end pb-8 z-10">
+                    <!-- Foto de Perfil -->
+                    <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white mb-4 shadow-lg">
+                        {% if perfil_usuario.foto %}
+                            <img src="{{ perfil_usuario.foto.url }}" alt="Foto de {{ perfil_usuario.get_display_name }}" class="w-full h-full object-cover">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center bg-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-white">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Painel de Informações com Fundo Transparente -->
+                    <div class="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-5 shadow-xl max-w-[90%] sm:max-w-md">
+                        <!-- Nome e Username -->
+                        <h1 class="text-2xl font-black font-display text-black mb-1 text-center">
+                            {{ perfil_usuario.get_full_name }}
+                        </h1>
+                        {% if perfil_usuario.pseudonimo %}
+                        <p class="text-lg text-black font-bold italic mb-2 text-center">
+                            "{{ perfil_usuario.pseudonimo }}"
+                        </p>
+                        {% endif %}
+
+                        <!-- E-mail (se habilitado pelo usuário) -->
+                        {% if exibir_email_perfil and perfil_usuario.email %}
+                        <a href="mailto:{{ perfil_usuario.email }}" class="flex items-center justify-center gap-1.5 text-sm text-black/80 hover:text-primary transition-colors mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                            </svg>
+                            {{ perfil_usuario.email }}
+                        </a>
+                        {% endif %}
+
+                        <!-- Badge de Role e Username -->
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            {% if perfil_usuario.role == 'AUTOR' or perfil_usuario.role == 'AUTOR_ADMIN' %}
+                                {% if perfil_usuario.is_classico %}
+                                    <!-- Badge Autor/Autora/Autore Clássico/Clássica/Clássique -->
+                                    <span class="bg-[#4F4A45] text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-md flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                                        </svg>
+                                        {% if perfil_usuario.sexo == 'M' %}
+                                            Autor Clássico
+                                        {% elif perfil_usuario.sexo == 'F' %}
+                                            Autora Clássica
+                                        {% elif perfil_usuario.sexo == 'O' %}
+                                            Autore Clássique
+                                        {% else %}
+                                            Textos Clássicos
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <!-- Badge Autor/Autora/Autore Contemporâneo/Contemporânea/Contemporâne -->
+                                    <span class="bg-[#3A4D39] text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-md flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                                        </svg>
+                                        {% if perfil_usuario.sexo == 'M' %}
+                                            Autor Contemporâneo
+                                        {% elif perfil_usuario.sexo == 'F' %}
+                                            Autora Contemporânea
+                                        {% elif perfil_usuario.sexo == 'O' %}
+                                            Autore Contemporâne
+                                        {% else %}
+                                            Textos Contemporâneos
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <!-- Badge padrão para outros roles -->
+                                <span class="{{ role_badge_class }} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-md">
+                                    {{ role_display }}
+                                </span>
+                            {% endif %}
+                            <p class="text-sm text-black font-bold">
+                                @{{ perfil_usuario.username }}
+                            </p>
+                        </div>
+
+                        <!-- Tempo de Cadastro -->
+                        <p class="text-xs text-black font-semibold text-center">
+                            Conosco na plataforma desde {{ membro_desde }}
+                        </p>
+
+                        <!-- Botões de Ação (Item 3.2 do ROADMAP) -->
+                        <!-- Só aparecem se o usuário logado NÃO for o próprio autor -->
+                        {% if user != perfil_usuario %}
+                        <div class="mt-4 flex justify-center gap-2">
+                            <!-- Botão Seguir/Seguindo -->
+                            <button @click="toggleSeguirAutor"
+                                    :class="seguindoAutor
+                                        ? 'px-4 py-2 text-sm font-semibold text-white bg-primary hover:bg-orange-600 rounded-lg transition-colors flex items-center gap-2 shadow-lg'
+                                        : 'px-4 py-2 text-sm font-semibold text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors flex items-center gap-2 shadow-lg'">
+                                <!-- Ícone Link -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                                </svg>
+                                <span x-text="seguindoAutor ? 'Seguindo' : 'Seguir'"></span>
+                            </button>
+
+                            <!-- Botão Ver Leitor - Só aparece para autores contemporâneos (não clássicos) -->
+                            {% if not perfil_usuario.is_classico %}
+                            <a href="{% url 'perfil_leitor_autor' username=perfil_usuario.username %}"
+                               class="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-2 shadow-lg">
+                                <!-- Ícone Livro Aberto (leitura) -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                                </svg>
+                                <span>Ver como {% if perfil_usuario.sexo == 'M' %}Leitor{% elif perfil_usuario.sexo == 'F' %}Leitora{% elif perfil_usuario.sexo == 'O' %}Leiture{% else %}Leitor{% endif %}</span>
+                            </a>
+                            {% endif %}
+
+                            <!-- Botão Apoie (Item 1 do ROADMAP) - Só aparece se autor tiver PIX -->
+                            {% if qrcode_base64 %}
+                            <a href="#secao-apoie"
+                               class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2 shadow-lg"
+                               onclick="event.preventDefault(); document.getElementById('secao-apoie').scrollIntoView({ behavior: 'smooth', block: 'center' });">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                                </svg>
+                                <span>Apoie</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+        </div>
+
+        <!-- Conteúdo do Perfil -->
+        <div class="layout-content-container flex flex-col max-w-6xl w-full px-4 py-8 mx-auto">
+                <div class="flex flex-col gap-8">
+
+                    <!-- SEÇÃO a) Visibilidade do Autor - Mostradores de Métricas -->
+                    <div class="w-full">
+                        <h2 class="text-2xl font-bold font-display text-text-light dark:text-text-dark mb-6">
+                            Visibilidade {% if perfil_usuario.sexo == 'M' %}do Autor{% elif perfil_usuario.sexo == 'F' %}da Autora{% elif perfil_usuario.sexo == 'O' %}de Autore{% else %}do Autor{% endif %}
+                        </h2>
+
+                        <!-- Grid de 3 Mostradores -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Mostrador 1: Tempo Total de Leitura -->
+                            <div class="bg-gradient-to-br from-primary/10 to-primary/20 border-2 border-primary/30 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+                                <div class="flex flex-col items-center gap-3">
+                                    <!-- Ícone -->
+                                    <div class="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-primary">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                        </svg>
+                                    </div>
+
+                                    <!-- Valor -->
+                                    <div class="text-center">
+                                        <p class="text-4xl font-black font-display text-primary">
+                                            {{ tempo_total_leitura_horas }}h {{ tempo_total_leitura_minutos }}min
+                                        </p>
+                                        <p class="text-xs text-text-light/60 dark:text-text-dark/60 mt-1">
+                                            ({{ tempo_total_leitura_segundos|default:0 }} segundos)
+                                        </p>
+                                    </div>
+
+                                    <!-- Label -->
+                                    <p class="text-sm font-semibold text-text-light dark:text-text-dark text-center">
+                                        Tempo Total de Leitura
+                                    </p>
+                                    <p class="text-xs text-text-light/70 dark:text-text-dark/70 text-center">
+                                        Tempo que leitores passaram lendo os textos {% if perfil_usuario.sexo == 'M' %}deste autor{% elif perfil_usuario.sexo == 'F' %}desta autora{% elif perfil_usuario.sexo == 'O' %}deste autore{% else %}deste autor{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Mostrador 2: Visualizações Totais -->
+                            <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/30 border-2 border-green-300 dark:border-green-700 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+                                <div class="flex flex-col items-center gap-3">
+                                    <!-- Ícone -->
+                                    <div class="w-16 h-16 bg-green-200/50 dark:bg-green-800/30 rounded-full flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-green-700 dark:text-green-400">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                    </div>
+
+                                    <!-- Valor -->
+                                    <div class="text-center">
+                                        <p class="text-4xl font-black font-display text-green-700 dark:text-green-400">
+                                            {{ total_visualizacoes|default:0 }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Label -->
+                                    <p class="text-sm font-semibold text-text-light dark:text-text-dark text-center">
+                                        Visualizações Totais
+                                    </p>
+                                    <p class="text-xs text-text-light/70 dark:text-text-dark/70 text-center">
+                                        Total de visualizações nos textos {% if perfil_usuario.sexo == 'M' %}deste autor{% elif perfil_usuario.sexo == 'F' %}desta autora{% elif perfil_usuario.sexo == 'O' %}deste autore{% else %}deste autor{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Mostrador 3: Comentários Totais -->
+                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/30 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+                                <div class="flex flex-col items-center gap-3">
+                                    <!-- Ícone -->
+                                    <div class="w-16 h-16 bg-blue-200/50 dark:bg-blue-800/30 rounded-full flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 text-blue-700 dark:text-blue-400">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                                        </svg>
+                                    </div>
+
+                                    <!-- Valor -->
+                                    <div class="text-center">
+                                        <p class="text-4xl font-black font-display text-blue-700 dark:text-blue-400">
+                                            {{ total_comentarios|default:0 }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Label -->
+                                    <p class="text-sm font-semibold text-text-light dark:text-text-dark text-center">
+                                        Comentários Totais
+                                    </p>
+                                    <p class="text-xs text-text-light/70 dark:text-text-dark/70 text-center">
+                                        Total de comentários aprovados nos textos {% if perfil_usuario.sexo == 'M' %}deste autor{% elif perfil_usuario.sexo == 'F' %}desta autora{% elif perfil_usuario.sexo == 'O' %}deste autore{% else %}deste autor{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO b) Acervo dos Meus Textos -->
+                    <div class="w-full">
+                        <h2 class="text-2xl font-bold font-display text-text-light dark:text-text-dark mb-6">
+                            Acervo dos Textos {% if perfil_usuario.sexo == 'M' %}deste Autor{% elif perfil_usuario.sexo == 'F' %}desta Autora{% elif perfil_usuario.sexo == 'O' %}deste Autore{% else %}deste Autor{% endif %}
+                        </h2>
+
+                        <!-- Filtros e Ordenação -->
+                        <form method="get"
+                              hx-get="/@{{ perfil_usuario.username }}/"
+                              hx-target="#lista-textos-container"
+                              hx-include="this"
+                              hx-indicator="#loading-textos"
+                              class="mb-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md border border-gray-200 dark:border-gray-700">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Busca por Título -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-text-light dark:text-text-dark mb-2">
+                                        Buscar por Título
+                                    </label>
+                                    <input type="text" name="busca" value="{{ busca }}" placeholder="Digite o título..."
+                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-text-light dark:text-text-dark">
+                                </div>
+
+                                <!-- Ordenação -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-text-light dark:text-text-dark mb-2">
+                                        Ordenar por
+                                    </label>
+                                    <select name="ordenacao"
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-text-light dark:text-text-dark">
+                                        <option value="recentes" {% if ordenacao == 'recentes' %}selected{% endif %}>Mais Recentes</option>
+                                        <option value="antigos" {% if ordenacao == 'antigos' %}selected{% endif %}>Mais Antigos</option>
+                                        <option value="mais_vistos" {% if ordenacao == 'mais_vistos' %}selected{% endif %}>Mais Visualizados</option>
+                                        <option value="maior_tempo_leitura" {% if ordenacao == 'maior_tempo_leitura' %}selected{% endif %}>Maior Tempo de Leitura</option>
+                                    </select>
+                                </div>
+
+                                <!-- Botão Filtrar -->
+                                <div class="flex items-end">
+                                    <button type="submit"
+                                            class="w-full px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                                        </svg>
+                                        Filtrar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Loading Indicator -->
+                        <div id="loading-textos" class="htmx-indicator text-center py-4">
+                            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+
+                        <!-- Container da Lista de Textos -->
+                        <div id="lista-textos-container">
+                            {% include 'usuarios/partials/perfil_autor_lista_textos.html' %}
+                        </div><!-- Fim do container -->
+                    </div>
+
+                    <!-- SEÇÃO c) Listas dos 6 Mais do Autor -->
+                    <div class="w-full">
+                        <h2 class="text-2xl font-bold font-display text-text-light dark:text-text-dark mb-6">
+                            Listas dos 6 Mais {% if perfil_usuario.sexo == 'M' %}do Autor{% elif perfil_usuario.sexo == 'F' %}da Autora{% elif perfil_usuario.sexo == 'O' %}de Autore{% else %}do Autor{% endif %}
+                        </h2>
+
+                        <!-- Grid de 6 Listas -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Lista 1: Mais Tempo de Leitura -->
+                            <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/30 rounded-lg p-4 border-2 border-purple-300 dark:border-purple-700">
+                                <h3 class="text-lg font-bold text-purple-800 dark:text-purple-300 mb-3 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+                                    Mais Tempo de Leitura
+                                </h3>
+                                {% if top_tempo_leitura %}
+                                <div class="space-y-2">
+                                    {% for texto in top_tempo_leitura %}
+                                    <a href="{% url 'textos:leitura_texto' texto.pk %}" class="block p-2 bg-white/50 dark:bg-gray-800/50 rounded hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                                        <p class="text-sm font-semibold text-text-light dark:text-text-dark line-clamp-2">{{ texto.titulo }}</p>
+                                        <p class="text-xs text-purple-700 dark:text-purple-400 mt-1">{{ texto.tempo_horas }}h {{ texto.tempo_minutos_resto }}min</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Lista 2: Mais Visualizados -->
+                            <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/30 rounded-lg p-4 border-2 border-green-300 dark:border-green-700">
+                                <h3 class="text-lg font-bold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                    </svg>
+                                    Mais Visualizados
+                                </h3>
+                                {% if top_visualizacoes %}
+                                <div class="space-y-2">
+                                    {% for texto in top_visualizacoes %}
+                                    <a href="{% url 'textos:leitura_texto' texto.pk %}" class="block p-2 bg-white/50 dark:bg-gray-800/50 rounded hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                                        <p class="text-sm font-semibold text-text-light dark:text-text-dark line-clamp-2">{{ texto.titulo }}</p>
+                                        <p class="text-xs text-green-700 dark:text-green-400 mt-1">{{ texto.total_views }} visualizações</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Lista 3: Mais Assinaturas nos Cartões -->
+                            <div class="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/30 rounded-lg p-4 border-2 border-amber-300 dark:border-amber-700">
+                                <h3 class="text-lg font-bold text-amber-800 dark:text-amber-300 mb-3 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6A2.25 2.25 0 0 1 6 3.75h1.5m9 0h-9" />
+                                    </svg>
+                                    Mais Assinaturas
+                                </h3>
+                                {% if top_cartoes %}
+                                <div class="space-y-2">
+                                    {% for texto in top_cartoes %}
+                                    <a href="{% url 'textos:leitura_texto' texto.pk %}" class="block p-2 bg-white/50 dark:bg-gray-800/50 rounded hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                                        <p class="text-sm font-semibold text-text-light dark:text-text-dark line-clamp-2">{{ texto.titulo }}</p>
+                                        <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">{{ texto.total_assinaturas }} assinaturas</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Lista 4: Mais Marcados como Melhores -->
+                            <div class="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/30 rounded-lg p-4 border-2 border-red-300 dark:border-red-700">
+                                <h3 class="text-lg font-bold text-red-800 dark:text-red-300 mb-3 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                                    </svg>
+                                    Marcados como Melhores
+                                </h3>
+                                {% if top_favoritos %}
+                                <div class="space-y-2">
+                                    {% for texto in top_favoritos %}
+                                    <a href="{% url 'textos:leitura_texto' texto.pk %}" class="block p-2 bg-white/50 dark:bg-gray-800/50 rounded hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                                        <p class="text-sm font-semibold text-text-light dark:text-text-dark line-clamp-2">{{ texto.titulo }}</p>
+                                        <p class="text-xs text-red-700 dark:text-red-400 mt-1">{{ texto.total_favoritos }} marcações</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Lista 5: Mais Marcados como Lidos -->
+                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/30 rounded-lg p-4 border-2 border-blue-300 dark:border-blue-700">
+                                <h3 class="text-lg font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                    </svg>
+                                    Marcados como Lidos
+                                </h3>
+                                {% if top_lidos %}
+                                <div class="space-y-2">
+                                    {% for texto in top_lidos %}
+                                    <a href="{% url 'textos:leitura_texto' texto.pk %}" class="block p-2 bg-white/50 dark:bg-gray-800/50 rounded hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                                        <p class="text-sm font-semibold text-text-light dark:text-text-dark line-clamp-2">{{ texto.titulo }}</p>
+                                        <p class="text-xs text-blue-700 dark:text-blue-400 mt-1">{{ texto.total_lidos }} marcações</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Lista 6: Mais Salvos para Ler Depois -->
+                            <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/30 rounded-lg p-4 border-2 border-indigo-300 dark:border-indigo-700">
+                                <h3 class="text-lg font-bold text-indigo-800 dark:text-indigo-300 mb-3 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+                                    </svg>
+                                    Salvos para Ler Depois
+                                </h3>
+                                {% if top_ler_depois %}
+                                <div class="space-y-2">
+                                    {% for texto in top_ler_depois %}
+                                    <a href="{% url 'textos:leitura_texto' texto.pk %}" class="block p-2 bg-white/50 dark:bg-gray-800/50 rounded hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                                        <p class="text-sm font-semibold text-text-light dark:text-text-dark line-clamp-2">{{ texto.titulo }}</p>
+                                        <p class="text-xs text-indigo-700 dark:text-indigo-400 mt-1">{{ texto.total_ler_depois }} marcações</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO d) Autores Amigos - Oculta para autores clássicos -->
+                    {% if not perfil_usuario.is_classico %}
+                    <div class="w-full">
+                        <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 text-primary">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                            </svg>
+                            Autores Amigos
+                        </h3>
+
+                        <!-- Grid de 2 colunas -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Autores que seguem este autor -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                                <h4 class="font-bold text-lg text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-blue-600 dark:text-blue-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                    </svg>
+                                    Autores Seguidores
+                                    <span class="ml-auto bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-sm">
+                                        {{ total_autores_que_seguem }}
+                                    </span>
+                                </h4>
+
+                                {% if autores_que_seguem %}
+                                <div class="space-y-3 max-h-96 overflow-y-auto">
+                                    {% for relacao in autores_que_seguem %}
+                                    <a href="/@{{ relacao.seguidor.username }}/" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <img src="{{ relacao.seguidor.get_avatar_url }}" alt="{{ relacao.seguidor.get_display_name }}" class="w-12 h-12 rounded-full object-cover border-2 border-primary">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-semibold text-text-light dark:text-text-dark truncate">{{ relacao.seguidor.get_display_name }}</p>
+                                            <p class="text-xs text-text-light/60 dark:text-text-dark/60">@{{ relacao.seguidor.username }}</p>
+                                        </div>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Autores que este autor segue -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                                <h4 class="font-bold text-lg text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-green-600 dark:text-green-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                    </svg>
+                                    Autores Seguidos
+                                    <span class="ml-auto bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-sm">
+                                        {{ total_autores_que_segue }}
+                                    </span>
+                                </h4>
+
+                                {% if autores_que_segue %}
+                                <div class="space-y-3 max-h-96 overflow-y-auto">
+                                    {% for relacao in autores_que_segue %}
+                                    <a href="/@{{ relacao.autor.username }}/" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <img src="{{ relacao.autor.get_avatar_url }}" alt="{{ relacao.autor.get_display_name }}" class="w-12 h-12 rounded-full object-cover border-2 border-primary">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-semibold text-text-light dark:text-text-dark truncate">{{ relacao.autor.get_display_name }}</p>
+                                            <p class="text-xs text-text-light/60 dark:text-text-dark/60">@{{ relacao.autor.username }}</p>
+                                        </div>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- SEÇÃO e) Meus Seguidores - Oculta para autores clássicos -->
+                    {% if not perfil_usuario.is_classico %}
+                    <div class="w-full">
+                        <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 text-primary">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                            </svg>
+                            Meus Seguidores
+                        </h3>
+
+                        <!-- Grid de 2 colunas -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Todos os seguidores -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                                <h4 class="font-bold text-lg text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-purple-600 dark:text-purple-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                                    </svg>
+                                    Seguidores
+                                    <span class="ml-auto bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded-full text-sm">
+                                        {{ total_leitores_seguidores }}
+                                    </span>
+                                </h4>
+
+                                {% if leitores_seguidores %}
+                                <div class="space-y-3 max-h-96 overflow-y-auto">
+                                    {% for relacao in leitores_seguidores %}
+                                    <a href="/@{{ relacao.seguidor.username }}/" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <img src="{{ relacao.seguidor.get_avatar_url }}" alt="{{ relacao.seguidor.get_display_name }}" class="w-12 h-12 rounded-full object-cover border-2 border-primary">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-semibold text-text-light dark:text-text-dark truncate">{{ relacao.seguidor.get_display_name }}</p>
+                                            <p class="text-xs text-text-light/60 dark:text-text-dark/60">@{{ relacao.seguidor.username }}</p>
+                                        </div>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Leitores especiais -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                                <h4 class="font-bold text-lg text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-yellow-600 dark:text-yellow-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                                    </svg>
+                                    Leitores Especiais
+                                    <span class="ml-auto bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-full text-sm">
+                                        {{ total_leitores_especiais }}
+                                    </span>
+                                </h4>
+
+                                {% if leitores_especiais %}
+                                <div class="space-y-3 max-h-96 overflow-y-auto">
+                                    {% for relacao in leitores_especiais %}
+                                    <a href="/@{{ relacao.seguidor.username }}/" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <img src="{{ relacao.seguidor.get_avatar_url }}" alt="{{ relacao.seguidor.get_display_name }}" class="w-12 h-12 rounded-full object-cover border-2 border-yellow-500">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-semibold text-text-light dark:text-text-dark truncate flex items-center gap-1">
+                                                {{ relacao.seguidor.get_display_name }}
+                                                <img src="{% static 'img/selo_ouro.png' %}" alt="Leitor Especial" class="w-4 h-4 object-contain">
+                                            </p>
+                                            <p class="text-xs text-text-light/60 dark:text-text-dark/60">@{{ relacao.seguidor.username }}</p>
+                                        </div>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- SEÇÃO f) Perfil de Leitores do Autor -->
+                    <div class="w-full">
+                        <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 text-primary">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+                            </svg>
+                            Perfil de Leitores {% if perfil_usuario.sexo == 'M' %}do Autor{% elif perfil_usuario.sexo == 'F' %}da Autora{% elif perfil_usuario.sexo == 'O' %}de Autore{% else %}do Autor{% endif %}
+                        </h3>
+
+                        <!-- Grid de 3 colunas (1 em mobile, 2 em tablet, 3 em desktop) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Localizações dos Leitores -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                                <h4 class="font-bold text-lg text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-blue-600 dark:text-blue-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                    </svg>
+                                    Localizações
+                                    <span class="ml-auto bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-sm">
+                                        {{ total_localizacoes }}
+                                    </span>
+                                </h4>
+
+                                {% if localizacoes_leitores %}
+                                <div class="space-y-2 max-h-96 overflow-y-auto">
+                                    {% for loc in localizacoes_leitores %}
+                                    <div class="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded">
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-text-light dark:text-text-dark truncate">{{ loc.cidade }}</p>
+                                            <p class="text-xs text-text-light/60 dark:text-text-dark/60">{{ loc.pais }}</p>
+                                        </div>
+                                        <span class="ml-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-bold">
+                                            {{ loc.total }}
+                                        </span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Gráfico de Distribuição por Idade -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700 flex flex-col justify-center min-h-[400px]">
+                                <h4 class="font-bold text-lg text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-green-600 dark:text-green-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                                    </svg>
+                                    Distribuição por Idade
+                                    <span class="ml-auto bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-sm">
+                                        {{ total_leitores_com_idade }}
+                                    </span>
+                                </h4>
+
+                                {% if total_leitores_com_idade > 0 %}
+                                <canvas id="graficoIdade" style="max-height: 300px;"></canvas>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Gráfico de Distribuição por Gênero -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700 flex flex-col justify-center min-h-[400px]">
+                                <h4 class="font-bold text-lg text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-purple-600 dark:text-purple-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+                                    </svg>
+                                    Distribuição por Gênero
+                                    <span class="ml-auto bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded-full text-sm">
+                                        {{ total_leitores_sexo_declarado }}
+                                    </span>
+                                </h4>
+
+                                {% if total_leitores_sexo_declarado > 0 %}
+                                <canvas id="graficoSexo" style="max-height: 300px;"></canvas>
+                                {% else %}
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">Nada nesta seção</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Script Chart.js para gráficos -->
+                    {% if total_leitores_com_idade > 0 or total_leitores_sexo_declarado > 0 %}
+                    <script src="{% static 'js/vendor/chart.umd.min.js' %}"></script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            {% if total_leitores_com_idade > 0 %}
+                            // Gráfico de Idade (Histograma/Barras)
+                            const ctxIdade = document.getElementById('graficoIdade');
+                            if (ctxIdade) {
+                                new Chart(ctxIdade, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: {{ faixas_etarias_labels|safe }},
+                                        datasets: [{
+                                            label: 'Leitores',
+                                            data: {{ faixas_etarias_values|safe }},
+                                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                                            borderColor: 'rgba(34, 197, 94, 1)',
+                                            borderWidth: 2
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                display: false
+                                            }
+                                        },
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true,
+                                                ticks: {
+                                                    stepSize: 1
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                            {% endif %}
+
+                            {% if total_leitores_sexo_declarado > 0 %}
+                            // Gráfico de Sexo (Pizza)
+                            const ctxSexo = document.getElementById('graficoSexo');
+                            if (ctxSexo) {
+                                new Chart(ctxSexo, {
+                                    type: 'pie',
+                                    data: {
+                                        labels: {{ sexo_labels|safe }},
+                                        datasets: [{
+                                            data: {{ sexo_values|safe }},
+                                            backgroundColor: [
+                                                'rgba(236, 72, 153, 0.8)',
+                                                'rgba(59, 130, 246, 0.8)',
+                                                'rgba(168, 85, 247, 0.8)'
+                                            ],
+                                            borderColor: [
+                                                'rgba(236, 72, 153, 1)',
+                                                'rgba(59, 130, 246, 1)',
+                                                'rgba(168, 85, 247, 1)'
+                                            ],
+                                            borderWidth: 2
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                position: 'bottom'
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                            {% endif %}
+                        });
+                    </script>
+                    {% endif %}
+
+                    <!-- SEÇÃO g) Imersão em leitura -->
+                    <div class="w-full">
+                        <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                            <!-- Ícone: clock (Heroicons) -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-purple-600 dark:text-purple-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <span>Imersão em leitura</span>
+                        </h3>
+
+                        {% if total_visualizacoes_com_tempo > 0 %}
+                        <!-- Card de Tempo de Leitura Recebida por Este Autor ao Longo do Tempo -->
+                        <div x-data="{ periodo: 'diario' }" class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+                            <!-- Cabeçalho com Toggle -->
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                                <div class="flex items-center gap-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-purple-600 dark:text-purple-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0 1 16.5 7.605" />
+                                    </svg>
+                                    <h4 class="font-semibold text-lg text-text-light dark:text-text-dark">
+                                        Tempo de Leitura Recebida {% if perfil_usuario.sexo == 'M' %}por Este Autor{% elif perfil_usuario.sexo == 'F' %}por Esta Autora{% elif perfil_usuario.sexo == 'O' %}por Este Autore{% else %}por Este Autor{% endif %} ao Longo do Tempo
+                                    </h4>
+                                </div>
+
+                                <!-- Toggle Diário/Mensal -->
+                                <div class="flex gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                    <button
+                                        @click="periodo = 'diario'"
+                                        :class="periodo === 'diario' ? 'bg-purple-600 text-white' : 'bg-transparent text-gray-600 dark:text-gray-300'"
+                                        class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200"
+                                    >
+                                        Diário
+                                    </button>
+                                    <button
+                                        @click="periodo = 'mensal'"
+                                        :class="periodo === 'mensal' ? 'bg-purple-600 text-white' : 'bg-transparent text-gray-600 dark:text-gray-300'"
+                                        class="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200"
+                                    >
+                                        Mensal
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Informações -->
+                            <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                                <span x-show="periodo === 'diario'">
+                                    Tempo total de leitura <strong>(minutos)</strong> nos <strong>últimos 30 dias com atividade</strong>
+                                </span>
+                                <span x-show="periodo === 'mensal'">
+                                    Tempo total de leitura <strong>(horas)</strong> nos <strong>últimos 12 meses com atividade</strong>
+                                </span>
+                            </div>
+
+                            <!-- Canvas para o Gráfico -->
+                            <div class="relative" style="height: 320px;">
+                                <canvas id="graficoTempo" x-show="periodo === 'diario' || periodo === 'mensal'"></canvas>
+                            </div>
+                        </div>
+                        {% else %}
+                        <!-- Estado Vazio -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <p class="text-gray-500 dark:text-gray-400">Nada nesta seção</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Script Chart.js para SEÇÃO g) -->
+                    {% if total_visualizacoes_com_tempo > 0 %}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const ctx = document.getElementById('graficoTempo');
+                            if (!ctx) return;
+
+                            // Dados do backend
+                            const dadosDiario = {
+                                labels: {{ tempo_diario_labels|safe }},
+                                values: {{ tempo_diario_values|safe }}
+                            };
+
+                            const dadosMensal = {
+                                labels: {{ tempo_mensal_labels|safe }},
+                                values: {{ tempo_mensal_values|safe }}
+                            };
+
+                            let graficoAtual = null;
+
+                            // Função para criar/atualizar o gráfico
+                            function atualizarGrafico(periodo) {
+                                const dados = periodo === 'diario' ? dadosDiario : dadosMensal;
+                                const unidade = periodo === 'diario' ? 'minutos' : 'horas';
+                                const cor = periodo === 'diario' ? 'rgba(147, 51, 234, 0.7)' : 'rgba(126, 34, 206, 0.7)';
+                                const corBorda = periodo === 'diario' ? 'rgba(147, 51, 234, 1)' : 'rgba(126, 34, 206, 1)';
+
+                                // Destruir gráfico anterior se existir
+                                if (graficoAtual) {
+                                    graficoAtual.destroy();
+                                }
+
+                                // Criar novo gráfico
+                                graficoAtual = new Chart(ctx, {
+                                    type: 'line',
+                                    data: {
+                                        labels: dados.labels,
+                                        datasets: [{
+                                            label: 'Tempo de leitura (' + unidade + ')',
+                                            data: dados.values,
+                                            backgroundColor: cor,
+                                            borderColor: corBorda,
+                                            borderWidth: 3,
+                                            fill: true,
+                                            tension: 0.4,
+                                            pointRadius: 4,
+                                            pointHoverRadius: 6,
+                                            pointBackgroundColor: corBorda,
+                                            pointBorderColor: '#fff',
+                                            pointBorderWidth: 2
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                display: false
+                                            },
+                                            tooltip: {
+                                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                                padding: 12,
+                                                titleFont: { size: 14, weight: 'bold' },
+                                                bodyFont: { size: 13 },
+                                                callbacks: {
+                                                    label: function(context) {
+                                                        return ' ' + context.parsed.y.toFixed(1) + ' ' + unidade;
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true,
+                                                ticks: {
+                                                    callback: function(value) {
+                                                        return value.toFixed(0);
+                                                    }
+                                                },
+                                                title: {
+                                                    display: true,
+                                                    text: 'Tempo (' + unidade + ')',
+                                                    font: { size: 12, weight: 'bold' }
+                                                }
+                                            },
+                                            x: {
+                                                ticks: {
+                                                    maxRotation: 45,
+                                                    minRotation: 45
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
+                            // Inicializar com período diário
+                            atualizarGrafico('diario');
+
+                            // Listener para mudança de período (Alpine.js)
+                            document.addEventListener('alpine:initialized', () => {
+                                // Observar mudanças no Alpine.js data
+                                const interval = setInterval(() => {
+                                    const periodoAtual = document.querySelector('[x-data]')?.__x?.$data?.periodo;
+                                    if (periodoAtual && graficoAtual) {
+                                        const tipoDados = periodoAtual === 'diario' ? dadosDiario : dadosMensal;
+                                        // Verificar se precisa atualizar
+                                        if (JSON.stringify(graficoAtual.data.labels) !== JSON.stringify(tipoDados.labels)) {
+                                            atualizarGrafico(periodoAtual);
+                                        }
+                                    }
+                                }, 100);
+                            });
+
+                            // Fallback: escutar cliques nos botões
+                            document.querySelectorAll('button[\\@click*="periodo"]').forEach(btn => {
+                                btn.addEventListener('click', function() {
+                                    setTimeout(() => {
+                                        const periodo = this.textContent.trim() === 'Diário' ? 'diario' : 'mensal';
+                                        atualizarGrafico(periodo);
+                                    }, 50);
+                                });
+                            });
+                        });
+                    </script>
+                    {% endif %}
+
+                    <!-- Seção: Doação PIX (Item 1 do ROADMAP) -->
+                    {% if qrcode_base64 %}
+                    {% load static %}
+                    {% with texto=perfil_usuario monetizacao=perfil_usuario.monetizacao_pix %}
+                    <div class="w-full">
+                        <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                            <!-- Ícone: gift (Heroicons) -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-green-600 dark:text-green-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                            </svg>
+                            <span>Apoie {% if perfil_usuario.sexo == 'M' %}este autor{% elif perfil_usuario.sexo == 'F' %}esta autora{% elif perfil_usuario.sexo == 'O' %}este autore{% else %}este autor{% endif %}</span>
+                        </h3>
+
+                        <div id="secao-apoie">
+                        <div class="bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 shadow-sm">
+                            <!-- Cabeçalho com mensagem intimista -->
+                            <div class="mb-4">
+                                <div class="flex items-start gap-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-1">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                                    </svg>
+                                    <div class="flex-1">
+                                        <p class="font-display text-sm leading-relaxed text-justify text-gray-800 dark:text-gray-200">
+                                            <span class="font-semibold">Gosta do trabalho deste autor?</span> Apoie e incentive fazendo um
+                                            <span class="font-bold text-green-700 dark:text-green-400">PIX diretamente</span> para quem escreve!
+                                            Se você decidir contribuir, saiba que ele será
+                                            <span class="font-extrabold text-primary dark:text-orange-400 text-base">100%</span>
+                                            enviado para a conta indicada por
+                                            <span class="font-bold text-gray-900 dark:text-white">{{ perfil_usuario.get_full_name }}</span>!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Conteúdo: QR Code + Informações em linha compacta -->
+                            <div class="flex flex-col lg:flex-row gap-4 items-start" x-data="{ copiado: false }">
+                                <!-- QR Code menor -->
+                                <div class="flex-shrink-0 mx-auto lg:mx-0">
+                                    <div class="bg-white p-2 rounded border border-green-300">
+                                        <img src="{{ qrcode_base64 }}" alt="QR Code PIX" class="w-32 h-32">
+                                    </div>
+                                    <p class="text-xs text-center text-green-600 dark:text-green-400 mt-1">
+                                        Escanear QR Code
+                                    </p>
+                                </div>
+
+                                <!-- Informações PIX compactas -->
+                                <div class="flex-1 space-y-3 w-full">
+                                    <!-- PIX Copia e Cola -->
+                                    <div>
+                                        <label class="block text-xs font-semibold text-green-800 dark:text-green-200 mb-1">
+                                            PIX Copia e Cola
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <input
+                                                type="text"
+                                                readonly
+                                                value="{{ pix_payload }}"
+                                                class="flex-1 px-2 py-1.5 bg-white dark:bg-gray-800 border border-green-300 dark:border-green-700 rounded text-xs font-mono text-gray-800 dark:text-gray-200 focus:outline-none overflow-x-auto"
+                                                id="pix-payload-input-perfil"
+                                            >
+                                            <button
+                                                @click="navigator.clipboard.writeText('{{ pix_payload }}'); copiado = true; setTimeout(() => copiado = false, 2000)"
+                                                :class="copiado ? 'px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded text-xs font-medium transition-colors flex-shrink-0' : 'px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium transition-colors flex-shrink-0'"
+                                                x-text="copiado ? 'Copiado!' : 'Copiar'"
+                                            ></button>
+                                        </div>
+                                        <p class="text-xs text-green-700 dark:text-green-300 mt-1 italic">
+                                            💡 Cole no app do seu banco
+                                        </p>
+                                    </div>
+
+                                    <!-- Beneficiado -->
+                                    <div class="text-xs">
+                                        <div class="flex items-center gap-1">
+                                            <span class="font-semibold text-green-800 dark:text-green-200">BENEFICIADO:</span>
+                                            <span class="text-green-700 dark:text-green-300">{{ monetizacao.pix_nome_completo }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Informações do banco -->
+                                    <div class="text-xs">
+                                        <div class="flex items-center gap-1">
+                                            <span class="font-semibold text-green-800 dark:text-green-200">BANCO DO BENEFICIADO:</span>
+                                            <span class="text-green-700 dark:text-green-300">{{ monetizacao.pix_nome_banco }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Valor sugerido -->
+                                    <div class="text-xs">
+                                        {% if monetizacao.pix_valor_padrao and monetizacao.pix_valor_padrao_informado %}
+                                        <p class="text-green-700 dark:text-green-300 italic text-justify leading-relaxed">
+                                            <span class="font-bold text-blue-700 dark:text-blue-400">Sugerimos uma contribuição de
+                                            R$ {{ monetizacao.pix_valor_padrao|floatformat:2 }}</span>,
+                                            mas sinta-se livre! A tela do PIX no app do seu banco abrirá sem um valor definido, doe o que o seu coração mandar ❤️
+                                        </p>
+                                        {% else %}
+                                        <span class="text-green-600 dark:text-green-400 italic">A tela do PIX no app do seu banco abrirá sem um valor definido, doe o que o seu coração mandar ❤️</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endif %}
+
+                    <!-- Botão Voltar -->
+                    <div class="flex justify-center">
+                        <a href="{% url 'core:home' %}" class="flex items-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 text-text-light dark:text-text-dark rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                            </svg>
+                            Voltar para Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Modal: Login Necessário (teleportado para o body para evitar problemas de stacking context) -->
+        <template x-teleport="body">
+            <div x-show="modalLoginNecessario"
+                 x-cloak
+                 @click="modalLoginNecessario = false"
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4"
+                 x-transition>
+                <div @click.stop class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                    <h3 class="text-xl font-bold mb-3 text-text-light dark:text-text-dark">Faça parte da nossa comunidade</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6 text-justify">
+                        Para ter acesso a esse e outros recursos incríveis da plataforma Livre Dia você precisa ter uma conta. É rápido, gratuito e incentiva nossos autores a produzir trabalhos cada vez melhores. Faça parte da nossa comunidade!
+                    </p>
+                    <div class="flex flex-col gap-3">
+                        <a href="{% url 'usuarios:cadastro_leitor' %}?next={{ request.path }}"
+                           class="w-full px-4 py-3 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-opacity-90 transition text-center">
+                            Cadastrar-se Gratuitamente
+                        </a>
+                        <a href="{% url 'usuarios:login' %}?next={{ request.path }}"
+                           class="w-full px-4 py-3 text-sm font-semibold bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition text-center">
+                            Já tenho conta - Fazer Login
+                        </a>
+                        <a href="#" @click.prevent="modalLoginNecessario = false"
+                           class="w-full text-center px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition">
+                            Agora não
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+</div>
+{% endif %}
+</div>
+{% endblock %}

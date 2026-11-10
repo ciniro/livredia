@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Melhores - @{{ perfil_usuario.username }} - Livre Dia{% endblock %}
+
+{% block content %}
+<div class="w-full -mt-10 sm:-mt-20">
+    <!-- Banner do Perfil (Full Width) -->
+    <div class="relative w-screen h-[32rem] overflow-hidden" style="margin-left: calc(-50vw + 50%);">
+        <!-- Imagem de Capa -->
+        {% if capa_escolhida %}
+        <div class="absolute inset-0 w-full h-full bg-cover"
+             style="background-image: url('{% load static %}{% static capa_escolhida.caminho_imagem %}'); background-position: center {{ alinhamento_vertical_capa }}; aspect-ratio: 21/9;">
+        </div>
+        {% else %}
+        <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-500/20 to-blue-600/40"></div>
+        {% endif %}
+
+        <!-- Conteúdo sobreposto no banner -->
+        <div class="absolute inset-0 flex flex-col items-center justify-end pb-8 z-10">
+            <!-- Foto de Perfil -->
+            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white mb-4 shadow-lg">
+                {% if perfil_usuario.foto %}
+                    <img src="{{ perfil_usuario.foto.url }}" alt="Foto de {{ perfil_usuario.get_display_name }}" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center bg-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-white">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Painel de Informações -->
+            <div class="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-5 shadow-xl max-w-[90%] sm:max-w-md">
+                <h1 class="text-2xl font-black font-display text-black mb-1 text-center">
+                    {{ perfil_usuario.get_full_name }}
+                </h1>
+
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="{{ role_badge_class }} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-md">
+                        {{ role_display }}
+                    </span>
+                    <p class="text-sm text-black font-bold">
+                        @{{ perfil_usuario.username }}
+                    </p>
+                </div>
+
+                <p class="text-xs text-black font-semibold text-center">
+                    Conosco na plataforma desde {{ membro_desde }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo da Página -->
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <!-- Cabeçalho da Lista -->
+    <div class="mb-8">
+        <a href="{% url 'perfil_publico' perfil_usuario.username %}" class="inline-flex items-center text-primary hover:text-primary/80 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Voltar para perfil
+        </a>
+
+        <div class="flex items-center gap-3 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-yellow-500">
+                <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+            </svg>
+            <h1 class="font-display text-3xl font-bold text-text-light dark:text-text-dark">Melhores de @{{ perfil_usuario.username }}</h1>
+        </div>
+        <p class="text-text-light/70 dark:text-text-dark/70">Textos favoritos marcados pelo usuário</p>
+    </div>
+
+    <!-- Grid de Textos -->
+    {% if textos_favoritos %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+            {% for item in textos_favoritos %}
+            <a href="{% url 'textos:leitura_texto' item.texto.pk %}" class="block bg-white dark:bg-gray-800 rounded-lg p-5 shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
+                <h3 class="font-bold text-lg text-text-light dark:text-text-dark mb-2 line-clamp-2">{{ item.texto.titulo }}</h3>
+                <p class="text-sm text-text-light/70 dark:text-text-dark/70 mb-3">por {{ item.texto.autor.get_display_name }}</p>
+                <div class="flex items-center gap-4 text-xs text-text-light/60 dark:text-text-dark/60">
+                    <span>{{ item.texto.visualizacoes }} {% if item.texto.visualizacoes == 1 %}visualização{% else %}visualizações{% endif %}</span>
+                    <span>{{ item.texto.data_criacao|date:"d/m/Y" }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <!-- Paginação -->
+        {% if is_paginated %}
+        <div class="flex justify-center items-center gap-2">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" class="px-3 py-2 rounded bg-gray-200 dark:bg-gray-700 text-text-light dark:text-text-dark hover:bg-gray-300 dark:hover:bg-gray-600">Primeira</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 rounded bg-gray-200 dark:bg-gray-700 text-text-light dark:text-text-dark hover:bg-gray-300 dark:hover:bg-gray-600">Anterior</a>
+            {% endif %}
+
+            <span class="px-4 py-2 text-text-light dark:text-text-dark">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 rounded bg-gray-200 dark:bg-gray-700 text-text-light dark:text-text-dark hover:bg-gray-300 dark:hover:bg-gray-600">Próxima</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 rounded bg-gray-200 dark:bg-gray-700 text-text-light dark:text-text-dark hover:bg-gray-300 dark:hover:bg-gray-600">Última</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-12">
+            <p class="text-lg text-text-light/60 dark:text-text-dark/60">Nenhum texto favorito ainda.</p>
+        </div>
+    {% endif %}
+    </div>
+</div>
+{% endblock %}

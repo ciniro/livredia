@@ -1,0 +1,315 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Gestão de Administradores - Painel Admin{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col h-full" x-data="{ showDeleteModal: false, showRemoveAdminModal: false, adminNome: '', adminPk: null }">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-border-light dark:border-border-dark">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-bold leading-tight text-text-light dark:text-text-dark font-display">
+                Gestão de Administradores
+            </h1>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Gerencie todos os usuários com permissões administrativas ({{ administradores|length }} total)
+            </p>
+        </div>
+
+        <!-- Botão Novo Admin Puro (apenas para ADMIN puro) -->
+        {% if can_create_admin %}
+        <a href="{% url 'painel_admin:novo_admin' %}"
+           class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-blue-600 text-white text-sm font-bold leading-normal tracking-wide hover:bg-blue-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Novo Admin Puro
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Grid de Administradores -->
+    <div class="flex-1 overflow-auto px-6 py-4">
+        {% if administradores %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for admin in administradores %}
+                <div class="border border-border-light dark:border-border-dark rounded-lg p-4 {% if admin.pk == super_admin_pk or admin.pk == user.pk %}opacity-50{% endif %}">
+                    <!-- Header do Card -->
+                    <div class="flex items-center gap-3 mb-4">
+                        <!-- Foto -->
+                        <img src="{{ admin.get_avatar_url }}"
+                             alt="{{ admin.get_full_name }}"
+                             class="w-16 h-16 rounded-full object-cover border-2 {% if admin.pk == super_admin_pk %}border-purple-600{% elif admin.pk == user.pk %}border-gray-400{% else %}border-primary{% endif %}">
+
+                        <!-- Nome e Tipo -->
+                        <div class="flex-1">
+                            <h3 class="font-bold text-base text-text-light dark:text-text-dark leading-tight">
+                                {{ admin.get_full_name }}
+                            </h3>
+
+                            {% if admin.pk == user.pk %}
+                            <span class="text-xs text-gray-500 font-normal">
+                                (Você)
+                            </span>
+                            {% endif %}
+
+                            <!-- Badge do Tipo -->
+                            <div class="mt-1">
+                                {% if admin.pk == super_admin_pk %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-600 text-white">
+                                    SUPER ADMIN
+                                </span>
+                                {% elif admin.role == 'ADMIN' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-600 text-white">
+                                    Admin Puro
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-600 text-white">
+                                    Autor-Admin
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações -->
+                    <div class="space-y-2 mb-4 text-sm text-placeholder-light dark:text-placeholder-dark">
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                            </svg>
+                            <span>Cadastrado desde: {{ admin.date_joined|date:"d/m/Y" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="flex flex-wrap gap-2">
+                        {% if admin.pk == super_admin_pk %}
+                            <!-- SUPER ADMIN: NUNCA pode ser alterado -->
+                            <span class="flex-1 bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs text-center cursor-not-allowed"
+                                  title="O Super Admin não pode ser alterado ou excluído por ninguém.">
+                                PROTEGIDO
+                            </span>
+
+                        {% elif admin.pk == user.pk %}
+                            <!-- Usuário logado: não pode alterar a si próprio -->
+                            <span class="flex-1 bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs text-center cursor-not-allowed"
+                                  title="Você não pode alterar suas próprias permissões. Use 'Minha Conta' no menu superior.">
+                                EDITAR
+                            </span>
+
+                        {% elif admin.role == 'ADMIN' %}
+                            <!-- Admin Puro: apenas ADMIN puro pode editar/excluir -->
+                            {% if user.role == 'ADMIN' %}
+                                <a href="{% url 'painel_admin:editar_admin' admin.pk %}"
+                                   class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors text-xs text-center">
+                                    EDITAR
+                                </a>
+                                <button @click="
+                                            adminNome = '{{ admin.get_full_name }}';
+                                            adminPk = {{ admin.pk }};
+                                            showDeleteModal = true;
+                                        "
+                                        class="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors text-xs text-center">
+                                    EXCLUIR
+                                </button>
+                            {% else %}
+                                <!-- Autor-Admin não pode fazer nada com Admin Puro -->
+                                <span class="flex-1 bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs text-center cursor-not-allowed"
+                                      title="Apenas administradores puros podem editar/excluir outros admins puros.">
+                                    SEM PERMISSÃO
+                                </span>
+                            {% endif %}
+
+                        {% else %}
+                            <!-- Autor-Admin: qualquer admin pode remover permissão administrativa -->
+                            <button @click="
+                                        adminNome = '{{ admin.get_full_name }}';
+                                        adminPk = {{ admin.pk }};
+                                        showRemoveAdminModal = true;
+                                    "
+                                    class="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors text-xs">
+                                REMOVER ADMIN
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginação -->
+            {% if is_paginated %}
+            <div class="flex items-center justify-center gap-2 mt-6">
+                {% if page_obj.has_previous %}
+                <a href="?page=1"
+                   class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark text-sm font-bold leading-normal tracking-wide border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    Primeira
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}"
+                   class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark text-sm font-bold leading-normal tracking-wide border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    Anterior
+                </a>
+                {% endif %}
+
+                <span class="flex items-center justify-center h-10 px-4 text-sm text-text-light dark:text-text-dark">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}"
+                   class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark text-sm font-bold leading-normal tracking-wide border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    Próxima
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}"
+                   class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark text-sm font-bold leading-normal tracking-wide border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    Última
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Estado Vazio -->
+            <div class="flex flex-col items-center justify-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-placeholder-light dark:text-placeholder-dark mb-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                </svg>
+                <p class="text-base text-text-light dark:text-text-dark font-medium mb-2">
+                    Nenhum administrador encontrado
+                </p>
+                <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                    {% if can_create_admin %}
+                        Clique em "Novo Admin Puro" para criar o primeiro administrador
+                    {% else %}
+                        Entre em contato com um administrador puro para criar novos admins
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div x-show="showDeleteModal"
+         x-cloak
+         @keydown.escape.window="showDeleteModal = false"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+         style="display: none;">
+
+        <div @click.away="showDeleteModal = false"
+             class="bg-background-light dark:bg-background-dark rounded-lg shadow-lg max-w-md w-full mx-4 p-6 border border-border-light dark:border-border-dark">
+
+            <!-- Header -->
+            <div class="flex items-start gap-4 mb-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-red-600 dark:text-red-400">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-text-light dark:text-text-dark font-display mb-1">
+                        Excluir Administrador
+                    </h3>
+                    <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                        Esta ação não pode ser desfeita!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="mb-6 space-y-3 text-sm text-text-light dark:text-text-dark">
+                <p>
+                    Você está prestes a <strong class="font-bold text-red-600 dark:text-red-400">excluir permanentemente</strong> o administrador:
+                </p>
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 border border-border-light dark:border-border-dark">
+                    <p class="font-bold text-base" x-text="adminNome"></p>
+                </div>
+                <p class="text-red-600 dark:text-red-400 font-medium">
+                    ⚠️ Esta ação irá:
+                </p>
+                <ul class="list-disc list-inside space-y-1 ml-2">
+                    <li>Excluir a conta permanentemente</li>
+                    <li>Remover todos os comentários (se houver)</li>
+                    <li>Esta ação <strong>NÃO</strong> pode ser revertida</li>
+                </ul>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex gap-3">
+                <button @click="showDeleteModal = false"
+                        class="flex-1 h-10 px-4 rounded-lg bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark text-sm font-bold border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    Cancelar
+                </button>
+                <form method="post" :action="`{% url 'painel_admin:excluir_admin' 0 %}`.replace('0', adminPk)" class="flex-1">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="w-full h-10 px-4 rounded-lg bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition-colors">
+                        Confirmar Exclusão
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Remoção de Admin -->
+    <div x-show="showRemoveAdminModal"
+         x-cloak
+         @keydown.escape.window="showRemoveAdminModal = false"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+         style="display: none;">
+
+        <div @click.away="showRemoveAdminModal = false"
+             class="bg-background-light dark:bg-background-dark rounded-lg shadow-lg max-w-md w-full mx-4 p-6 border border-border-light dark:border-border-dark">
+
+            <!-- Header -->
+            <div class="flex items-start gap-4 mb-4">
+                <div class="flex-shrink-0 w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-orange-600 dark:text-orange-400">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-bold text-text-light dark:text-text-dark font-display mb-1">
+                        Remover Permissão Administrativa
+                    </h3>
+                    <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                        Esta ação pode ser revertida posteriormente
+                    </p>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="mb-6 space-y-3 text-sm text-text-light dark:text-text-dark">
+                <p>
+                    Você está prestes a <strong class="font-bold text-orange-600 dark:text-orange-400">remover permissão administrativa</strong> de:
+                </p>
+                <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 border border-border-light dark:border-border-dark">
+                    <p class="font-bold text-base" x-text="adminNome"></p>
+                </div>
+                <p class="text-orange-600 dark:text-orange-400 font-medium">
+                    ⚠️ Esta ação irá:
+                </p>
+                <ul class="list-disc list-inside space-y-1 ml-2">
+                    <li>Remover acesso ao painel administrativo</li>
+                    <li>O usuário voltará a ser um <strong>autor normal</strong></li>
+                    <li>Esta ação <strong>PODE</strong> ser revertida posteriormente</li>
+                </ul>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex gap-3">
+                <button @click="showRemoveAdminModal = false"
+                        class="flex-1 h-10 px-4 rounded-lg bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark text-sm font-bold border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    Cancelar
+                </button>
+                <form method="post" :action="`{% url 'painel_admin:remover_admin_autor' 0 %}`.replace('0', adminPk)" class="flex-1">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="w-full h-10 px-4 rounded-lg bg-orange-600 text-white text-sm font-bold hover:bg-orange-700 transition-colors">
+                        Confirmar Remoção
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+<!-- Modal de Inserir Link -->
+<div x-data="{
+    modalLinkAberto: false,
+    urlLink: '',
+    textoLink: '',
+    inserirLink() {
+        if (this.urlLink) {
+            window.dispatchEvent(new CustomEvent('inserir-link', {
+                detail: { url: this.urlLink, texto: this.textoLink }
+            }));
+            this.urlLink = '';
+            this.textoLink = '';
+            this.modalLinkAberto = false;
+        }
+    }
+}" @open-link-modal.window="modalLinkAberto = true; textoLink = $event.detail?.texto || ''" x-cloak>
+    <!-- Overlay -->
+    <div x-show="modalLinkAberto"
+         @click="modalLinkAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+
+    <!-- Modal Content -->
+    <div x-show="modalLinkAberto"
+         @click.away="modalLinkAberto = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-95"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-lg w-full border border-border-light dark:border-border-dark">
+            <!-- Header do Modal -->
+            <div class="bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                    </svg>
+                    Inserir Link
+                </h2>
+                <button @click="modalLinkAberto = false" class="text-white hover:text-gray-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Conteúdo do Modal -->
+            <div class="p-6 space-y-4">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        Texto do Link <span class="text-placeholder-light dark:text-placeholder-dark">(opcional)</span>
+                    </p>
+                    <input
+                        x-model="textoLink"
+                        type="text"
+                        placeholder="Texto que aparecerá no link"
+                        class="form-input flex w-full resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-14 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark p-4 text-base font-normal leading-normal"
+                    />
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        Deixe vazio para usar a URL como texto
+                    </p>
+                </label>
+
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        URL do Link <span class="text-red-600">*</span>
+                    </p>
+                    <input
+                        x-model="urlLink"
+                        @keydown.enter="inserirLink()"
+                        type="text"
+                        placeholder="https://exemplo.com"
+                        class="form-input flex w-full resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-14 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark p-4 text-base font-normal leading-normal"
+                    />
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        Digite a URL completa começando com http:// ou https://
+                    </p>
+                </label>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalLinkAberto = false" class="px-6 py-2 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg font-medium hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                    Cancelar
+                </button>
+                <button @click="inserirLink()" class="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                    Inserir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

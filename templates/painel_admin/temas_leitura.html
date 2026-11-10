@@ -1,0 +1,206 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Temas de Leitura - Painel Admin{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col h-full">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-border-light dark:border-border-dark">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-bold leading-tight text-text-light dark:text-text-dark font-display">
+                Temas de Leitura
+            </h1>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Gerenciar temas CSS customizáveis para a experiência de leitura
+            </p>
+        </div>
+
+        <a href="{% url 'painel_admin:novo_tema_leitura' %}"
+           class="flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Novo Tema
+        </a>
+    </div>
+
+    <!-- Listagem -->
+    <div class="flex-1 overflow-auto px-6 py-6" x-data="{ showModal: false, temaParaExcluir: null, formAction: '' }">
+        {% if temas %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for tema in temas %}
+            <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-5 hover:shadow-md transition-shadow">
+                <!-- Status e Nome -->
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-text-light dark:text-text-dark mb-1">
+                            {{ tema.nome_exibicao }}
+                        </h3>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                            Slug: <span class="font-mono text-xs">{{ tema.slug }}</span>
+                        </p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                            CSS: <span class="font-mono text-xs">{{ tema.arquivo_css }}</span>
+                        </p>
+                    </div>
+
+                    {% if tema.ativo %}
+                    <span class="ml-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold rounded">
+                        ATIVO
+                    </span>
+                    {% else %}
+                    <span class="ml-2 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-bold rounded">
+                        INATIVO
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Descrição -->
+                {% if tema.descricao %}
+                <div class="mb-3 text-xs text-placeholder-light dark:text-placeholder-dark line-clamp-2">
+                    {{ tema.descricao }}
+                </div>
+                {% endif %}
+
+                <!-- Ordem -->
+                <div class="flex items-center gap-2 mb-4 text-xs text-placeholder-light dark:text-placeholder-dark">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5 7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />
+                    </svg>
+                    <span>Ordem: {{ tema.ordem }}</span>
+                </div>
+
+                <!-- Botões de Ação ou Mensagem de Proteção -->
+                {% if tema.slug == 'padrao' %}
+                <!-- Mensagem para tema padrão (não pode editar/excluir) -->
+                <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div class="flex items-start gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                        </svg>
+                        <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                            <strong>Tema protegido.</strong> O tema padrão não pode ser editado ou excluído pois é usado como fallback do sistema.
+                        </p>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Botões normais para temas customizados -->
+                <div class="flex gap-2">
+                    <a href="{% url 'painel_admin:editar_tema_leitura' tema.pk %}"
+                       class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                        </svg>
+                        Editar
+                    </a>
+
+                    <button type="button"
+                            @click="temaParaExcluir = { nome: '{{ tema.nome_exibicao }}', arquivo: '{{ tema.arquivo_css }}', pk: {{ tema.pk}} }; formAction = '{% url 'painel_admin:excluir_tema_leitura' tema.pk %}'; showModal = true"
+                            class="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                        Excluir
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- Estado vazio -->
+        <div class="flex flex-col items-center justify-center py-16 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-20 h-20 text-placeholder-light dark:text-placeholder-dark mb-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
+            </svg>
+            <h3 class="text-xl font-bold text-text-light dark:text-text-dark mb-2">
+                Nenhum tema cadastrado
+            </h3>
+            <p class="text-placeholder-light dark:text-placeholder-dark mb-6 max-w-md">
+                Cadastre temas CSS customizáveis para personalizar a experiência de leitura dos usuários.
+            </p>
+            <a href="{% url 'painel_admin:novo_tema_leitura' %}"
+               class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary/90 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Cadastrar Primeiro Tema
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Modal de Confirmação de Exclusão -->
+        <div x-show="showModal"
+             x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-4"
+             style="display: none;">
+            <!-- Backdrop -->
+            <div @click="showModal = false"
+                 class="absolute inset-0 bg-black/50"></div>
+
+            <!-- Modal Content -->
+            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+                <!-- Título -->
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-red-600 dark:text-red-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-text-light dark:text-text-dark mb-1">
+                            Confirmar Exclusão
+                        </h3>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                            Tem certeza que deseja excluir o tema <strong x-text="temaParaExcluir?.nome"></strong>?
+                        </p>
+                        <p class="text-xs text-red-600 dark:text-red-400 mt-2">
+                            Esta ação é irreversível e o arquivo CSS será deletado permanentemente.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Botões -->
+                <div class="flex flex-col gap-2 pt-2">
+                    <!-- Botão de Download -->
+                    <a :href="'/static/css/themes/' + temaParaExcluir?.arquivo"
+                       target="_blank"
+                       download
+                       class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Baixar Arquivo CSS
+                    </a>
+
+                    <!-- Linha de separação -->
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 border-t border-border-light dark:border-border-dark"></div>
+                        <span class="text-xs text-placeholder-light dark:text-placeholder-dark">ou</span>
+                        <div class="flex-1 border-t border-border-light dark:border-border-dark"></div>
+                    </div>
+
+                    <!-- Botões Cancelar e Confirmar -->
+                    <div class="flex gap-2">
+                        <button type="button"
+                                @click="showModal = false"
+                                class="flex-1 px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-text-light dark:text-text-dark rounded-lg font-bold text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            Cancelar
+                        </button>
+
+                        <form :action="formAction" method="post" class="flex-1">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="w-full px-4 py-2.5 bg-red-600 text-white rounded-lg font-bold text-sm hover:bg-red-700 transition-colors">
+                                Confirmar Exclusão
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

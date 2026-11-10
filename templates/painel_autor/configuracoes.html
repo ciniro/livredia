@@ -1,0 +1,306 @@
+{% extends 'base_autor.html' %}
+
+{% block title %}Personalizar - Área {% if user.sexo == 'M' %}do Autor{% elif user.sexo == 'F' %}da Autora{% elif user.sexo == 'O' %}de Autore{% else %}de Escrita{% endif %} - LIVRE DIA{% endblock %}
+
+{% block autor_content %}
+<div class="flex flex-col w-full">
+    <!-- Título -->
+    <h1 class="font-display text-3xl font-bold tracking-tight text-text-light dark:text-text-dark pb-2">Personalizar</h1>
+    <p class="text-sm text-placeholder-light dark:text-placeholder-dark pb-6">Personalize a aparência da sua área {% if user.sexo == 'M' %}do autor{% elif user.sexo == 'F' %}da autora{% elif user.sexo == 'O' %}de autore{% else %}de escrita{% endif %}</p>
+
+    <!-- SEÇÃO: Aparência da Plataforma (Light/Dark Mode) -->
+    <div class="mb-8"
+         x-data="{
+             temaAtual: '{{ tema_plataforma|default:'light' }}',
+             salvando: false,
+             async aplicarTema(tema) {
+                 this.temaAtual = tema;
+                 document.documentElement.className = tema;
+                 this.salvando = true;
+                 try {
+                     const formData = new FormData();
+                     formData.append('tema', tema);
+                     formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                     await fetch('{% url 'usuarios:alterar_tema_plataforma' %}', {
+                         method: 'POST',
+                         body: formData
+                     });
+                 } catch (error) {
+                     console.error('Erro ao salvar tema:', error);
+                 }
+                 this.salvando = false;
+             }
+         }">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-primary">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="font-display text-xl font-bold text-text-light dark:text-text-dark">Aparência da Plataforma</h2>
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark">Escolha entre modo claro ou escuro</p>
+                </div>
+            </div>
+            <!-- Indicador de salvamento -->
+            <span x-show="salvando" x-transition class="text-xs text-primary font-medium">Salvando...</span>
+        </div>
+
+        <!-- Opções de tema com preview visual -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Modo Claro -->
+            <button type="button" @click="aplicarTema('light')" class="cursor-pointer group text-left">
+                <div class="border-2 rounded-lg overflow-hidden transition-all group-hover:border-primary/50"
+                     :class="temaAtual === 'light' ? 'border-green-500 ring-2 ring-green-500/30' : 'border-border-light dark:border-border-dark'">
+                    <!-- Preview do tema -->
+                    <div class="relative w-full h-20 flex items-center justify-center bg-[#fcfaf8]">
+                        <!-- Checkmark quando selecionado -->
+                        <div class="absolute top-2 right-2 bg-green-500 rounded-full p-1 transition-opacity"
+                             :class="temaAtual === 'light' ? 'opacity-100' : 'opacity-0'">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="white" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </div>
+                        <!-- Ícone sol -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-[#e69019]">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                        </svg>
+                    </div>
+                    <!-- Info do tema -->
+                    <div class="p-3 bg-[#f3eee7]">
+                        <h4 class="font-semibold text-sm text-[#1b150e]">Modo Claro</h4>
+                        <p class="text-xs text-[#97794e]">Ideal para ambientes bem iluminados</p>
+                    </div>
+                </div>
+            </button>
+
+            <!-- Modo Escuro -->
+            <button type="button" @click="aplicarTema('dark')" class="cursor-pointer group text-left">
+                <div class="border-2 rounded-lg overflow-hidden transition-all group-hover:border-primary/50"
+                     :class="temaAtual === 'dark' ? 'border-green-500 ring-2 ring-green-500/30' : 'border-border-light dark:border-border-dark'">
+                    <!-- Preview do tema -->
+                    <div class="relative w-full h-20 flex items-center justify-center bg-[#211a11]">
+                        <!-- Checkmark quando selecionado -->
+                        <div class="absolute top-2 right-2 bg-green-500 rounded-full p-1 transition-opacity"
+                             :class="temaAtual === 'dark' ? 'opacity-100' : 'opacity-0'">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="white" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                        </div>
+                        <!-- Ícone lua -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-[#f3eee7]">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                        </svg>
+                    </div>
+                    <!-- Info do tema -->
+                    <div class="p-3 bg-[#32291e]">
+                        <h4 class="font-semibold text-sm text-[#f3eee7]">Modo Escuro</h4>
+                        <p class="text-xs text-[#a18a6c]">Ideal para leitura noturna</p>
+                    </div>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Grid de duas colunas para Light e Dark Mode -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Coluna 1: Light Mode -->
+        <div>
+            <!-- Cabeçalho -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-amber-600 dark:text-amber-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="font-display text-xl font-bold text-text-light dark:text-text-dark">Modo Claro</h2>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark">Cores para o tema claro</p>
+                    </div>
+                </div>
+                <!-- Botão Remover Cor -->
+                <button
+                    hx-post="{% url 'painel_autor:remover_cor' %}"
+                    hx-swap="none"
+                    class="px-3 py-1.5 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-lg hover:bg-border-light dark:hover:bg-border-dark transition-colors text-xs font-medium"
+                >
+                    Restaurar padrão
+                </button>
+            </div>
+
+            <!-- Grade de Cores Light -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {% for valor, nome in cores_light %}
+                <button
+                    hx-post="{% url 'painel_autor:aplicar_cor' cor=valor %}"
+                    hx-swap="none"
+                    class="cursor-pointer group"
+                >
+                    <div
+                        class="flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all group-hover:border-primary group-hover:shadow-md {% if config.cor_background == valor %}border-primary bg-primary/5{% else %}border-border-light dark:border-border-dark{% endif %}"
+                    >
+                        <!-- Círculo de Cor -->
+                        <div
+                            class="w-12 h-12 rounded-full border-2 border-border-light dark:border-border-dark shadow-sm"
+                            style="background-color: {{ valor }};"
+                        ></div>
+                        <!-- Nome da Cor -->
+                        <span class="text-xs text-center font-medium text-text-light dark:text-text-dark leading-tight">{{ nome }}</span>
+                    </div>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Coluna 2: Dark Mode -->
+        <div>
+            <!-- Cabeçalho -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-indigo-600 dark:text-indigo-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="font-display text-xl font-bold text-text-light dark:text-text-dark">Modo Escuro</h2>
+                        <p class="text-xs text-placeholder-light dark:text-placeholder-dark">Cores para o tema escuro</p>
+                    </div>
+                </div>
+                <!-- Botão Remover Cor -->
+                <button
+                    hx-post="{% url 'painel_autor:remover_cor_dark' %}"
+                    hx-swap="none"
+                    class="px-3 py-1.5 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-lg hover:bg-border-light dark:hover:bg-border-dark transition-colors text-xs font-medium"
+                >
+                    Restaurar padrão
+                </button>
+            </div>
+
+            <!-- Grade de Cores Dark -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {% for valor, nome in cores_dark %}
+                <button
+                    hx-post="{% url 'painel_autor:aplicar_cor_dark' cor=valor %}"
+                    hx-swap="none"
+                    class="cursor-pointer group"
+                >
+                    <div
+                        class="flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all group-hover:border-primary group-hover:shadow-md {% if config.cor_background_dark == valor %}border-primary bg-primary/5{% else %}border-border-light dark:border-border-dark{% endif %}"
+                    >
+                        <!-- Círculo de Cor -->
+                        <div
+                            class="w-12 h-12 rounded-full border-2 border-gray-500 shadow-sm"
+                            style="background-color: {{ valor }};"
+                        ></div>
+                        <!-- Nome da Cor -->
+                        <span class="text-xs text-center font-medium text-text-light dark:text-text-dark leading-tight">{{ nome }}</span>
+                    </div>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Seção: Emoji de Marca d'água -->
+    <div class="mt-8">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-primary">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="font-display text-xl font-bold text-text-light dark:text-text-dark">Ícone de Marca d'água</h2>
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark">Aparece sutilmente no fundo das suas páginas</p>
+                </div>
+            </div>
+            <!-- Botão Remover Ícone -->
+            <button
+                hx-post="{% url 'painel_autor:remover_emoji' %}"
+                hx-swap="none"
+                class="px-3 py-1.5 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-lg hover:bg-border-light dark:hover:bg-border-dark transition-colors text-xs font-medium"
+            >
+                Remover ícone
+            </button>
+        </div>
+
+        <!-- Grade de Emojis/Ícones -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
+            {% for valor, nome in emojis %}
+            <button
+                hx-post="{% url 'painel_autor:aplicar_emoji' emoji=valor %}"
+                hx-swap="none"
+                class="cursor-pointer group"
+            >
+                <div
+                    class="flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all group-hover:border-primary group-hover:shadow-md {% if config.emoji_marca_dagua == valor %}border-primary bg-primary/5{% else %}border-border-light dark:border-border-dark{% endif %}"
+                >
+                    <!-- Ícone SVG -->
+                    <div class="w-10 h-10 flex items-center justify-center">
+                        {% if valor == 'heart' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                        </svg>
+                        {% elif valor == 'star' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                        </svg>
+                        {% elif valor == 'sun' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+                        </svg>
+                        {% elif valor == 'moon' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+                        </svg>
+                        {% elif valor == 'mountain' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                        </svg>
+                        {% elif valor == 'book-open' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                        </svg>
+                        {% elif valor == 'pencil' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                        </svg>
+                        {% elif valor == 'flower' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                        </svg>
+                        {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <!-- Nome do Ícone -->
+                    <span class="text-xs text-center font-medium text-text-light dark:text-text-dark leading-tight">{{ nome }}</span>
+                </div>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Dica -->
+    <div class="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+        <div class="flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-primary flex-shrink-0 mt-0.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+            </svg>
+            <p class="text-sm text-text-light dark:text-text-dark">
+                <strong>Dica:</strong> As cores do <strong>Modo Claro</strong> são aplicadas quando você ou seus visitantes estão com o tema claro ativado.
+                As cores do <strong>Modo Escuro</strong> aparecem quando o tema escuro está ativo.
+                Alterne entre os modos usando os botões acima!
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,327 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Comunicação Geral - Painel Admin{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col h-full">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-border-light dark:border-border-dark">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-bold leading-tight text-text-light dark:text-text-dark font-display">
+                Comunicação Geral
+            </h1>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Envie e-mails para usuários da plataforma
+            </p>
+        </div>
+
+        <!-- Botão Nova Comunicação -->
+        <a href="{% url 'painel_admin:comunicacao_geral_nova' %}"
+           class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-verde-floresta text-white text-sm font-bold leading-normal tracking-wide hover:bg-verde-floresta/90 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Nova Comunicação
+        </a>
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="flex-1 overflow-auto px-6 py-6">
+        <div class="max-w-6xl mx-auto">
+            {% if comunicacoes %}
+
+            <!-- Nota sobre Tracking -->
+            {% if debug %}
+            <div class="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                </svg>
+                <div class="text-sm text-amber-700 dark:text-amber-400">
+                    <strong>Ambiente de desenvolvimento:</strong> O rastreamento de aberturas de e-mail não funciona em localhost porque os clientes de e-mail (Gmail, Outlook, etc.) não conseguem acessar URLs locais. Em produção, o tracking funcionará normalmente.
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Grid de Comunicações -->
+            <div id="grid-comunicacoes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for comunicacao in comunicacoes %}
+                <div id="card-comunicacao-{{ comunicacao.pk }}" class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
+                    <!-- Header do Card -->
+                    <div class="p-4 border-b border-border-light dark:border-border-dark">
+                        <div class="flex items-center justify-between mb-2">
+                            <!-- Status -->
+                            {% if comunicacao.status == 'ENVIADO' %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-verde-floresta/20 text-verde-floresta">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 mr-1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                                Enviado
+                            </span>
+                            {% elif comunicacao.status == 'ENVIANDO' %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 mr-1 animate-spin">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                </svg>
+                                Enviando...
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-600 dark:text-red-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 mr-1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                                </svg>
+                                Erro
+                            </span>
+                            {% endif %}
+
+                            <!-- Tipo -->
+                            <span class="text-xs text-placeholder-light dark:text-placeholder-dark">
+                                {{ comunicacao.get_tipo_display }}
+                            </span>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-text-light dark:text-text-dark line-clamp-2">
+                            {{ comunicacao.titulo }}
+                        </h3>
+                    </div>
+
+                    <!-- Estatisticas -->
+                    <div class="p-4 bg-gray-50 dark:bg-gray-800/50">
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <!-- Destinatarios -->
+                            <div>
+                                <p class="text-2xl font-bold text-primary">{{ comunicacao.total_destinatarios }}</p>
+                                <p class="text-xs text-placeholder-light dark:text-placeholder-dark">Enviados</p>
+                            </div>
+
+                            <!-- Aberturas -->
+                            <div>
+                                <p class="text-2xl font-bold text-verde-floresta">{{ comunicacao.total_aberturas }}</p>
+                                <p class="text-xs text-placeholder-light dark:text-placeholder-dark">Aberturas</p>
+                            </div>
+
+                            <!-- Taxa -->
+                            <div>
+                                <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ comunicacao.taxa_abertura }}%</p>
+                                <p class="text-xs text-placeholder-light dark:text-placeholder-dark">Taxa</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer do Card -->
+                    <div class="p-4 border-t border-border-light dark:border-border-dark flex items-center justify-between">
+                        <span class="text-xs text-placeholder-light dark:text-placeholder-dark">
+                            {{ comunicacao.data_criacao|date:"d/m/Y H:i" }}
+                        </span>
+
+                        <div class="flex items-center gap-3">
+                            <a href="{% url 'painel_admin:comunicacao_geral_detalhes' comunicacao.pk %}"
+                               class="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+                                Ver detalhes
+                            </a>
+                            <a href="{% url 'painel_admin:comunicacao_geral_nova' %}?repetir={{ comunicacao.pk }}"
+                               class="text-sm font-medium text-verde-floresta hover:text-verde-floresta/80 transition-colors">
+                                Repetir
+                            </a>
+                            <button type="button"
+                                    onclick="confirmarExclusao({{ comunicacao.pk }}, '{{ comunicacao.titulo|escapejs }}')"
+                                    class="text-sm font-medium text-red-500 hover:text-red-600 transition-colors">
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Estado vazio -->
+            <div class="text-center py-16">
+                <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-primary">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-text-light dark:text-text-dark mb-2">
+                    Nenhuma comunicação enviada
+                </h3>
+                <p class="text-placeholder-light dark:text-placeholder-dark mb-6">
+                    Clique no botão acima para criar sua primeira comunicação.
+                </p>
+                <a href="{% url 'painel_admin:comunicacao_geral_nova' %}"
+                   class="inline-flex items-center px-6 py-3 bg-verde-floresta text-white font-bold rounded-lg hover:bg-verde-floresta/90 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Criar primeira comunicação
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- CSRF Token para JavaScript -->
+{% csrf_token %}
+
+<!-- Modal de Confirmação de Exclusão -->
+<div id="modal-excluir" class="fixed inset-0 z-50 hidden">
+    <!-- Overlay -->
+    <div class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40" onclick="fecharModalExcluir()"></div>
+    <!-- Modal -->
+    <div class="fixed inset-0 flex items-center justify-center p-4 z-50">
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-xl max-w-sm w-full border border-border-light dark:border-border-dark overflow-hidden" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="px-5 py-4 flex items-center gap-3 bg-red-500/10">
+                <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-base font-bold text-text-light dark:text-text-dark">Excluir Comunicação</h3>
+                    <p id="modal-excluir-titulo" class="text-sm text-placeholder-light dark:text-placeholder-dark mt-0.5 truncate"></p>
+                </div>
+            </div>
+            <!-- Content -->
+            <div class="px-5 py-4">
+                <p class="text-sm text-text-light dark:text-text-dark">
+                    Tem certeza que deseja excluir esta comunicação? Esta ação irá remover permanentemente o registro e todos os dados de rastreamento associados.
+                </p>
+            </div>
+            <!-- Buttons -->
+            <div class="px-5 py-3 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark flex justify-end gap-3">
+                <button type="button" onclick="fecharModalExcluir()"
+                        class="px-4 py-1.5 rounded-lg text-sm font-medium text-text-light dark:text-text-dark bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                    Cancelar
+                </button>
+                <button type="button" id="btn-confirmar-excluir" onclick="executarExclusao(event)"
+                        class="px-4 py-1.5 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white transition-colors">
+                    Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Variáveis globais para o modal
+var comunicacaoParaExcluir = null;
+
+// Função para obter o CSRF token
+function getCSRFToken() {
+    // Primeiro tenta do input hidden
+    var tokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (tokenInput) {
+        return tokenInput.value;
+    }
+    // Fallback: tenta do cookie
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, 10) === 'csrftoken=') {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function confirmarExclusao(pk, titulo) {
+    comunicacaoParaExcluir = pk;
+    document.getElementById('modal-excluir-titulo').textContent = titulo;
+    document.getElementById('modal-excluir').classList.remove('hidden');
+}
+
+function fecharModalExcluir() {
+    document.getElementById('modal-excluir').classList.add('hidden');
+    comunicacaoParaExcluir = null;
+}
+
+function executarExclusao(event) {
+    // Prevenir propagação do evento
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    if (!comunicacaoParaExcluir) {
+        return;
+    }
+
+    var pk = comunicacaoParaExcluir;
+    var btn = document.getElementById('btn-confirmar-excluir');
+    var btnTextoOriginal = btn.textContent;
+
+    // Desabilitar botão e mostrar loading
+    btn.disabled = true;
+    btn.textContent = 'Excluindo...';
+
+    // Obter CSRF token
+    var csrftoken = getCSRFToken();
+
+    if (!csrftoken) {
+        alert('Erro: Token de segurança não encontrado. Recarregue a página.');
+        btn.disabled = false;
+        btn.textContent = btnTextoOriginal;
+        return;
+    }
+
+    // Fazer requisição AJAX
+    fetch('/painel-admin/comunicacao-geral/' + pk + '/excluir/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        credentials: 'same-origin'
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            throw new Error('Erro na requisição');
+        }
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.success) {
+            // Sucesso - remover o card da tela com animação
+            var card = document.getElementById('card-comunicacao-' + pk);
+            if (card) {
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                setTimeout(function() {
+                    card.remove();
+                    // Verificar se não há mais cards
+                    var grid = document.getElementById('grid-comunicacoes');
+                    if (grid && grid.children.length === 0) {
+                        location.reload();
+                    }
+                }, 300);
+            }
+            fecharModalExcluir();
+        } else {
+            throw new Error(data.message || 'Erro ao excluir');
+        }
+    })
+    .catch(function(error) {
+        alert('Erro ao excluir a comunicação. Tente novamente.');
+        btn.disabled = false;
+        btn.textContent = btnTextoOriginal;
+    });
+}
+
+// Fechar modal com ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        fecharModalExcluir();
+    }
+});
+</script>
+{% endblock %}

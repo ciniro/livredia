@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fale Conosco - LIVRE DIA{% endblock %}
+
+{% block content %}
+<main class="flex-1 px-4 py-10 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl sm:text-5xl font-bold font-display tracking-tight text-text-light dark:text-text-dark">Fale Conosco</h1>
+            <p class="mt-4 text-lg text-muted-light dark:text-muted-dark">Envie-nos suas dúvidas, sugestões ou feedback. Valorizamos sua opinião.</p>
+        </div>
+
+        <!-- Formulário de Contato -->
+        <form method="post" class="space-y-8">
+            {% csrf_token %}
+
+            <!-- Grid: Nome e E-mail -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Campo Nome -->
+                <label class="flex flex-col">
+                    <p class="text-base font-medium leading-normal pb-2 text-text-light dark:text-text-dark">
+                        Nome{% if form.nome.field.required %} <span class="text-primary">*</span>{% endif %}
+                    </p>
+                    {{ form.nome }}
+                    {% if form.nome.errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.nome.errors.0 }}</p>
+                    {% endif %}
+                </label>
+
+                <!-- Campo E-mail -->
+                <label class="flex flex-col">
+                    <p class="text-base font-medium leading-normal pb-2 text-text-light dark:text-text-dark">
+                        E-mail{% if form.email.field.required %} <span class="text-primary">*</span>{% endif %}
+                    </p>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </label>
+            </div>
+
+            <!-- Campo Assunto -->
+            <label class="flex flex-col">
+                <p class="text-base font-medium leading-normal pb-2 text-text-light dark:text-text-dark">
+                    Assunto{% if form.assunto.field.required %} <span class="text-primary">*</span>{% endif %}
+                </p>
+                {{ form.assunto }}
+                {% if form.assunto.errors %}
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.assunto.errors.0 }}</p>
+                {% endif %}
+            </label>
+
+            <!-- Campo Mensagem -->
+            <label class="flex flex-col">
+                <p class="text-base font-medium leading-normal pb-2 text-text-light dark:text-text-dark">
+                    Mensagem{% if form.mensagem.field.required %} <span class="text-primary">*</span>{% endif %}
+                </p>
+                {{ form.mensagem }}
+                {% if form.mensagem.errors %}
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.mensagem.errors.0 }}</p>
+                {% endif %}
+            </label>
+
+            <!-- Botão de Envio -->
+            <div class="flex flex-col items-center gap-6">
+                <button type="submit" class="flex min-w-[200px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary text-white text-lg font-bold leading-normal tracking-wide shadow-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50 focus:ring-offset-background-light dark:focus:ring-offset-background-dark transition-all duration-300">
+                    <span class="truncate">Enviar</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+{% endblock %}

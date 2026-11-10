@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Texto Publicado - LIVRE DIA</title>
+    <style>
+        /* Reset básico */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #4F4A45;
+            line-height: 1.6;
+        }
+
+        /* Container principal */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #FDFBF6;
+            border: 1px solid #e0ddd5;
+        }
+
+        /* Cabeçalho */
+        .header {
+            background-color: #e69019;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            margin: 8px 0 0;
+            color: #ffffff;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        /* Conteúdo */
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            color: #3A4D39;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 30px;
+            font-size: 15px;
+            color: #4F4A45;
+            line-height: 1.8;
+        }
+
+        .message p {
+            margin: 0 0 15px 0;
+        }
+
+        /* Box de destaque do texto */
+        .texto-destaque {
+            background-color: #f5f3ed;
+            border-left: 4px solid #e69019;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .texto-destaque .autor-nome {
+            font-size: 14px;
+            color: #3A4D39;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .texto-destaque .texto-titulo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #4F4A45;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+        }
+
+        .texto-destaque .texto-subtitulo {
+            font-size: 16px;
+            color: #666;
+            margin: 0;
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        .texto-destaque .texto-trecho {
+            font-size: 14px;
+            color: #555;
+            margin: 15px 0 0 0;
+            line-height: 1.7;
+            padding-top: 12px;
+            border-top: 1px dashed #ddd;
+        }
+
+        /* Botão */
+        .button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+
+        .read-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background-color: #e69019;
+            color: #ffffff !important;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 8px;
+            letter-spacing: 0.5px;
+            transition: background-color 0.3s;
+        }
+
+        .read-button:hover {
+            background-color: #d47a05;
+        }
+
+        /* Aviso de configurações */
+        .config-notice {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f5f3ed;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .config-notice a {
+            color: #e69019;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .config-notice a:hover {
+            text-decoration: underline;
+        }
+
+        /* Rodapé */
+        .footer {
+            background-color: #3A4D39;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 13px;
+            color: #ffffff;
+            opacity: 0.9;
+        }
+
+        .footer a {
+            color: #e69019;
+            text-decoration: none;
+        }
+
+        /* Responsividade */
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .texto-destaque .texto-titulo {
+                font-size: 18px;
+            }
+
+            .read-button {
+                padding: 14px 30px;
+                font-size: 15px;
+            }
+
+            .footer {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1>📖 LIVRE DIA</h1>
+            <p>Novo texto publicado por um autor que você segue</p>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="content">
+            <div class="greeting">
+                Olá, {{ nome_seguidor }}!
+            </div>
+
+            <div class="message">
+                <p>
+                    <strong>{{ nome_autor }}</strong>, um autor que você segue no <strong>LIVRE DIA</strong>, acabou de publicar um novo texto! 🎉
+                </p>
+                <p>
+                    Corra para conferir esta nova obra e mergulhe na leitura:
+                </p>
+            </div>
+
+            <!-- Box de Destaque do Texto -->
+            <div class="texto-destaque">
+                <div class="autor-nome">{{ nome_autor }}</div>
+                <div class="texto-titulo">{{ titulo_texto }}</div>
+                {% if subtitulo_texto %}
+                <div class="texto-subtitulo">{{ subtitulo_texto }}</div>
+                {% endif %}
+                {% if trecho_texto %}
+                <div class="texto-trecho">"{{ trecho_texto }}"</div>
+                {% endif %}
+            </div>
+
+            <!-- Botão de Leitura -->
+            <div class="button-container">
+                <a href="{{ link_texto }}" class="read-button">
+                    📚 LEIA AGORA!
+                </a>
+            </div>
+
+            <!-- Aviso de Configurações -->
+            <div class="config-notice">
+                Se você não deseja mais receber avisos por e-mail quando seus autores favoritos publicarem novos textos,
+                você pode desativar essa opção nas suas <a href="{{ link_configuracoes }}">configurações de notificações</a>.
+            </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="footer">
+            <p>
+                Textos humanos autênticos, livres de IA.<br>
+                <a href="https://livredia.com.br">livredia.com.br</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

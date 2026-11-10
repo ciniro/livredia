@@ -1,0 +1,177 @@
+{% extends 'base_autor.html' %}
+{% load static %}
+
+{% block title %}Meus Seguidores - LIVRE DIA{% endblock %}
+
+{% block autor_content %}
+<!-- Container Principal -->
+<div class="max-w-7xl mx-auto">
+    <!-- Header com Título -->
+    <div class="mb-6">
+        <h1 class="text-3xl sm:text-4xl font-black leading-tight font-display text-text-light dark:text-text-dark">
+            Meus Seguidores
+        </h1>
+        <p class="text-sm text-placeholder-light dark:text-placeholder-dark mt-1">
+            Conheça os leitores que acompanham seu trabalho ({{ total_seguidores }} {% if total_seguidores == 1 %}seguidor{% else %}seguidores{% endif %})
+        </p>
+    </div>
+
+    <!-- ETAPA 4: Filtros e Ordenação -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-border-light dark:border-border-dark p-6 mb-6">
+        <form method="get" action="" class="space-y-4">
+            <!-- Linha 1: Busca e Ordenação -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Campo de Busca -->
+                <div>
+                    <label for="busca" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                        Buscar seguidor
+                    </label>
+                    <input
+                        type="text"
+                        id="busca"
+                        name="busca"
+                        value="{{ busca }}"
+                        placeholder="Nome ou username..."
+                        class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark focus:ring-2 focus:ring-primary focus:border-primary"
+                    >
+                </div>
+
+                <!-- Dropdown de Ordenação -->
+                <div>
+                    <label for="order_by" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                        Ordenar por
+                    </label>
+                    <select
+                        id="order_by"
+                        name="order_by"
+                        class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark focus:ring-2 focus:ring-primary focus:border-primary"
+                    >
+                        <option value="antigos" {% if order_by == 'antigos' %}selected{% endif %}>Mais antigos</option>
+                        <option value="visualizacoes" {% if order_by == 'visualizacoes' %}selected{% endif %}>Mais visualizações</option>
+                        <option value="tempo_leitura" {% if order_by == 'tempo_leitura' %}selected{% endif %}>Mais tempo de leitura</option>
+                        <option value="comentarios" {% if order_by == 'comentarios' %}selected{% endif %}>Mais comentários</option>
+                        <option value="lidos" {% if order_by == 'lidos' %}selected{% endif %}>Mais textos lidos</option>
+                        <option value="favoritos" {% if order_by == 'favoritos' %}selected{% endif %}>Mais textos favoritos</option>
+                        <option value="cartoes" {% if order_by == 'cartoes' %}selected{% endif %}>Mais cartões assinados</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Linha 2: Checkbox e Botões -->
+            <div class="flex flex-wrap items-center gap-4">
+                <!-- Checkbox "Apenas leitores especiais" -->
+                <label class="flex items-center gap-2 text-sm text-text-light dark:text-text-dark cursor-pointer">
+                    <input
+                        type="checkbox"
+                        name="apenas_especiais"
+                        {% if apenas_especiais == 'on' %}checked{% endif %}
+                        class="w-4 h-4 text-primary border-border-light dark:border-border-dark rounded focus:ring-2 focus:ring-primary"
+                    >
+                    <span>Apenas leitores especiais</span>
+                </label>
+
+                <!-- Botões -->
+                <div class="flex gap-2 ml-auto">
+                    <!-- Botão Filtrar -->
+                    <button
+                        type="submit"
+                        class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
+                    >
+                        Filtrar
+                    </button>
+
+                    <!-- Botão Limpar Filtros -->
+                    <a
+                        href="{% url 'painel_autor:meus_seguidores' %}"
+                        class="px-6 py-2 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                    >
+                        Limpar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if seguidores %}
+        <!-- Paginação Superior -->
+        {% if is_paginated %}
+        <div class="flex items-center justify-center gap-2 mb-6">
+            {% if page_obj.has_previous %}
+                <a href="?page=1&order_by={{ order_by }}&busca={{ busca }}&apenas_especiais={{ apenas_especiais }}" class="px-4 py-2 rounded-lg bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark hover:bg-primary hover:text-white transition-colors text-sm font-medium">
+                    Primeira
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}&order_by={{ order_by }}&busca={{ busca }}&apenas_especiais={{ apenas_especiais }}" class="px-4 py-2 rounded-lg bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark hover:bg-primary hover:text-white transition-colors text-sm font-medium">
+                    Anterior
+                </a>
+            {% endif %}
+
+            <span class="px-4 py-2 text-sm font-medium text-text-light dark:text-text-dark">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&order_by={{ order_by }}&busca={{ busca }}&apenas_especiais={{ apenas_especiais }}" class="px-4 py-2 rounded-lg bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark hover:bg-primary hover:text-white transition-colors text-sm font-medium">
+                    Próxima
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&order_by={{ order_by }}&busca={{ busca }}&apenas_especiais={{ apenas_especiais }}" class="px-4 py-2 rounded-lg bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark hover:bg-primary hover:text-white transition-colors text-sm font-medium">
+                    Última
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Grid de Cards de Seguidores -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {% for autor_seguido in seguidores %}
+                {% with seguidor=autor_seguido.seguidor %}
+                {% include 'painel_autor/_card_seguidor.html' %}
+                {% endwith %}
+            {% endfor %}
+        </div>
+
+        <!-- Paginação Inferior -->
+        {% if is_paginated %}
+        <div class="flex items-center justify-center gap-2 mt-8">
+            {% if page_obj.has_previous %}
+                <a href="?page=1&order_by={{ order_by }}&busca={{ busca }}&apenas_especiais={{ apenas_especiais }}" class="px-4 py-2 rounded-lg bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark hover:bg-primary hover:text-white transition-colors text-sm font-medium">
+                    Primeira
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}&order_by={{ order_by }}&busca={{ busca }}&apenas_especiais={{ apenas_especiais }}" class="px-4 py-2 rounded-lg bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark hover:bg-primary hover:text-white transition-colors text-sm font-medium">
+                    Anterior
+                </a>
+            {% endif %}
+
+            <span class="px-4 py-2 text-sm font-medium text-text-light dark:text-text-dark">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&order_by={{ order_by }}&busca={{ busca }}&apenas_especiais={{ apenas_especiais }}" class="px-4 py-2 rounded-lg bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark hover:bg-primary hover:text-white transition-colors text-sm font-medium">
+                    Próxima
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&order_by={{ order_by }}&busca={{ busca }}&apenas_especiais={{ apenas_especiais }}" class="px-4 py-2 rounded-lg bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark hover:bg-primary hover:text-white transition-colors text-sm font-medium">
+                    Última
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Estado Vazio: Nenhum seguidor ainda -->
+        <div class="text-center py-16">
+            <div class="flex justify-center mb-6">
+                <!-- Ícone: user-group (Heroicons outline) -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-24 h-24 text-placeholder-light dark:text-placeholder-dark opacity-40">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-text-light dark:text-text-dark mb-2">
+                Nenhum seguidor ainda
+            </h2>
+            <p class="text-placeholder-light dark:text-placeholder-dark max-w-md mx-auto">
+                Continue compartilhando seu trabalho e logo você terá leitores acompanhando sua jornada literária!
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

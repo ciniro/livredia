@@ -1,0 +1,495 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Gestão de Temas - Painel Admin{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col h-full" x-data="{ showDeleteModal: false, temaNome: '', temaPk: null, temaTextos: 0 }">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-border-light dark:border-border-dark">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-bold leading-tight text-text-light dark:text-text-dark font-display">
+                Gestão de Temas
+            </h1>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Gerencie todos os temas/tags do sistema ({{ total_temas }} total)
+            </p>
+        </div>
+
+        <!-- Botão Novo Tema -->
+        <a href="{% url 'painel_admin:novo_tema' %}"
+           class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide hover:bg-primary/90 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Novo Tema
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="px-6 py-4">
+        <form method="get" action="{% url 'painel_admin:gestao_temas' %}" class="flex flex-wrap gap-4">
+            <!-- Busca -->
+            <div class="flex-1 min-w-[200px]">
+                <label for="busca" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">
+                    Buscar tema
+                </label>
+                <input type="text"
+                       id="busca"
+                       name="busca"
+                       value="{{ busca }}"
+                       placeholder="Digite o nome do tema"
+                       class="form-input flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-10 placeholder:text-placeholder-light dark:text-placeholder-dark p-[15px] text-sm font-normal leading-normal">
+            </div>
+
+            <!-- Quantidade por Página -->
+            <div class="w-40">
+                <label for="per_page" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">
+                    Temas por página
+                </label>
+                <select id="per_page"
+                        name="per_page"
+                        class="form-select flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-10 p-[10px] text-sm font-normal leading-normal appearance-none">
+                    <option value="30" {% if per_page == 30 %}selected{% endif %}>30</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+
+            <!-- Ordenação -->
+            <div class="w-40">
+                <label for="ordenacao" class="block text-sm font-medium text-text-light dark:text-text-dark mb-1">
+                    Ordenar por
+                </label>
+                <select id="ordenacao"
+                        name="ordenacao"
+                        class="form-select flex w-full min-w-0 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-10 p-[10px] text-sm font-normal leading-normal appearance-none">
+                    <option value="nome_asc" {% if ordenacao == 'nome_asc' %}selected{% endif %}>Nome (A-Z)</option>
+                    <option value="nome_desc" {% if ordenacao == 'nome_desc' %}selected{% endif %}>Nome (Z-A)</option>
+                    <option value="textos_desc" {% if ordenacao == 'textos_desc' %}selected{% endif %}>Mais textos</option>
+                    <option value="textos_asc" {% if ordenacao == 'textos_asc' %}selected{% endif %}>Menos textos</option>
+                </select>
+            </div>
+
+            <!-- Botão Filtrar -->
+            <div class="flex items-end">
+                <button type="submit"
+                        class="flex items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide hover:bg-primary/90 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                    Filtrar
+                </button>
+            </div>
+
+            <!-- Botão Limpar Filtros -->
+            {% if busca or ordenacao != 'nome_asc' %}
+            <div class="flex items-end">
+                <a href="{% url 'painel_admin:gestao_temas' %}"
+                   class="flex items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-500 text-white text-sm font-bold leading-normal tracking-wide hover:bg-gray-600 transition-colors">
+                    Limpar
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Paginação (acima do grid) -->
+    {% if is_paginated %}
+    <div class="px-6 flex justify-end">
+        <div class="flex items-center gap-2">
+            <!-- Botão Primeira -->
+            {% if page_obj.has_previous %}
+                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page=1"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Primeira
+                </a>
+                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_obj.previous_page_number }}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Anterior
+                </a>
+            {% else %}
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Primeira
+                </span>
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Anterior
+                </span>
+            {% endif %}
+
+            <!-- Números de Página -->
+            {% with current_page=page_obj.number total_pages=page_obj.paginator.num_pages %}
+                {% if total_pages <= 7 %}
+                    <!-- Mostrar todas as páginas se forem 7 ou menos -->
+                    {% for page_num in page_obj.paginator.page_range %}
+                        {% if page_num == current_page %}
+                            <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                {{ page_num }}
+                            </span>
+                        {% else %}
+                            <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_num }}"
+                               class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ page_num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Lógica inteligente para muitas páginas -->
+                    {% if current_page <= 4 %}
+                        <!-- Início: mostrar 1 2 3 4 5 ... última -->
+                        {% for i in "12345" %}
+                            {% if forloop.counter == current_page %}
+                                <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                    {{ forloop.counter }}
+                                </span>
+                            {% else %}
+                                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ forloop.counter }}"
+                                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ forloop.counter }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ total_pages }}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% elif current_page >= total_pages|add:"-3" %}
+                        <!-- Final: mostrar primeira ... n-4 n-3 n-2 n-1 n -->
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page=1"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        {% for i in "54321" %}
+                            {% with page_num=total_pages|add:forloop.counter|add:"-6" %}
+                                {% if page_num == current_page %}
+                                    <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                        {{ page_num }}
+                                    </span>
+                                {% else %}
+                                    <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_num }}"
+                                       class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                        {{ page_num }}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Meio: mostrar 1 ... atual-1 atual atual+1 ... última -->
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page=1"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ current_page|add:"-1" }}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"-1" }}
+                        </a>
+                        <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                            {{ current_page }}
+                        </span>
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ current_page|add:"1" }}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"1" }}
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ total_pages }}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% endif %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Botão Próxima e Última -->
+            {% if page_obj.has_next %}
+                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_obj.next_page_number }}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Próxima
+                </a>
+                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_obj.paginator.num_pages }}"
+                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Última
+                </a>
+            {% else %}
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Próxima
+                </span>
+                <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Última
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Lista de Temas -->
+    <div class="flex-1 overflow-auto px-6 py-4">
+        {% if temas %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                {% for tema in temas %}
+                <div class="border border-border-light dark:border-border-dark rounded-lg p-4 hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors flex flex-col">
+                    <!-- Nome do Tema -->
+                    <h3 class="font-bold text-base text-text-light dark:text-text-dark leading-tight mb-2 truncate" title="{{ tema.nome }}">
+                        {{ tema.nome }}
+                    </h3>
+
+                    <!-- Estatísticas -->
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mb-3 flex-1">
+                        {% if tema.total_textos == 0 %}
+                            Nenhum texto
+                        {% elif tema.total_textos == 1 %}
+                            1 texto
+                        {% else %}
+                            {{ tema.total_textos }} textos
+                        {% endif %}
+                    </p>
+
+                    <!-- Botões de Ação -->
+                    <div class="flex gap-2">
+                        <!-- Editar -->
+                        <a href="{% url 'painel_admin:editar_tema' pk=tema.pk %}"
+                           class="flex-1 flex items-center justify-center h-8 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                           title="Editar tema">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                            </svg>
+                        </a>
+
+                        <!-- Excluir -->
+                        <button @click="showDeleteModal = true; temaNome = '{{ tema.nome }}'; temaPk = {{ tema.pk }}; temaTextos = {{ tema.total_textos }}"
+                                class="flex-1 flex items-center justify-center h-8 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                                title="Excluir tema">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginação (abaixo do grid) -->
+            {% if is_paginated %}
+            <div class="mt-6 flex justify-end">
+                <div class="flex items-center gap-2">
+                    <!-- Botão Primeira -->
+                    {% if page_obj.has_previous %}
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page=1"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            Primeira
+                        </a>
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_obj.previous_page_number }}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            Anterior
+                        </a>
+                    {% else %}
+                        <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                            Primeira
+                        </span>
+                        <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                            Anterior
+                        </span>
+                    {% endif %}
+
+                    <!-- Números de Página -->
+                    {% with current_page=page_obj.number total_pages=page_obj.paginator.num_pages %}
+                        {% if total_pages <= 7 %}
+                            <!-- Mostrar todas as páginas se forem 7 ou menos -->
+                            {% for page_num in page_obj.paginator.page_range %}
+                                {% if page_num == current_page %}
+                                    <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                        {{ page_num }}
+                                    </span>
+                                {% else %}
+                                    <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_num }}"
+                                       class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                        {{ page_num }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <!-- Lógica inteligente para muitas páginas -->
+                            {% if current_page <= 4 %}
+                                <!-- Início: mostrar 1 2 3 4 5 ... última -->
+                                {% for i in "12345" %}
+                                    {% if forloop.counter == current_page %}
+                                        <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                            {{ forloop.counter }}
+                                        </span>
+                                    {% else %}
+                                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ forloop.counter }}"
+                                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                            {{ forloop.counter }}
+                                        </a>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ total_pages }}"
+                                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ total_pages }}
+                                </a>
+                            {% elif current_page >= total_pages|add:"-3" %}
+                                <!-- Final: mostrar primeira ... n-4 n-3 n-2 n-1 n -->
+                                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page=1"
+                                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    1
+                                </a>
+                                <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                                {% for i in "54321" %}
+                                    {% with page_num=total_pages|add:forloop.counter|add:"-6" %}
+                                        {% if page_num == current_page %}
+                                            <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                                {{ page_num }}
+                                            </span>
+                                        {% else %}
+                                            <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_num }}"
+                                               class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                                {{ page_num }}
+                                            </a>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endfor %}
+                            {% else %}
+                                <!-- Meio: mostrar 1 ... atual-1 atual atual+1 ... última -->
+                                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page=1"
+                                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    1
+                                </a>
+                                <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ current_page|add:"-1" }}"
+                                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ current_page|add:"-1" }}
+                                </a>
+                                <span class="px-3 py-1.5 text-sm rounded-lg bg-primary text-white font-bold">
+                                    {{ current_page }}
+                                </span>
+                                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ current_page|add:"1" }}"
+                                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ current_page|add:"1" }}
+                                </a>
+                                <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                                <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ total_pages }}"
+                                   class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ total_pages }}
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Botão Próxima e Última -->
+                    {% if page_obj.has_next %}
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_obj.next_page_number }}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            Próxima
+                        </a>
+                        <a href="?busca={{ busca }}&ordenacao={{ ordenacao }}&per_page={{ per_page }}&page={{ page_obj.paginator.num_pages }}"
+                           class="px-3 py-1.5 text-sm rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            Última
+                        </a>
+                    {% else %}
+                        <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                            Próxima
+                        </span>
+                        <span class="px-3 py-1.5 text-sm rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                            Última
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- Estado vazio -->
+            <div class="flex flex-col items-center justify-center py-12">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-placeholder-light dark:text-placeholder-dark mb-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+                </svg>
+                <h3 class="text-lg font-bold text-text-light dark:text-text-dark mb-2">
+                    Nenhum tema encontrado
+                </h3>
+                <p class="text-sm text-placeholder-light dark:text-placeholder-dark mb-4">
+                    {% if busca %}
+                        Não encontramos temas com o termo "{{ busca }}".
+                    {% else %}
+                        Cadastre o primeiro tema para começar.
+                    {% endif %}
+                </p>
+                {% if not busca %}
+                <a href="{% url 'painel_admin:novo_tema' %}"
+                   class="flex items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide hover:bg-primary/90 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 mr-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Criar Primeiro Tema
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div x-show="showDeleteModal"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         @click.self="showDeleteModal = false">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+        <!-- Modal -->
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div @click.away="showDeleteModal = false"
+                 class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-90"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform scale-100"
+                 x-transition:leave-end="opacity-0 transform scale-90">
+
+                <!-- Ícone de Alerta -->
+                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-red-600 dark:text-red-500">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                </div>
+
+                <!-- Título -->
+                <h3 class="text-lg font-bold text-center text-text-light dark:text-text-dark mb-2">
+                    Confirmar Exclusão
+                </h3>
+
+                <!-- Mensagem -->
+                <p class="text-sm text-center text-placeholder-light dark:text-placeholder-dark mb-2">
+                    Tem certeza que deseja excluir o tema <strong x-text="temaNome"></strong>?
+                </p>
+
+                <!-- Aviso sobre textos -->
+                <div x-show="temaTextos > 0" class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-4">
+                    <p class="text-sm text-yellow-800 dark:text-yellow-300">
+                        <strong x-text="temaTextos"></strong> <span x-text="temaTextos === 1 ? 'texto usa' : 'textos usam'"></span> este tema.
+                        <span class="block mt-1">Os textos <strong>não serão excluídos</strong>, apenas perderão a associação com este tema.</span>
+                    </p>
+                </div>
+
+                <!-- Botões -->
+                <div class="flex gap-3">
+                    <button @click="showDeleteModal = false"
+                            class="flex-1 flex items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-500 text-white text-sm font-bold leading-normal tracking-wide hover:bg-gray-600 transition-colors">
+                        Cancelar
+                    </button>
+                    <form :action="'/painel-admin/gestao/temas/' + temaPk + '/excluir/'" method="post" class="flex-1">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="w-full flex items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-red-600 text-white text-sm font-bold leading-normal tracking-wide hover:bg-red-700 transition-colors">
+                            Confirmar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

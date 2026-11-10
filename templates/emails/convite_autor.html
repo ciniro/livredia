@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convite para Escrever - LIVRE DIA</title>
+    <style>
+        /* Reset básico */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #4F4A45;
+            line-height: 1.6;
+        }
+
+        /* Container principal */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #FDFBF6;
+            border: 1px solid #e0ddd5;
+        }
+
+        /* Cabeçalho */
+        .header {
+            background-color: #3A4D39;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header p {
+            margin: 8px 0 0;
+            color: #ffffff;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        /* Conteúdo */
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 20px;
+            font-weight: 600;
+            color: #3A4D39;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 30px;
+            font-size: 15px;
+            color: #4F4A45;
+            line-height: 1.8;
+        }
+
+        .message p {
+            margin: 0 0 15px 0;
+        }
+
+        /* Destaque do convidador */
+        .inviter-box {
+            background-color: #f8f6f0;
+            border-left: 4px solid #3A4D39;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .inviter-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #4F4A45;
+        }
+
+        .inviter-box strong {
+            color: #3A4D39;
+        }
+
+        /* Botão */
+        .button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+
+        .accept-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background-color: #3A4D39;
+            color: #ffffff !important;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 8px;
+            letter-spacing: 0.5px;
+            transition: background-color 0.3s;
+        }
+
+        .accept-button:hover {
+            background-color: #2d3d2c;
+        }
+
+        /* Link alternativo */
+        .alt-link {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f5f3ed;
+            border-left: 3px solid #e69019;
+        }
+
+        .alt-link p {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: #4F4A45;
+        }
+
+        .alt-link a {
+            word-break: break-all;
+            color: #e69019;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        /* Lista de benefícios */
+        .benefits {
+            background-color: #f8f6f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+
+        .benefits h3 {
+            margin: 0 0 15px 0;
+            color: #3A4D39;
+            font-size: 16px;
+        }
+
+        .benefits ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .benefits li {
+            margin-bottom: 8px;
+            color: #4F4A45;
+            font-size: 14px;
+        }
+
+        /* Rodapé */
+        .footer {
+            background-color: #3A4D39;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 13px;
+            color: #ffffff;
+            opacity: 0.9;
+        }
+
+        .footer a {
+            color: #e69019;
+            text-decoration: none;
+        }
+
+        /* Responsividade */
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .accept-button {
+                padding: 14px 30px;
+                font-size: 15px;
+            }
+
+            .footer {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <h1>LIVRE DIA</h1>
+            <p>Você foi {% if sexo == 'M' %}convidado{% elif sexo == 'F' %}convidada{% elif sexo == 'O' %}convidade{% else %}recebeu um convite{% endif %} para ser {% if sexo == 'M' %}autor{% elif sexo == 'F' %}autora{% elif sexo == 'O' %}autore{% else %}parte da nossa comunidade de autores{% endif %}!</p>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="content">
+            <div class="greeting">
+                Olá, {{ nome }}!
+            </div>
+
+            <div class="message">
+                <p>
+                    Temos uma ótima notícia! Você foi {% if sexo == 'M' %}convidado{% elif sexo == 'F' %}convidada{% elif sexo == 'O' %}convidade{% else %}recebeu um convite{% endif %} para fazer parte da comunidade de autores do <strong>LIVRE DIA</strong> - a plataforma de curadoria de textos humanos autênticos.
+                </p>
+            </div>
+
+            <!-- Quem convidou -->
+            <div class="inviter-box">
+                <p>
+                    Este convite foi enviado por <strong>{{ autor_convidante }}</strong>, que acredita no seu potencial como {% if sexo == 'M' %}autor{% elif sexo == 'F' %}autora{% elif sexo == 'O' %}autore{% else %}parte{% endif %} na nossa plataforma.
+                </p>
+            </div>
+
+            <!-- Benefícios -->
+            <div class="benefits">
+                <h3>O que você ganha ao se tornar {% if sexo == 'M' %}autor{% elif sexo == 'F' %}autora{% elif sexo == 'O' %}autore{% else %}parte da comunidade{% endif %}:</h3>
+                <ul>
+                    <li>Publique crônicas, poesias, ensaios e outros textos autorais</li>
+                    <li>Receba o <strong>Selo Livre de IA</strong> - certificação de autenticidade humana</li>
+                    <li>Construa sua galeria pessoal de textos</li>
+                    <li>Conecte-se com leitores que valorizam a escrita autêntica</li>
+                    <li>Participe de uma comunidade literária exclusiva</li>
+                    <li>Seja {% if sexo == 'M' %}remunerado{% elif sexo == 'F' %}remunerada{% elif sexo == 'O' %}remunerade{% else %}remunerado(a){% endif %} pelo seu trabalho por meio de doações voluntárias da comunidade</li>
+                </ul>
+            </div>
+
+            <div class="message">
+                <p>
+                    Para aceitar o convite e ativar sua conta {% if sexo == 'M' %}de autor{% elif sexo == 'F' %}de autora{% elif sexo == 'O' %}de autore{% else %}na plataforma{% endif %}, clique no botão abaixo. Você poderá confirmar seus dados e definir sua senha de acesso.
+                </p>
+            </div>
+
+            <!-- Botão de Aceitar -->
+            <div class="button-container">
+                <a href="{{ link_ativacao }}" class="accept-button">
+                    Aceitar Convite e Ativar Conta
+                </a>
+            </div>
+
+            <!-- Link Alternativo -->
+            <div class="alt-link">
+                <p><strong>Caso o botão não funcione</strong>, copie e cole este link na barra de endereços do seu navegador:</p>
+                <a href="{{ link_ativacao }}">{{ link_ativacao }}</a>
+            </div>
+
+            <div class="message" style="margin-top: 30px;">
+                <p style="font-size: 13px; color: #666;">
+                    Este convite é válido por <strong>7 dias</strong>. Se você não conhece a pessoa que enviou este convite ou não deseja se tornar {% if sexo == 'M' %}autor{% elif sexo == 'F' %}autora{% elif sexo == 'O' %}autore{% else %}parte da comunidade{% endif %}, pode ignorar este e-mail com segurança.
+                </p>
+            </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="footer">
+            <p>
+                Textos humanos autênticos, livres de IA.<br>
+                <a href="https://livredia.com.br">livredia.com.br</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

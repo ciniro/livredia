@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}Galeria de Autores - LIVRE DIA{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background-light dark:bg-background-dark py-8 px-4">
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Cabeçalho da Página -->
+        <div class="mb-8">
+            <h1 class="text-4xl md:text-5xl font-display font-bold text-text-light dark:text-text-dark mb-2">
+                Nossos Autores
+            </h1>
+            <p class="text-lg text-placeholder-light dark:text-placeholder-dark">
+                Conheça os autores verificados que compartilham suas obras em nossa plataforma.
+            </p>
+        </div>
+
+        <!-- Formulário de Filtros Unificado -->
+        <form id="filtros-form" hx-get="{% url 'galeria_autores' %}" hx-target="#grid-autores" hx-push-url="true" hx-indicator="#loading-indicator" class="mb-6 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark rounded-lg p-6 shadow-sm">
+
+            <!-- Busca por Nome/Pseudônimo -->
+            <div class="mb-6">
+                <label for="busca_nome" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                    Buscar por nome ou pseudônimo
+                </label>
+                <input
+                    type="text"
+                    name="busca_nome"
+                    id="busca_nome"
+                    value="{{ busca_nome }}"
+                    placeholder="Digite parte do nome ou pseudônimo..."
+                    class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark"
+                >
+            </div>
+
+            <!-- Filtro de Temas (Checkboxes estilizados) -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-text-light dark:text-text-dark mb-3">
+                    Filtrar por temas (selecione um ou mais)
+                </label>
+                <div class="flex gap-3 flex-wrap">
+                    {% for tag in tags %}
+                    <label
+                        x-data="{ checked: {% if tag.slug in filtro_tags %}true{% else %}false{% endif %} }"
+                        :class="checked ? 'bg-verde-floresta text-white' : 'bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark'"
+                        class="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg px-4 cursor-pointer transition"
+                    >
+                        <input
+                            type="checkbox"
+                            name="tags"
+                            value="{{ tag.slug }}"
+                            {% if tag.slug in filtro_tags %}checked{% endif %}
+                            class="hidden"
+                            @change="checked = !checked"
+                        >
+                        <p class="text-sm font-medium">{{ tag.nome }}</p>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="flex flex-wrap gap-3">
+                <button
+                    type="submit"
+                    class="px-6 py-2 bg-verde-floresta text-white font-medium rounded-lg hover:bg-verde-floresta-hover transition"
+                >
+                    Filtrar
+                </button>
+
+                <a
+                    href="{% url 'galeria_autores' %}"
+                    hx-get="{% url 'galeria_autores' %}"
+                    hx-target="#grid-autores"
+                    hx-push-url="true"
+                    hx-indicator="#loading-indicator"
+                    class="px-6 py-2 bg-border-light dark:bg-border-dark text-text-light dark:text-text-dark font-medium rounded-lg hover:opacity-80 transition"
+                >
+                    Limpar Filtros
+                </a>
+            </div>
+
+        </form>
+
+        <!-- Loading Indicator -->
+        <div class="flex justify-end mb-4">
+            <div id="loading-indicator" class="htmx-indicator">
+                <svg class="animate-spin h-5 w-5 text-[#e69019]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Grid de Autores (HTMX Target) -->
+        <div id="grid-autores">
+            {% include 'textos/partials/_grid_autores.html' %}
+        </div>
+
+    </div>
+</div>
+
+<style>
+.htmx-indicator {
+    display: none;
+}
+.htmx-request .htmx-indicator {
+    display: inline-block;
+}
+</style>
+
+{% endblock %}

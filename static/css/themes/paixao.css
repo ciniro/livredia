@@ -1,0 +1,10 @@
+/* Tema Paixão - Tons avermelhados românticos e intensos */
+  .tema-paixao {
+      background-color: #fef5f5;
+      color: #5c1a1a;
+  }
+
+  .dark .tema-paixao {
+      background-color: #2d1010;
+      color: #ffd4d4;
+  }

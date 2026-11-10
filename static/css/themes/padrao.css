@@ -1,0 +1,10 @@
+/* Tema Padrão - Pergaminho claro/escuro */
+.tema-padrao {
+    background-color: #fcfaf8;
+    color: #1b150e;
+}
+
+.dark .tema-padrao {
+    background-color: #211a11;
+    color: #f3eee7;
+}

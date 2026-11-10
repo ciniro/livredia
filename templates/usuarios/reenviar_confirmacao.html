@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}LIVRE DIA - Reenviar E-mail de Confirmação{% endblock %}
+
+{% block content %}
+<div class="layout-content-container flex flex-col max-w-md w-full px-4 sm:px-0">
+    <div class="flex flex-col items-center gap-8">
+        <div class="text-center">
+            <p class="text-4xl font-black leading-tight tracking-[-0.033em] font-display">Reenviar Confirmação</p>
+            <p class="text-base font-normal leading-normal text-text-light dark:text-text-dark mt-4">
+                Digite seu e-mail para receber um novo link de confirmação
+            </p>
+        </div>
+
+        <!-- Formulário de Reenvio -->
+        <form method="post" class="w-full flex flex-col gap-6">
+            {% csrf_token %}
+
+            <div class="flex flex-col gap-4">
+                <!-- Campo E-mail -->
+                <label class="flex flex-col w-full">
+                    <p class="text-base font-medium leading-normal pb-2">E-mail</p>
+                    <div class="flex w-full flex-1 items-stretch rounded-lg">
+                        <input
+                            name="email"
+                            class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary h-14 placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark p-[15px] text-base font-normal leading-normal"
+                            placeholder="seuemail@exemplo.com"
+                            type="email"
+                            value="{{ email }}"
+                            required
+                            autofocus
+                        />
+                    </div>
+                </label>
+            </div>
+
+            <!-- Botão Enviar -->
+            <div class="flex flex-col gap-3">
+                <button type="submit" class="flex min-w-[84px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white dark:text-text-light text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors">
+                    <span class="truncate">Reenviar E-mail de Confirmação</span>
+                </button>
+
+                <!-- Link para voltar ao login -->
+                <div class="text-center">
+                    <a href="{% url 'usuarios:login' %}" class="text-sm text-primary hover:text-primary-dark transition-colors">
+                        Voltar para o login
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        <!-- Informação adicional -->
+        <div class="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg p-4">
+            <div class="flex items-start">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-primary mr-3 mt-0.5 flex-shrink-0">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                </svg>
+                <div class="flex-1">
+                    <p class="text-sm leading-normal text-text-light dark:text-text-dark">
+                        <strong>Importante:</strong> O link de confirmação é válido por 7 dias. Verifique sua caixa de entrada e pasta de spam.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

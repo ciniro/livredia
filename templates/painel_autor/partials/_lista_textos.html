@@ -1,0 +1,346 @@
+{% load tempo_filters %}
+<!-- Partial: Lista de Textos (Mobile-First + Responsivo) -->
+
+<!-- Paginação (ACIMA da lista) -->
+{% include 'painel_autor/partials/_paginacao.html' %}
+
+{% if textos %}
+    <!-- MOBILE & TABLET: Cards (< 1024px) -->
+    <div class="block lg:hidden space-y-4">
+        {% for texto in textos %}
+            <div class="bg-white dark:bg-gray-800 border border-border-light dark:border-border-dark rounded-xl p-4 sm:p-5 hover:shadow-lg transition-all">
+                <!-- Header do Card (Título + Status) -->
+                <div class="flex items-start justify-between gap-3 mb-3">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-base sm:text-lg font-bold text-text-light dark:text-text-dark line-clamp-2 mb-1">
+                            {{ texto.titulo }}
+                        </h3>
+                        {% if texto.subtitulo %}
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark line-clamp-1">
+                                {{ texto.subtitulo }}
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Botão Toggle de Status -->
+                    <button
+                        hx-post="{% url 'painel_autor:toggle_status_texto' texto.id %}"
+                        hx-swap="none"
+                        class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold transition-all hover:opacity-80 whitespace-nowrap {% if texto.status == 'PUBLICADO' %}bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/50{% else %}bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50{% endif %}"
+                        title="Clique para {% if texto.status == 'PUBLICADO' %}despublicar{% else %}publicar{% endif %}"
+                    >
+                        {% if texto.status == 'PUBLICADO' %}
+                            Reverter para rascunho
+                        {% else %}
+                            Publicar
+                        {% endif %}
+                    </button>
+                </div>
+
+                <!-- Estatísticas em Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-4 pt-3 border-t border-border-light dark:border-border-dark">
+                    <!-- Visualizações -->
+                    <div class="flex flex-col items-center p-2 bg-secondary-light/50 dark:bg-secondary-dark/50 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-primary mb-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        <span class="text-xs font-bold text-text-light dark:text-text-dark">{{ texto.total_visualizacoes }}</span>
+                        <span class="text-xs text-placeholder-light dark:text-placeholder-dark">Leituras</span>
+                    </div>
+
+                    <!-- Comentários -->
+                    <div class="flex flex-col items-center p-2 bg-secondary-light/50 dark:bg-secondary-dark/50 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-primary mb-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+                        </svg>
+                        <span class="text-xs font-bold text-text-light dark:text-text-dark">{{ texto.total_comentarios }}</span>
+                        <span class="text-xs text-placeholder-light dark:text-placeholder-dark">Comentários</span>
+                    </div>
+
+                    <!-- Selo IA -->
+                    <div class="flex flex-col items-center p-2 bg-secondary-light/50 dark:bg-secondary-dark/50 rounded-lg">
+                        {% if texto.selo_livre_ia %}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-green-600 dark:text-green-400 mb-1">
+                                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+                            </svg>
+                        {% else %}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-gray-400 mb-1">
+                                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clip-rule="evenodd" />
+                            </svg>
+                        {% endif %}
+                        <span class="text-xs font-bold text-text-light dark:text-text-dark">Selo IA</span>
+                    </div>
+
+                    <!-- Data -->
+                    <div class="flex flex-col items-center p-2 bg-secondary-light/50 dark:bg-secondary-dark/50 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-primary mb-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                        </svg>
+                        <span class="text-xs font-bold text-text-light dark:text-text-dark">
+                            {{ texto.data_publicacao|date:"d/m/Y H:i"|default:"--" }}
+                        </span>
+                        <span class="text-xs text-placeholder-light dark:text-placeholder-dark">Publicação</span>
+                    </div>
+
+                    <!-- Tempo Total -->
+                    <div class="flex flex-col items-center p-2 bg-secondary-light/50 dark:bg-secondary-dark/50 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-primary mb-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <span class="text-xs font-bold text-text-light dark:text-text-dark">{{ texto.tempo_total_leitura|formatar_tempo }}</span>
+                        <span class="text-xs text-placeholder-light dark:text-placeholder-dark">Tempo Total</span>
+                    </div>
+
+                    <!-- Leitores únicos (NOVO) -->
+                    <div class="flex flex-col items-center p-2 bg-secondary-light/50 dark:bg-secondary-dark/50 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-primary mb-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                        </svg>
+                        <span class="text-xs font-bold text-text-light dark:text-text-dark">{{ texto.visualizacoes_unicas }}</span>
+                        <span class="text-xs text-placeholder-light dark:text-placeholder-dark">Leitores únicos</span>
+                    </div>
+
+                    <!-- Tempo Médio (CORRIGIDO) -->
+                    <div class="flex flex-col items-center p-2 bg-secondary-light/50 dark:bg-secondary-dark/50 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-primary mb-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <span class="text-xs font-bold text-text-light dark:text-text-dark">{{ texto.tempo_total_leitura|calcular_tempo_medio:texto.visualizacoes_unicas }}</span>
+                        <span class="text-xs text-placeholder-light dark:text-placeholder-dark">Tempo Médio</span>
+                    </div>
+                </div>
+
+                <!-- Ações -->
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-border-light dark:border-border-dark">
+                    <!-- Botão Editar -->
+                    <a href="{% url 'painel_autor:editar_texto' texto.id %}" class="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Editar texto">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                        </svg>
+                    </a>
+
+                    <!-- Botão Visualizar / Pré-visualizar -->
+                    {% if texto.status == 'PUBLICADO' %}
+                        <a href="{% url 'textos:leitura_texto' texto.pk %}" target="_blank" class="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Visualizar na zona pública">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'textos:leitura_texto' texto.pk %}" target="_blank" class="p-2 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors" title="Pré-visualizar rascunho (visível apenas para você)">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                        </a>
+                    {% endif %}
+
+                    <!-- Botão Excluir -->
+                    <button
+                        @click="abrirModal({{ texto.id }}, '{{ texto.titulo|escapejs }}')"
+                        class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Excluir texto"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- DESKTOP: Tabela (>= 1024px) -->
+    <div class="hidden lg:block overflow-x-auto rounded-xl border border-border-light dark:border-border-dark">
+        <table class="w-full text-left">
+            <thead class="bg-secondary-light dark:bg-secondary-dark border-b border-border-light dark:border-border-dark">
+                <tr>
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark">Título</th>
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark text-center">Status</th>
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark text-center">Selo IA</th>
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark text-center">Data</th>
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark text-center">Comentários</th>
+
+                    <!-- Exibições totais -->
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark text-center">
+                        Exibições totais
+                    </th>
+
+                    <!-- Visualizações únicas -->
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark text-center">
+                        Visualizações únicas
+                    </th>
+
+                    <!-- Tempo Total -->
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark text-center">
+                        Tempo Total
+                    </th>
+
+                    <!-- Tempo Médio -->
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark text-center">
+                        Tempo Médio
+                    </th>
+
+                    <th class="px-4 py-3 text-sm font-bold text-text-light dark:text-text-dark text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border-light dark:divide-border-dark">
+                {% for texto in textos %}
+                    <tr class="hover:bg-primary/5 transition-colors">
+                        <!-- Título -->
+                        <td class="px-4 py-4">
+                            <div class="max-w-md">
+                                <p class="text-sm font-bold text-text-light dark:text-text-dark line-clamp-1">
+                                    {{ texto.titulo }}
+                                </p>
+                                {% if texto.subtitulo %}
+                                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark line-clamp-1 mt-0.5">
+                                        {{ texto.subtitulo }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Status (Botão Toggle) -->
+                        <td class="px-4 py-4 text-center">
+                            <button
+                                hx-post="{% url 'painel_autor:toggle_status_texto' texto.id %}"
+                                hx-swap="none"
+                                class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold transition-all hover:opacity-80 {% if texto.status == 'PUBLICADO' %}bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/50{% else %}bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50{% endif %}"
+                                title="Clique para {% if texto.status == 'PUBLICADO' %}despublicar{% else %}publicar{% endif %}"
+                            >
+                                {% if texto.status == 'PUBLICADO' %}
+                                    Reverter para rascunho
+                                {% else %}
+                                    Publicar
+                                {% endif %}
+                            </button>
+                        </td>
+
+                        <!-- Selo IA -->
+                        <td class="px-4 py-4 text-center">
+                            {% if texto.selo_livre_ia %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-green-600 dark:text-green-400 mx-auto">
+                                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+                                </svg>
+                            {% else %}
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-gray-400 mx-auto">
+                                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clip-rule="evenodd" />
+                                </svg>
+                            {% endif %}
+                        </td>
+
+                        <!-- Data -->
+                        <td class="px-4 py-4 text-center text-sm text-placeholder-light dark:text-placeholder-dark">
+                            {% if texto.data_publicacao %}
+                                <div class="flex flex-col items-center">
+                                    <span class="font-medium text-text-light dark:text-text-dark">{{ texto.data_publicacao|date:"d/m/Y" }}</span>
+                                    <span class="text-xs">{{ texto.data_publicacao|date:"H:i" }}</span>
+                                </div>
+                            {% else %}
+                                --
+                            {% endif %}
+                        </td>
+
+                        <!-- Comentários -->
+                        <td class="px-4 py-4 text-center text-sm text-text-light dark:text-text-dark">
+                            {{ texto.total_comentarios }}
+                            {% if texto.total_comentarios_pendentes > 0 %}
+                                <span class="text-xs text-yellow-600 dark:text-yellow-400">({{ texto.total_comentarios_pendentes }})</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Exibições totais -->
+                        <td class="px-4 py-4 text-center text-sm text-text-light dark:text-text-dark">
+                            {{ texto.total_visualizacoes }}
+                        </td>
+
+                        <!-- Visualizações únicas -->
+                        <td class="px-4 py-4 text-center text-sm text-text-light dark:text-text-dark">
+                            {{ texto.visualizacoes_unicas }}
+                        </td>
+
+                        <!-- Tempo Total -->
+                        <td class="px-4 py-4 text-center text-sm text-text-light dark:text-text-dark">
+                            {{ texto.tempo_total_leitura|formatar_tempo }}
+                        </td>
+
+                        <!-- Tempo Médio -->
+                        <td class="px-4 py-4 text-center text-sm text-text-light dark:text-text-dark">
+                            {{ texto.tempo_total_leitura|calcular_tempo_medio:texto.visualizacoes_unicas }}
+                        </td>
+
+                        <!-- Ações -->
+                        <td class="px-4 py-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <!-- Editar -->
+                                <a href="{% url 'painel_autor:editar_texto' texto.id %}" class="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Editar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                    </svg>
+                                </a>
+
+                                <!-- Visualizar / Pré-visualizar -->
+                                {% if texto.status == 'PUBLICADO' %}
+                                    <a href="{% url 'textos:leitura_texto' texto.pk %}" target="_blank" class="p-1.5 text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Visualizar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'textos:leitura_texto' texto.pk %}" target="_blank" class="p-1.5 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors" title="Pré-visualizar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                        </svg>
+                                    </a>
+                                {% endif %}
+
+                                <!-- Excluir -->
+                                <button
+                                    @click="abrirModal({{ texto.id }}, '{{ texto.titulo|escapejs }}')"
+                                    class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    title="Excluir"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginação (ABAIXO da lista) -->
+    <div class="mt-6">
+        {% include 'painel_autor/partials/_paginacao.html' %}
+    </div>
+
+{% else %}
+    <!-- Estado Vazio -->
+    <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+        <div class="p-4 bg-secondary-light dark:bg-secondary-dark rounded-full mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-placeholder-light dark:text-placeholder-dark">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+        </div>
+        <h3 class="text-lg font-bold text-text-light dark:text-text-dark mb-2">
+            Nenhum texto encontrado
+        </h3>
+        <p class="text-sm text-placeholder-light dark:text-placeholder-dark max-w-md">
+            {% if status_ativa == 'PUBLICADO' %}
+                Você ainda não publicou nenhum texto. Crie seu primeiro texto e compartilhe suas ideias!
+            {% elif status_ativa == 'RASCUNHO' %}
+                Você não possui rascunhos salvos no momento.
+            {% else %}
+                Comece a escrever seu primeiro texto e compartilhe suas ideias com o mundo!
+            {% endif %}
+        </p>
+    </div>
+{% endif %}

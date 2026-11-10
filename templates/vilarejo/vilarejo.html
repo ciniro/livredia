@@ -1,0 +1,966 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ vilarejo.nome }} - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Força a cor de fundo do main para cobrir todo o espaço */
+    main {
+        background-color: #f5f5f4 !important; /* stone-100 - modo claro */
+    }
+    .dark main {
+        background-color: #1c1917 !important; /* stone-900 - modo escuro */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="w-full -mt-10 sm:-mt-20">
+    <!-- Banner do Vilarejo - EXATAMENTE igual ao perfil -->
+    <div class="relative w-screen h-64 sm:h-80" style="margin-left: calc(-50vw + 50%);">
+        {% if vilarejo.capa_personalizada %}
+        <img id="banner-img" src="{{ vilarejo.capa_personalizada.url }}" alt="Banner do Vilarejo" class="w-full h-full object-cover object-center">
+        {% else %}
+        <picture id="banner-img">
+            <source media="(min-width: 768px)" srcset="{% static 'img/banner_vilarejo_md_lg.png' %}">
+            <img src="{% static 'img/banner_vilarejo_m.png' %}" alt="Banner do Vilarejo" class="w-full h-full object-cover object-center">
+        </picture>
+        {% endif %}
+        <!-- Conteudo sobreposto no banner -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <div class="bg-white/85 dark:bg-stone-900/85 backdrop-blur-sm rounded-2xl px-6 py-4 sm:px-8 sm:py-6 shadow-xl max-w-[90%] sm:max-w-lg">
+                <div class="flex flex-col items-center gap-2">
+                    <img src="{% static 'img/village.png' %}" alt="Vilarejo" class="w-12 h-12 sm:w-14 sm:h-14">
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-800 dark:text-stone-100 text-center">
+                        {{ vilarejo.nome }}
+                    </h1>
+                    {% if is_dono %}
+                    <span class="px-3 py-1 bg-amber-500 text-white rounded-full text-sm font-medium">Você é o anfitrião</span>
+                    {% elif is_admin %}
+                    <span class="px-3 py-1 bg-red-500 text-white rounded-full text-sm font-medium">Admin</span>
+                    {% else %}
+                    <span class="px-3 py-1 bg-emerald-500 text-white rounded-full text-sm font-medium">Visitante</span>
+                    {% endif %}
+                </div>
+                <div class="flex flex-col items-center gap-2 mt-3">
+                    {% if is_dono %}
+                    <a href="{% url 'vilarejo:gestao' vilarejo.id %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold shadow-md hover:bg-emerald-500 transition-all">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Gerenciar vilarejo
+                    </a>
+                    <!-- Botoes de capa -->
+                    <div class="flex flex-wrap items-center justify-center gap-2">
+                        <button type="button" onclick="abrirModalCapa()"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-600 text-white rounded-lg text-xs font-semibold shadow-md hover:bg-stone-500 transition-all">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            Alterar capa
+                        </button>
+                        {% if vilarejo.capa_personalizada %}
+                        <button type="button" onclick="restaurarCapaPadrao()"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-semibold shadow-md hover:bg-amber-600 transition-all">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            Capa padrao
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if not is_dono %}
+                    <a href="{% url 'vilarejo:meu_vilarejo' %}" class="px-3 py-1.5 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 rounded-full text-sm font-medium hover:bg-stone-100 dark:hover:bg-stone-600">Ir para o meu vilarejo</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container principal do chat e vizinhos -->
+    <div class="w-full bg-stone-100 dark:bg-stone-900 flex flex-col p-2 sm:p-3 lg:p-4 mt-4" style="min-height: calc(100vh - 20rem);">
+
+
+    <!-- Layout Principal: duas colunas ocupando todo o espaco restante -->
+    <div class="flex-1 flex flex-col lg:flex-row gap-2 sm:gap-3 min-h-0 overflow-hidden">
+
+        <!-- Coluna Vizinhos (esquerda) -->
+        <div class="w-full lg:flex-shrink-0 flex flex-col min-h-0 order-1" id="vizinhos-container" style="max-width: 100%; --lg-width: 360px;">
+        <style>@media (min-width: 1024px) { #vizinhos-container { width: 360px !important; max-width: 360px !important; } }</style>
+            <div class="bg-white dark:bg-stone-800 rounded-xl shadow-lg dark:shadow-stone-950/50 dark:border dark:border-stone-700/50 flex flex-col h-full overflow-hidden">
+                <!-- Cabecalho Vizinhos -->
+                <div class="p-3 border-b border-stone-200 dark:border-stone-700/70 flex items-center justify-between flex-shrink-0 dark:bg-stone-800/50">
+                    <h2 class="font-bold text-sm text-stone-800 dark:text-emerald-100">Vizinhos ({{ vizinhos|length }}/9)</h2>
+                    <button id="toggle-vizinhos" class="lg:hidden text-stone-500">
+                        <svg id="vizinhos-chevron" class="w-5 h-5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                </div>
+                <!-- Lista de Vizinhos com scroll -->
+                <div id="vizinhos-lista" class="hidden lg:block flex-1 overflow-y-auto p-2 space-y-1 dark:bg-stone-900/50">
+                    {% for v in vizinhos %}
+                    <div class="flex items-center gap-2 p-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-700/50 dark:border dark:border-transparent dark:hover:border-stone-600/50 transition-all">
+                        <a href="{% url 'perfil_publico' v.usuario.username %}" class="flex-shrink-0">
+                            {% if v.usuario.foto %}
+                            <img src="{{ v.usuario.foto.url }}" alt="{{ v.usuario.username }}" class="w-8 h-8 rounded-full object-cover border-2 border-emerald-200 dark:border-emerald-600/50 dark:ring-1 dark:ring-emerald-500/30">
+                            {% else %}
+                            <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center border-2 border-emerald-200 dark:border-emerald-700/50">
+                                <span class="text-emerald-600 dark:text-emerald-400 font-bold text-xs">{{ v.usuario.username|slice:":1"|upper }}</span>
+                            </div>
+                            {% endif %}
+                        </a>
+                        <div class="flex-1 min-w-0">
+                            <button type="button" onclick="inserirMencao('{{ v.usuario.username }}')" class="text-sm font-medium text-stone-800 dark:text-stone-100 hover:text-emerald-600 dark:hover:text-emerald-400 truncate block text-left transition-colors">
+                                {{ v.usuario.get_display_name }}
+                            </button>
+                            <span class="text-xs text-stone-500 dark:text-stone-400">{{ v.similaridade }}%</span>
+                            {% if v.is_permanente %}<span class="text-amber-500 dark:text-amber-400 ml-1">★</span>{% endif %}
+                        </div>
+                        {% if v.usuario.vilarejo %}
+                        <a href="{% url 'vilarejo:vilarejo_detalhe' v.usuario.vilarejo.id %}" class="text-xs px-2 py-1 bg-emerald-100 dark:bg-emerald-900/70 text-emerald-700 dark:text-emerald-300 rounded hover:bg-emerald-200 dark:hover:bg-emerald-800/70 dark:border dark:border-emerald-700/50 inline-flex items-center gap-1 transition-colors">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                            Visitar vilarejo
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-stone-500 dark:text-stone-400 text-sm">Nenhum vizinho ainda</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Chat (direita) - ocupa todo o espaco restante -->
+        <div class="flex-1 flex flex-col min-h-0 order-2" id="chat-container">
+            <div class="bg-white dark:bg-stone-800 rounded-xl shadow-lg dark:shadow-stone-950/50 dark:border dark:border-stone-700/50 flex flex-col h-full overflow-hidden">
+                    <!-- Cabecalho do Chat -->
+                    <div class="p-2 sm:p-3 lg:p-4 border-b border-stone-200 dark:border-stone-700/70 flex items-center justify-between dark:bg-stone-800/50">
+                        <h2 class="font-bold text-sm sm:text-base lg:text-lg text-stone-800 dark:text-emerald-100">
+                            Chat do Vilarejo
+                        </h2>
+                        <span id="contador-mensagens" class="text-xs sm:text-sm text-stone-500 dark:text-stone-400">
+                            <span id="contador-mensagens-num">{{ mensagens|length }}</span> mensagens
+                        </span>
+                    </div>
+
+                    <!-- Area de Mensagens - ALTURA FIXA -->
+                    <div id="mensagens-container" class="overflow-y-auto p-2 sm:p-3 lg:p-4 space-y-4 sm:space-y-5 lg:space-y-6 dark:bg-stone-900/50" style="height: 550px; max-height: 550px;">
+                        {% for m in mensagens %}
+                        <div class="mensagem flex gap-1.5 sm:gap-2 {% if m.autor.id == usuario_atual.id %}flex-row-reverse{% endif %}"
+                             data-mensagem-id="{{ m.id }}"
+                             data-autor-id="{{ m.autor.id }}">
+                            <!-- Avatar -->
+                            <a href="{% url 'perfil_publico' m.autor.username %}" class="flex-shrink-0">
+                                {% if m.autor.foto %}
+                                <img src="{{ m.autor.foto.url }}"
+                                     alt="{{ m.autor.username }}"
+                                     class="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full object-cover">
+                                {% else %}
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full bg-emerald-100 dark:bg-emerald-800 dark:border dark:border-emerald-600/50 flex items-center justify-center">
+                                    <span class="text-emerald-600 dark:text-emerald-300 font-bold text-xs sm:text-sm lg:text-base">
+                                        {{ m.autor.username|slice:":1"|upper }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </a>
+                            <!-- Conteudo -->
+                            <div class="{% if m.autor.id == usuario_atual.id %}bg-emerald-100 dark:bg-emerald-900/80 dark:border dark:border-emerald-700/50{% else %}bg-stone-100 dark:bg-stone-700/80 dark:border dark:border-stone-600/50{% endif %} rounded-lg p-1.5 sm:p-2 lg:p-3 max-w-[80%] sm:max-w-[75%] mensagem-content relative shadow-sm dark:shadow-stone-950/30">
+                                <div class="flex items-center gap-1 sm:gap-2 mb-0.5 flex-wrap">
+                                    <button type="button" onclick="inserirMencao('{{ m.autor.username }}')"
+                                       class="font-medium text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer">
+                                        @{{ m.autor.username }}
+                                    </button>
+                                    <span class="text-xs text-stone-500 dark:text-stone-400">
+                                        {{ m.criado_em|naturaltime }}
+                                    </span>
+                                    {% if m.editado_em %}
+                                    <span class="text-xs text-stone-400 dark:text-stone-500">(editado)</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-xs sm:text-sm lg:text-base text-stone-700 dark:text-stone-200 break-words mensagem-conteudo">{{ m.conteudo }}</p>
+                                <!-- Links de acao (editar/excluir) -->
+                                {% if m.autor.id == usuario_atual.id or is_dono or is_admin %}
+                                <div class="flex gap-2 mt-1">
+                                    {% if m.autor.id == usuario_atual.id %}
+                                    <button type="button" onclick="abrirModalEditar({{ m.id }})"
+                                            class="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors">
+                                        Editar
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" onclick="confirmarExcluir({{ m.id }})"
+                                            class="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 hover:underline transition-colors">
+                                        Excluir
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-6 sm:py-8 lg:py-12 text-stone-500 dark:text-stone-400">
+                            <svg class="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                            <p class="text-sm sm:text-base lg:text-lg">Nenhuma mensagem ainda.</p>
+                            <p class="text-xs sm:text-sm mt-1">Seja o primeiro a enviar uma mensagem!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Formulario de Mensagem -->
+                    <div class="p-2 sm:p-3 lg:p-4 border-t border-stone-200 dark:border-stone-700/70 dark:bg-stone-800/30">
+                        <form id="form-mensagem" class="flex flex-col gap-2">
+                            {% csrf_token %}
+                            <!-- Linha 1: Campo de texto + Botao Emoji -->
+                            <div class="flex gap-2 items-center">
+                                <!-- Container do Input com Autocomplete -->
+                                <div class="relative flex-1">
+                                    <input type="text"
+                                           name="conteudo"
+                                           id="input-mensagem"
+                                           placeholder="Digite sua mensagem..."
+                                           maxlength="500"
+                                           autocomplete="off"
+                                           class="w-full px-3 py-2.5 rounded-lg border border-stone-300 dark:border-stone-600
+                                                  bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200
+                                                  focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
+                                    <!-- Autocomplete de Mencoes (relativo ao input) -->
+                                    <div id="mencoes-autocomplete"
+                                         class="hidden absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-stone-800 rounded-lg shadow-xl border border-stone-200 dark:border-stone-700 z-50 max-h-40 overflow-y-auto">
+                                    </div>
+                                </div>
+                                <!-- Botao Emoji -->
+                                <div class="relative">
+                                    <button type="button"
+                                            id="btn-emoji"
+                                            class="p-2.5 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700 text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600 transition-colors"
+                                            title="Emojis">
+                                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </button>
+                                    <!-- Picker de Emojis -->
+                                    <div id="emoji-picker"
+                                         class="hidden absolute bottom-full right-0 mb-2 bg-white dark:bg-stone-800 rounded-lg shadow-xl p-3 border border-stone-200 dark:border-stone-700 z-50">
+                                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; width: 252px;">
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">😀</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">😂</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">🥰</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">😍</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">🤔</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">😅</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">😊</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">🙂</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">😎</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">🤩</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">😢</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">😭</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">🥺</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">😤</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">👍</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">👎</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">👏</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">🙌</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">❤️</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">🔥</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">✨</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">💯</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">🎉</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">📚</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">✍️</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">📖</button>
+                                            <button type="button" class="emoji-btn hover:bg-stone-100 dark:hover:bg-stone-700 rounded" style="font-size: 1.5rem; padding: 4px; text-align: center;">🤗</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Linha 2: Botao Enviar -->
+                            <button type="submit"
+                                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-lg font-bold
+                                           transition-all duration-200 text-lg shadow-lg hover:shadow-xl active:shadow-md
+                                           border-b-4 border-emerald-700 hover:border-emerald-600 active:border-b-2 active:translate-y-0.5">
+                                Enviar
+                            </button>
+                        </form>
+                        <!-- Linha 3: Contador e Status -->
+                        <div class="mt-2 flex justify-between items-center text-xs text-stone-500 dark:text-stone-400">
+                            <span id="contador-caracteres">0/500</span>
+                            <span id="ws-status" class="inline-flex items-center gap-1">
+                                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                <span>Conectando...</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Upload de Capa -->
+<div id="modal-capa" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-stone-800 rounded-xl shadow-2xl w-full max-w-md">
+        <div class="p-4 border-b border-stone-200 dark:border-stone-700 flex justify-between items-center">
+            <h3 class="font-bold text-lg text-stone-800 dark:text-stone-100">Alterar Capa do Vilarejo</h3>
+            <button type="button" onclick="fecharModalCapa()" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <form id="form-capa" class="p-4" enctype="multipart/form-data">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">Selecione uma imagem</label>
+                <div class="border-2 border-dashed border-stone-300 dark:border-stone-600 rounded-lg p-6 text-center hover:border-emerald-400 dark:hover:border-emerald-500 transition-colors cursor-pointer" onclick="document.getElementById('input-capa').click()">
+                    <input type="file" id="input-capa" name="capa" accept="image/*" class="hidden" onchange="previewCapa(this)">
+                    <div id="capa-preview-area">
+                        <svg class="w-12 h-12 mx-auto text-stone-400 dark:text-stone-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <p class="text-sm text-stone-500 dark:text-stone-400">Clique para selecionar uma imagem</p>
+                        <p class="text-xs text-stone-400 dark:text-stone-500 mt-1">JPG, PNG ou GIF (max. 10MB)</p>
+                    </div>
+                    <img id="capa-preview" class="hidden max-h-48 mx-auto rounded-lg" alt="Preview">
+                </div>
+            </div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="fecharModalCapa()"
+                        class="px-4 py-2 bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-200 rounded-lg font-medium transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit" id="btn-salvar-capa"
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Salvar Capa
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Edicao de Mensagem -->
+<div id="modal-editar" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-stone-800 rounded-xl shadow-2xl w-full max-w-md">
+        <div class="p-4 border-b border-stone-200 dark:border-stone-700 flex justify-between items-center">
+            <h3 class="font-bold text-lg text-stone-800 dark:text-stone-100">Editar Mensagem</h3>
+            <button type="button" onclick="fecharModalEditar()" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <form id="form-editar" class="p-4">
+            <input type="hidden" id="editar-mensagem-id">
+            <div class="mb-4">
+                <textarea id="editar-conteudo"
+                          rows="4"
+                          maxlength="500"
+                          class="w-full px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-600
+                                 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200
+                                 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                          placeholder="Digite sua mensagem..."></textarea>
+                <div class="mt-1 text-right text-xs text-stone-500">
+                    <span id="editar-contador">0</span>/500
+                </div>
+            </div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="fecharModalEditar()"
+                        class="px-4 py-2 bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-200 rounded-lg font-medium transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors">
+                    Salvar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Funcao global para inserir mencao ao clicar no nome do vizinho
+function inserirMencao(username) {
+    const input = document.getElementById('input-mensagem');
+    const contador = document.getElementById('contador-caracteres');
+    const mencao = '@' + username + ' ';
+
+    // Insere a mencao na posicao atual do cursor ou no final
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const text = input.value;
+
+    // Se ja tem texto, adiciona espaco antes se necessario
+    let novoTexto;
+    if (text.length > 0 && start === text.length && !text.endsWith(' ')) {
+        novoTexto = text + ' ' + mencao;
+    } else {
+        novoTexto = text.substring(0, start) + mencao + text.substring(end);
+    }
+
+    input.value = novoTexto;
+    input.focus();
+
+    // Posiciona cursor apos a mencao
+    const novaPosicao = start + mencao.length + (text.length > 0 && start === text.length && !text.endsWith(' ') ? 1 : 0);
+    input.setSelectionRange(novaPosicao, novaPosicao);
+
+    // Atualiza contador
+    contador.textContent = input.value.length + '/500';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const vilarejoId = {{ vilarejo.id }};
+    const usuarioAtualId = {{ usuario_atual.id }};
+    const isDono = {{ is_dono|yesno:"true,false" }};
+    const isAdmin = {{ is_admin|yesno:"true,false" }};
+    const form = document.getElementById('form-mensagem');
+    const input = document.getElementById('input-mensagem');
+    const contador = document.getElementById('contador-caracteres');
+    const container = document.getElementById('mensagens-container');
+    const wsStatus = document.getElementById('ws-status');
+
+    // Toggle vizinhos em mobile
+    const toggleBtn = document.getElementById('toggle-vizinhos');
+    const vizinhosLista = document.getElementById('vizinhos-lista');
+    const chevron = document.getElementById('vizinhos-chevron');
+
+    toggleBtn.addEventListener('click', function() {
+        if (window.innerWidth < 1024) {
+            vizinhosLista.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+    });
+
+    // Contador de caracteres
+    input.addEventListener('input', function() {
+        contador.textContent = this.value.length + '/500';
+        checkMencoes(this.value);
+    });
+
+    // Scroll para o final
+    function scrollToBottom() {
+        container.scrollTop = container.scrollHeight;
+    }
+    scrollToBottom();
+
+    // Emoji Picker
+    const btnEmoji = document.getElementById('btn-emoji');
+    const emojiPicker = document.getElementById('emoji-picker');
+
+    btnEmoji.addEventListener('click', function(e) {
+        e.stopPropagation();
+        emojiPicker.classList.toggle('hidden');
+    });
+
+    document.querySelectorAll('.emoji-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            input.value += this.textContent;
+            input.focus();
+            contador.textContent = input.value.length + '/500';
+            emojiPicker.classList.add('hidden');
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!emojiPicker.contains(e.target) && e.target !== btnEmoji) {
+            emojiPicker.classList.add('hidden');
+        }
+    });
+
+    // Autocomplete de Mencoes
+    const mencoesContainer = document.getElementById('mencoes-autocomplete');
+    let vizinhosData = [];
+
+    // Carregar lista de vizinhos para mencoes
+    fetch('{% url "vilarejo:listar_vizinhos" vilarejo.id %}')
+        .then(r => r.json())
+        .then(data => {
+            vizinhosData = data.usuarios || [];
+        });
+
+    function checkMencoes(text) {
+        const match = text.match(/@(\w*)$/);
+        if (match) {
+            const termo = match[1].toLowerCase();
+            const filtrados = vizinhosData.filter(u =>
+                u.username.toLowerCase().includes(termo) ||
+                u.nome.toLowerCase().includes(termo)
+            ).slice(0, 5);
+
+            if (filtrados.length > 0) {
+                mencoesContainer.innerHTML = filtrados.map(u => `
+                    <div class="mencao-item flex items-center gap-2 p-2 hover:bg-stone-100 dark:hover:bg-stone-700 cursor-pointer"
+                         data-username="${u.username}">
+                        ${u.foto
+                            ? `<img src="${u.foto}" class="w-6 h-6 rounded-full">`
+                            : `<div class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                                 <span class="text-emerald-600 dark:text-emerald-400 text-xs font-bold">${u.username[0].toUpperCase()}</span>
+                               </div>`
+                        }
+                        <span class="text-sm text-stone-800 dark:text-stone-200">@${u.username}</span>
+                        <span class="text-xs text-stone-500">${u.nome}</span>
+                    </div>
+                `).join('');
+                mencoesContainer.classList.remove('hidden');
+
+                mencoesContainer.querySelectorAll('.mencao-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const username = this.dataset.username;
+                        input.value = input.value.replace(/@\w*$/, '@' + username + ' ');
+                        mencoesContainer.classList.add('hidden');
+                        input.focus();
+                        contador.textContent = input.value.length + '/500';
+                    });
+                });
+            } else {
+                mencoesContainer.classList.add('hidden');
+            }
+        } else {
+            mencoesContainer.classList.add('hidden');
+        }
+    }
+
+    // WebSocket
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    let ws;
+
+    function conectarWebSocket() {
+        ws = new WebSocket(wsProtocol + '//' + window.location.host + '/ws/vilarejo/' + vilarejoId + '/');
+
+        ws.onopen = function() {
+            wsStatus.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Conectado';
+        };
+
+        ws.onclose = function() {
+            wsStatus.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span> Desconectado';
+            setTimeout(conectarWebSocket, 3000);
+        };
+
+        ws.onerror = function() {
+            wsStatus.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span> Erro';
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'chat_message') {
+                adicionarMensagem(data.message);
+            } else if (data.type === 'message_edited') {
+                editarMensagemUI(data.message);
+            } else if (data.type === 'message_deleted') {
+                removerMensagemUI(data.message_id);
+            }
+        };
+    }
+
+    conectarWebSocket();
+
+    function adicionarMensagem(msg) {
+        // Remover placeholder se existir
+        const placeholder = container.querySelector('.text-center');
+        if (placeholder && placeholder.querySelector('svg')) placeholder.remove();
+
+        const isProprioUsuario = msg.author.id === usuarioAtualId;
+        const podeExcluir = isProprioUsuario || isDono || isAdmin;
+
+        // Gerar HTML dos botoes de acao
+        let acoesHtml = '';
+        if (podeExcluir) {
+            acoesHtml = '<div class="flex gap-2 mt-1">';
+            if (isProprioUsuario) {
+                acoesHtml += `<button type="button" onclick="abrirModalEditar(${msg.id})" class="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline transition-colors">Editar</button>`;
+            }
+            acoesHtml += `<button type="button" onclick="confirmarExcluir(${msg.id})" class="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 hover:underline transition-colors">Excluir</button>`;
+            acoesHtml += '</div>';
+        }
+
+        const html = `
+            <div class="mensagem flex gap-1.5 sm:gap-2 ${isProprioUsuario ? 'flex-row-reverse' : ''}"
+                 data-mensagem-id="${msg.id}"
+                 data-autor-id="${msg.author.id}">
+                <a href="/@${msg.author.username}/" class="flex-shrink-0">
+                    ${msg.author.foto
+                        ? `<img src="${msg.author.foto}" alt="${msg.author.username}" class="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full object-cover">`
+                        : `<div class="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 rounded-full bg-emerald-100 dark:bg-emerald-800 dark:border dark:border-emerald-600/50 flex items-center justify-center">
+                             <span class="text-emerald-600 dark:text-emerald-300 font-bold text-xs sm:text-sm lg:text-base">${msg.author.username[0].toUpperCase()}</span>
+                           </div>`
+                    }
+                </a>
+                <div class="${isProprioUsuario ? 'bg-emerald-100 dark:bg-emerald-900/80 dark:border dark:border-emerald-700/50' : 'bg-stone-100 dark:bg-stone-700/80 dark:border dark:border-stone-600/50'} rounded-lg p-1.5 sm:p-2 lg:p-3 max-w-[80%] sm:max-w-[75%] shadow-sm dark:shadow-stone-950/30">
+                    <div class="flex items-center gap-1 sm:gap-2 mb-0.5 flex-wrap">
+                        <button type="button" onclick="inserirMencao('${msg.author.username}')" class="font-medium text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer">
+                            @${msg.author.username}
+                        </button>
+                        <span class="text-xs text-stone-500 dark:text-stone-400">agora</span>
+                    </div>
+                    <p class="text-xs sm:text-sm lg:text-base text-stone-700 dark:text-stone-200 break-words mensagem-conteudo">${formatarMencoes(escapeHtml(msg.content))}</p>
+                    ${acoesHtml}
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+        scrollToBottom();
+        atualizarContadorMensagens(1);
+    }
+
+    function editarMensagemUI(msg) {
+        const el = container.querySelector(`[data-mensagem-id="${msg.id}"] .mensagem-conteudo`);
+        if (el) el.innerHTML = formatarMencoes(escapeHtml(msg.content));
+    }
+
+    function removerMensagemUI(msgId) {
+        const el = container.querySelector(`[data-mensagem-id="${msgId}"]`);
+        if (el) {
+            el.remove();
+            atualizarContadorMensagens(-1);
+        }
+    }
+
+    function atualizarContadorMensagens(delta) {
+        const contadorEl = document.getElementById('contador-mensagens-num');
+        if (contadorEl) {
+            const atual = parseInt(contadorEl.textContent) || 0;
+            contadorEl.textContent = Math.max(0, atual + delta);
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Funcao para formatar mencoes @username como links clicaveis
+    function formatarMencoes(texto) {
+        // Regex para encontrar @username (letras, numeros, underscores)
+        return texto.replace(/@(\w+)/g, '<a href="#" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline mencao-link" data-username="$1" onclick="inserirMencao(\'$1\'); return false;">@$1</a>');
+    }
+
+    // Funcao global para inserir mencao no input
+    window.inserirMencao = function(username) {
+        const mencao = '@' + username + ' ';
+        input.value += mencao;
+        input.focus();
+        // Atualizar contador
+        contador.textContent = input.value.length + '/500';
+    };
+
+    // Aplicar formatacao nas mensagens existentes ao carregar
+    container.querySelectorAll('.mensagem-conteudo').forEach(el => {
+        el.innerHTML = formatarMencoes(escapeHtml(el.textContent));
+    });
+
+    // Envio de mensagem
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const conteudo = input.value.trim();
+        if (!conteudo) return;
+
+        const btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = '...';
+
+        fetch('{% url "vilarejo:enviar_mensagem" vilarejo.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: 'conteudo=' + encodeURIComponent(conteudo)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                input.value = '';
+                contador.textContent = '0/500';
+                // Adiciona a mensagem ao chat imediatamente (fallback quando WebSocket nao funciona)
+                const msgFormatada = {
+                    id: data.mensagem.id,
+                    author: {
+                        id: data.mensagem.autor.id,
+                        username: data.mensagem.autor.username,
+                        foto: data.mensagem.autor.foto
+                    },
+                    content: data.mensagem.conteudo
+                };
+                // Verifica se a mensagem ja nao foi adicionada via WebSocket
+                if (!container.querySelector(`[data-mensagem-id="${msgFormatada.id}"]`)) {
+                    adicionarMensagem(msgFormatada);
+                }
+            } else {
+                alert(data.error || 'Erro ao enviar mensagem');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Erro ao enviar mensagem');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = 'Enviar';
+        });
+    });
+
+    // === FUNCOES DE EDICAO E EXCLUSAO ===
+    const modalEditar = document.getElementById('modal-editar');
+    const formEditar = document.getElementById('form-editar');
+    const editarMensagemId = document.getElementById('editar-mensagem-id');
+    const editarConteudo = document.getElementById('editar-conteudo');
+    const editarContador = document.getElementById('editar-contador');
+
+    // Contador de caracteres no modal de edicao
+    editarConteudo.addEventListener('input', function() {
+        editarContador.textContent = this.value.length;
+    });
+
+    // Funcao global para abrir modal de edicao
+    window.abrirModalEditar = function(mensagemId) {
+        // Obter o conteudo diretamente do elemento na pagina (evita problemas de escape)
+        const msgEl = document.querySelector(`[data-mensagem-id="${mensagemId}"]`);
+        const conteudoEl = msgEl ? msgEl.querySelector('.mensagem-conteudo') : null;
+        const conteudoAtual = conteudoEl ? conteudoEl.textContent : '';
+
+        editarMensagemId.value = mensagemId;
+        editarConteudo.value = conteudoAtual;
+        editarContador.textContent = conteudoAtual.length;
+        modalEditar.classList.remove('hidden');
+        modalEditar.classList.add('flex');
+        editarConteudo.focus();
+    };
+
+    // Funcao global para fechar modal de edicao
+    window.fecharModalEditar = function() {
+        modalEditar.classList.add('hidden');
+        modalEditar.classList.remove('flex');
+        editarMensagemId.value = '';
+        editarConteudo.value = '';
+    };
+
+    // Submit do formulario de edicao
+    formEditar.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const mensagemId = editarMensagemId.value;
+        const novoConteudo = editarConteudo.value.trim();
+
+        if (!novoConteudo) {
+            alert('A mensagem nao pode estar vazia');
+            return;
+        }
+
+        const btn = formEditar.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = 'Salvando...';
+
+        fetch(`/vilarejo/${vilarejoId}/mensagem/${mensagemId}/editar/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: 'conteudo=' + encodeURIComponent(novoConteudo)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Atualizar na UI localmente (WebSocket tambem vai atualizar)
+                const msgEl = document.querySelector(`[data-mensagem-id="${mensagemId}"] .mensagem-conteudo`);
+                if (msgEl) {
+                    msgEl.textContent = novoConteudo;
+                    // Adicionar indicador (editado) se nao existir
+                    const headerEl = document.querySelector(`[data-mensagem-id="${mensagemId}"] .flex.items-center`);
+                    if (headerEl && !headerEl.querySelector('.text-stone-400')) {
+                        headerEl.insertAdjacentHTML('beforeend', '<span class="text-xs text-stone-400 dark:text-stone-500">(editado)</span>');
+                    }
+                }
+                fecharModalEditar();
+            } else {
+                alert(data.error || 'Erro ao editar mensagem');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Erro ao editar mensagem');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = 'Salvar';
+        });
+    });
+
+    // Funcao global para excluir mensagem diretamente (sem modal)
+    window.confirmarExcluir = function(mensagemId) {
+        fetch(`/vilarejo/${vilarejoId}/mensagem/${mensagemId}/excluir/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remover da UI localmente (WebSocket tambem vai remover)
+                const msgEl = document.querySelector(`[data-mensagem-id="${mensagemId}"]`);
+                if (msgEl) {
+                    msgEl.remove();
+                    atualizarContadorMensagens(-1);
+                }
+            } else {
+                alert(data.error || 'Erro ao excluir mensagem');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Erro ao excluir mensagem');
+        });
+    };
+
+    // Fechar modal ao clicar fora
+    modalEditar.addEventListener('click', function(e) {
+        if (e.target === modalEditar) fecharModalEditar();
+    });
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (!modalEditar.classList.contains('hidden')) fecharModalEditar();
+            if (!document.getElementById('modal-capa').classList.contains('hidden')) fecharModalCapa();
+        }
+    });
+
+    // === FUNCOES DE CAPA PERSONALIZADA ===
+    const modalCapa = document.getElementById('modal-capa');
+    const formCapa = document.getElementById('form-capa');
+    const inputCapa = document.getElementById('input-capa');
+    const capaPreview = document.getElementById('capa-preview');
+    const capaPreviewArea = document.getElementById('capa-preview-area');
+    const btnSalvarCapa = document.getElementById('btn-salvar-capa');
+
+    // Funcao global para abrir modal de capa
+    window.abrirModalCapa = function() {
+        modalCapa.classList.remove('hidden');
+        modalCapa.classList.add('flex');
+    };
+
+    // Funcao global para fechar modal de capa
+    window.fecharModalCapa = function() {
+        modalCapa.classList.add('hidden');
+        modalCapa.classList.remove('flex');
+        // Resetar formulario
+        inputCapa.value = '';
+        capaPreview.classList.add('hidden');
+        capaPreviewArea.classList.remove('hidden');
+        btnSalvarCapa.disabled = true;
+    };
+
+    // Preview da imagem selecionada
+    window.previewCapa = function(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            // Verificar tamanho (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('A imagem deve ter no maximo 10MB.');
+                input.value = '';
+                return;
+            }
+
+            // Verificar tipo
+            if (!file.type.startsWith('image/')) {
+                alert('O arquivo deve ser uma imagem.');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                capaPreview.src = e.target.result;
+                capaPreview.classList.remove('hidden');
+                capaPreviewArea.classList.add('hidden');
+                btnSalvarCapa.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Submit do formulario de capa
+    if (formCapa) {
+        formCapa.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!inputCapa.files || !inputCapa.files[0]) {
+                alert('Selecione uma imagem.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('capa', inputCapa.files[0]);
+
+            btnSalvarCapa.disabled = true;
+            btnSalvarCapa.textContent = 'Enviando...';
+
+            fetch('{% url "vilarejo:alterar_capa" vilarejo.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Recarregar pagina para atualizar banner
+                    window.location.reload();
+                } else {
+                    alert(data.error || 'Erro ao salvar a capa.');
+                    btnSalvarCapa.disabled = false;
+                    btnSalvarCapa.textContent = 'Salvar Capa';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Erro ao enviar a imagem.');
+                btnSalvarCapa.disabled = false;
+                btnSalvarCapa.textContent = 'Salvar Capa';
+            });
+        });
+    }
+
+    // Funcao global para restaurar capa padrao
+    window.restaurarCapaPadrao = function() {
+        fetch('{% url "vilarejo:restaurar_capa" vilarejo.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Recarregar pagina para atualizar banner
+                window.location.reload();
+            } else {
+                console.error(data.error || 'Erro ao restaurar a capa.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+        });
+    };
+
+    // Fechar modal ao clicar fora
+    if (modalCapa) {
+        modalCapa.addEventListener('click', function(e) {
+            if (e.target === modalCapa) fecharModalCapa();
+        });
+    }
+});
+</script>
+{% endblock %}

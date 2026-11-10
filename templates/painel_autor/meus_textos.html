@@ -1,0 +1,300 @@
+{% extends 'base_autor.html' %}
+{% load static %}
+{% load tempo_filters %}
+
+{% block title %}Meus Textos - LIVRE DIA{% endblock %}
+
+{% block autor_content %}
+<!-- Modal de Exclusão (Alpine.js) -->
+<div x-data="{
+    modalAberto: false,
+    textoId: null,
+    textoTitulo: '',
+    abrirModal(id, titulo) {
+        this.textoId = id;
+        this.textoTitulo = titulo;
+        this.modalAberto = true;
+    },
+    fecharModal() {
+        this.modalAberto = false;
+        this.textoId = null;
+        this.textoTitulo = '';
+    }
+}">
+    <!-- Container Principal -->
+    <div class="max-w-7xl mx-auto">
+        <!-- Header com Título e Botão "Novo Texto" -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-3xl sm:text-4xl font-black leading-tight font-display text-text-light dark:text-text-dark">
+                    Meus Textos
+                </h1>
+                <p class="text-sm text-placeholder-light dark:text-placeholder-dark mt-1">
+                    Gerencie suas obras publicadas e rascunhos
+                </p>
+            </div>
+
+            <!-- Botão Novo Texto -->
+            <a href="{% url 'painel_autor:novo_texto' %}" class="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-bold transition-all shadow-md hover:shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                <span class="hidden sm:inline">Novo Texto</span>
+            </a>
+        </div>
+
+        <!-- Tabs de Status -->
+        <div class="border-b border-border-light dark:border-border-dark mb-6">
+            <!-- Dropdown para Mobile -->
+            <div class="md:hidden pb-3">
+                <label class="block text-xs font-medium text-placeholder-light dark:text-placeholder-dark mb-1.5">
+                    Filtrar por status
+                </label>
+                <select
+                    onchange="window.location.href = this.value"
+                    class="w-full h-12 px-4 rounded-lg text-text-light dark:text-text-dark font-bold text-sm border-2 border-primary bg-background-light dark:bg-background-dark focus:outline-0 focus:ring-2 focus:ring-primary/50"
+                >
+                    <option value="?status=TODOS&order_by={{ order_by }}&per_page={{ per_page }}" {% if status_ativa == 'TODOS' %}selected{% endif %}>
+                        Todos ({{ total_todos }})
+                    </option>
+                    <option value="?status=PUBLICADO&order_by={{ order_by }}&per_page={{ per_page }}" {% if status_ativa == 'PUBLICADO' %}selected{% endif %}>
+                        Publicados ({{ total_publicados }})
+                    </option>
+                    <option value="?status=RASCUNHO&order_by={{ order_by }}&per_page={{ per_page }}" {% if status_ativa == 'RASCUNHO' %}selected{% endif %}>
+                        Rascunhos ({{ total_rascunhos }})
+                    </option>
+                </select>
+            </div>
+
+            <!-- Tabs para Desktop -->
+            <nav class="hidden md:flex gap-4 sm:gap-8">
+                <!-- Tab Todos -->
+                <a
+                    href="?status=TODOS&order_by={{ order_by }}&per_page={{ per_page }}"
+                    hx-get="?status=TODOS&order_by={{ order_by }}&per_page={{ per_page }}"
+                    hx-target="#lista-textos-container"
+                    hx-push-url="true"
+                    hx-indicator="#loading-indicator"
+                    class="flex items-center gap-2 px-1 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-colors {% if status_ativa == 'TODOS' %}border-primary text-primary{% else %}border-transparent text-placeholder-light dark:text-placeholder-dark hover:border-primary/50 hover:text-primary{% endif %}"
+                >
+                    <span>Todos</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark">
+                        {{ total_todos }}
+                    </span>
+                </a>
+
+                <!-- Tab Publicados -->
+                <a
+                    href="?status=PUBLICADO&order_by={{ order_by }}&per_page={{ per_page }}"
+                    hx-get="?status=PUBLICADO&order_by={{ order_by }}&per_page={{ per_page }}"
+                    hx-target="#lista-textos-container"
+                    hx-push-url="true"
+                    hx-indicator="#loading-indicator"
+                    class="flex items-center gap-2 px-1 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-colors {% if status_ativa == 'PUBLICADO' %}border-primary text-primary{% else %}border-transparent text-placeholder-light dark:text-placeholder-dark hover:border-primary/50 hover:text-primary{% endif %}"
+                >
+                    <span>Publicados</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                        {{ total_publicados }}
+                    </span>
+                </a>
+
+                <!-- Tab Rascunhos -->
+                <a
+                    href="?status=RASCUNHO&order_by={{ order_by }}&per_page={{ per_page }}"
+                    hx-get="?status=RASCUNHO&order_by={{ order_by }}&per_page={{ per_page }}"
+                    hx-target="#lista-textos-container"
+                    hx-push-url="true"
+                    hx-indicator="#loading-indicator"
+                    class="flex items-center gap-2 px-1 py-3 border-b-2 text-sm font-bold whitespace-nowrap transition-colors {% if status_ativa == 'RASCUNHO' %}border-primary text-primary{% else %}border-transparent text-placeholder-light dark:text-placeholder-dark hover:border-primary/50 hover:text-primary{% endif %}"
+                >
+                    <span>Rascunhos</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">
+                        {{ total_rascunhos }}
+                    </span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Filtros (Ordenação e Paginação) -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <!-- Ordenação -->
+            <div class="flex items-center gap-2">
+                <label for="order_by" class="text-xs font-medium text-text-light dark:text-text-dark whitespace-nowrap">
+                    Ordenar por:
+                </label>
+                <select
+                    id="order_by"
+                    name="order_by"
+                    hx-get="?status={{ status_ativa }}&per_page={{ per_page }}"
+                    hx-include="[name='order_by']"
+                    hx-target="#lista-textos-container"
+                    hx-push-url="true"
+                    hx-indicator="#loading-indicator"
+                    class="min-w-[180px] px-4 h-12 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-xs text-text-light dark:text-text-dark focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                >
+                    <option value="mais_recentes" {% if order_by == 'mais_recentes' %}selected{% endif %}>Mais recentes</option>
+                    <option value="mais_antigos" {% if order_by == 'mais_antigos' %}selected{% endif %}>Mais antigos</option>
+                    <option value="mais_visualizados" {% if order_by == 'mais_visualizados' %}selected{% endif %}>Mais visualizados</option>
+                    <option value="mais_comentados" {% if order_by == 'mais_comentados' %}selected{% endif %}>Mais comentados</option>
+                    <option value="maior_tempo_total" {% if order_by == 'maior_tempo_total' %}selected{% endif %}>Maior tempo total de leitura</option>
+                    <option value="menor_tempo_total" {% if order_by == 'menor_tempo_total' %}selected{% endif %}>Menor tempo total de leitura</option>
+                </select>
+            </div>
+
+            <!-- Paginação -->
+            <div class="flex items-center gap-2">
+                <label for="per_page" class="text-xs font-medium text-text-light dark:text-text-dark whitespace-nowrap">
+                    Por página:
+                </label>
+                <select
+                    id="per_page"
+                    name="per_page"
+                    hx-get="?status={{ status_ativa }}&order_by={{ order_by }}"
+                    hx-include="[name='per_page']"
+                    hx-target="#lista-textos-container"
+                    hx-push-url="true"
+                    hx-indicator="#loading-indicator"
+                    class="min-w-[100px] px-4 h-12 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-xs text-text-light dark:text-text-dark focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                >
+                    <option value="30" {% if per_page == '30' %}selected{% endif %}>30</option>
+                    <option value="50" {% if per_page == '50' %}selected{% endif %}>50</option>
+                    <option value="100" {% if per_page == '100' %}selected{% endif %}>100</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="htmx-indicator">
+            <div class="flex items-center justify-center p-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        </div>
+
+        <!-- Container da Lista de Textos (substituível via HTMX) -->
+        <div id="lista-textos-container">
+            {% include 'painel_autor/partials/_lista_textos.html' %}
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div
+        x-show="modalAberto"
+        x-cloak
+        @keydown.escape.window="fecharModal()"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        style="display: none;"
+    >
+        <div
+            @click.away="fecharModal()"
+            x-show="modalAberto"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4"
+        >
+            <!-- Header do Modal -->
+            <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-red-600 dark:text-red-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-text-light dark:text-text-dark">
+                            Excluir Texto
+                        </h3>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark mt-1">
+                            Esta ação não pode ser desfeita
+                        </p>
+                    </div>
+                </div>
+                <button @click="fecharModal()" class="text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Corpo do Modal -->
+            <div class="space-y-3">
+                <p class="text-sm text-text-light dark:text-text-dark">
+                    Você tem certeza que deseja excluir o texto:
+                </p>
+                <p class="text-sm font-bold text-primary p-3 bg-primary/5 rounded-lg break-words" x-text="textoTitulo"></p>
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 space-y-2">
+                    <p class="text-xs font-medium text-yellow-800 dark:text-yellow-200">
+                        ⚠️ Ao excluir este texto, também serão removidos:
+                    </p>
+                    <ul class="text-xs text-yellow-700 dark:text-yellow-300 space-y-1 ml-4 list-disc">
+                        <li>Todos os comentários relacionados</li>
+                        <li>Registro de visualizações</li>
+                        <li>Associações com temas/tags</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button
+                    @click="fecharModal()"
+                    class="px-4 py-2 text-sm font-medium text-text-light dark:text-text-dark hover:bg-secondary-light dark:hover:bg-secondary-dark rounded-lg transition-colors"
+                >
+                    Cancelar
+                </button>
+                <button
+                    @click="
+                        $refs.deleteForm.setAttribute('hx-post', '{% url 'painel_autor:excluir_texto' 0 %}'.replace('/0/', '/' + textoId + '/'));
+                        htmx.process($refs.deleteForm);
+                        htmx.trigger($refs.deleteForm, 'submit');
+                    "
+                    class="px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                >
+                    Sim, Excluir
+                </button>
+            </div>
+
+            <!-- Formulário Oculto para Exclusão -->
+            <form
+                x-ref="deleteForm"
+                method="POST"
+                hx-post=""
+                hx-swap="none"
+                style="display: none;"
+            >
+                {% csrf_token %}
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Ocultar scrollbar em navegadores webkit */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    /* Estilo do Alpine.js x-cloak */
+    [x-cloak] {
+        display: none !important;
+    }
+
+    /* Loading indicator HTMX */
+    .htmx-indicator {
+        display: none;
+    }
+    .htmx-request .htmx-indicator {
+        display: block;
+    }
+    .htmx-request.htmx-indicator {
+        display: block;
+    }
+</style>
+{% endblock %}

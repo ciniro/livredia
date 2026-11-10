@@ -1,0 +1,906 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+{% load humanize %}
+{% load tempo_filters %}
+
+{% block title %}Gestão de Autores - Painel Admin - LIVRE DIA{% endblock %}
+
+{% block admin_content %}
+<div class="space-y-8" x-data="{
+    showDeleteModal: false,
+    showLinkModal: false,
+    autorNome: '',
+    autorTextos: 0,
+    autorPk: null
+}">
+    <!-- Cabeçalho com Estatísticas e Botão -->
+    <div class="flex flex-wrap justify-between items-center gap-4">
+        <div>
+            <h1 class="text-text-light dark:text-text-dark text-2xl sm:text-3xl font-black leading-tight tracking-[-0.033em] font-display">
+                Gestão de Autores
+            </h1>
+            <p class="text-placeholder-light dark:text-placeholder-dark text-xs mt-2">
+                Total: {{ total_autores }} | Ativos: {{ autores_ativos }} | Pendentes: {{ autores_pendentes }}
+            </p>
+        </div>
+        <a href="{% url 'painel_admin:novo_autor' %}"
+           class="flex items-center justify-center h-10 px-5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            <span>Novo Autor</span>
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <form method="get" action="{% url 'painel_admin:gestao_autores' %}" class="flex flex-wrap gap-3 items-end">
+        <!-- Busca por Nome -->
+        <label class="flex flex-col flex-1 min-w-[250px]">
+            <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Buscar por Nome</span>
+            <input
+                type="text"
+                name="busca"
+                value="{{ busca }}"
+                placeholder="Digite o nome do autor..."
+                class="form-input flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-9 placeholder:text-placeholder-light dark:text-placeholder-dark px-3 text-xs font-normal">
+        </label>
+
+        <!-- Quantidade por Página -->
+        <label class="flex flex-col">
+            <span class="text-xs font-medium text-text-light dark:text-text-dark mb-1.5">Autores por página</span>
+            <select
+                name="per_page"
+                class="form-select flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-9 px-3 text-xs font-normal">
+                <option value="30" {% if per_page == '30' %}selected{% endif %}>30</option>
+                <option value="50" {% if per_page == '50' %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == '100' %}selected{% endif %}>100</option>
+            </select>
+        </label>
+
+        <!-- Esconder Clássicos -->
+        <label class="flex items-center gap-2 h-9 mt-6">
+            <input
+                type="checkbox"
+                name="esconder_classicos"
+                {% if esconder_classicos == 'on' %}checked{% endif %}
+                class="w-4 h-4 rounded border-border-light dark:border-border-dark text-primary focus:ring-2 focus:ring-primary/50 cursor-pointer">
+            <span class="text-xs font-medium text-text-light dark:text-text-dark">Esconder clássicos</span>
+        </label>
+
+        <!-- Botão Filtrar -->
+        <button
+            type="submit"
+            class="flex items-center justify-center h-9 px-4 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition-colors gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+            Filtrar
+        </button>
+
+        <!-- Botão Limpar -->
+        <a
+            href="{% url 'painel_admin:gestao_autores' %}"
+            class="flex items-center justify-center h-9 px-4 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg text-xs font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+            Limpar
+        </a>
+    </form>
+
+    <!-- Paginação (acima da tabela) -->
+    {% if is_paginated %}
+    <div class="flex justify-end">
+        <div class="flex items-center gap-1.5">
+            <!-- Botão Primeira -->
+            {% if page_obj.has_previous %}
+                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page=1"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Primeira
+                </a>
+                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_obj.previous_page_number }}"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Anterior
+                </a>
+            {% else %}
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Primeira
+                </span>
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Anterior
+                </span>
+            {% endif %}
+
+            <!-- Números de Página -->
+            {% with current_page=page_obj.number total_pages=page_obj.paginator.num_pages %}
+                {% if total_pages <= 7 %}
+                    <!-- Mostrar todas as páginas se forem 7 ou menos -->
+                    {% for page_num in page_obj.paginator.page_range %}
+                        {% if page_num == current_page %}
+                            <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                {{ page_num }}
+                            </span>
+                        {% else %}
+                            <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_num }}"
+                               class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ page_num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Lógica inteligente para muitas páginas -->
+                    {% if current_page <= 4 %}
+                        <!-- Início: mostrar 1 2 3 4 5 ... última -->
+                        {% for i in "12345" %}
+                            {% if forloop.counter == current_page %}
+                                <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                    {{ forloop.counter }}
+                                </span>
+                            {% else %}
+                                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ forloop.counter }}"
+                                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ forloop.counter }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ total_pages }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% elif current_page >= total_pages|add:"-3" %}
+                        <!-- Final: mostrar primeira ... n-4 n-3 n-2 n-1 n -->
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page=1"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        {% for i in "54321" %}
+                            {% with page_num=total_pages|add:forloop.counter|add:"-6" %}
+                                {% if page_num == current_page %}
+                                    <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                        {{ page_num }}
+                                    </span>
+                                {% else %}
+                                    <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_num }}"
+                                       class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                        {{ page_num }}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Meio: mostrar 1 ... atual-1 atual atual+1 ... última -->
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page=1"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ current_page|add:"-1" }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"-1" }}
+                        </a>
+                        <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                            {{ current_page }}
+                        </span>
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ current_page|add:"1" }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"1" }}
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ total_pages }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% endif %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Botão Próxima e Última -->
+            {% if page_obj.has_next %}
+                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_obj.next_page_number }}"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Próxima
+                </a>
+                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_obj.paginator.num_pages }}"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Última
+                </a>
+            {% else %}
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Próxima
+                </span>
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Última
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabela de Autores -->
+    <div class="rounded-xl border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark shadow-sm overflow-visible">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="overflow-visible">
+                    <tr class="bg-secondary-light/30 dark:bg-secondary-dark/20 overflow-visible">
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">Foto</th>
+
+                        <!-- Nome (clicável para ordenar) -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">
+                            <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={% if order_by == 'first_name' %}-first_name{% else %}first_name{% endif %}"
+                               class="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer">
+                                Nome do Autor
+                                {% if order_by == 'first_name' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                                    </svg>
+                                {% elif order_by == '-first_name' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+                                    </svg>
+                                {% endif %}
+                            </a>
+                        </th>
+
+                        <!-- Cadastrado desde (clicável para ordenar) -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark">
+                            <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={% if order_by == 'date_joined' %}-date_joined{% else %}date_joined{% endif %}"
+                               class="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer">
+                                Cadastrado desde
+                                {% if order_by == 'date_joined' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                                    </svg>
+                                {% elif order_by == '-date_joined' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+                                    </svg>
+                                {% endif %}
+                            </a>
+                        </th>
+
+                        <!-- Textos Publicados (clicável para ordenar) -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">
+                            <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={% if order_by == 'total_textos_publicados' %}-total_textos_publicados{% else %}total_textos_publicados{% endif %}"
+                               class="flex items-center justify-center gap-2 hover:text-primary transition-colors cursor-pointer">
+                                Textos Publicados
+                                {% if order_by == 'total_textos_publicados' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                                    </svg>
+                                {% elif order_by == '-total_textos_publicados' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+                                    </svg>
+                                {% endif %}
+                            </a>
+                        </th>
+
+                        <!-- Exibições totais -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">
+                            Exibições totais
+                        </th>
+
+                        <!-- Visualizações únicas -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">
+                            Visualizações únicas
+                        </th>
+
+                        <!-- Tempo Total -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">
+                            Tempo Total
+                        </th>
+
+                        <!-- Tempo Médio -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">
+                            Tempo Médio
+                        </th>
+
+                        <!-- Editar -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">Editar</th>
+
+                        <!-- Excluir -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">Excluir</th>
+
+                        <!-- Suspender/Reativar -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">Suspender/Reativar</th>
+
+                        <!-- Status (clicável para ordenar) -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">
+                            <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={% if order_by == 'is_active' %}-is_active{% else %}is_active{% endif %}"
+                               class="flex items-center justify-center gap-2 hover:text-primary transition-colors cursor-pointer">
+                                Status
+                                {% if order_by == 'is_active' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+                                    </svg>
+                                {% elif order_by == '-is_active' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+                                    </svg>
+                                {% endif %}
+                            </a>
+                        </th>
+
+                        <!-- Admin -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">Admin</th>
+
+                        <!-- Gerar Convite -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">Gerar Convite</th>
+
+                        <!-- Enviar Convite -->
+                        <th class="p-3 text-xs font-bold text-text-light dark:text-text-dark text-center">Enviar Convite</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border-light/40 dark:divide-border-dark/40">
+                    {% if autores %}
+                        {% for autor in autores %}
+                        <tr id="autor-row-{{ autor.pk }}" class="{% if autor.pk == user.pk %}opacity-50{% endif %}">
+                            <!-- Foto -->
+                            <td class="p-2.5">
+                                <img src="{{ autor.get_avatar_url }}"
+                                     alt="{{ autor.get_display_name }}"
+                                     class="w-10 h-10 rounded-full object-cover border-2 {% if autor.pk == user.pk %}border-gray-400{% else %}border-primary{% endif %}">
+                            </td>
+
+                            <!-- Nome do Autor -->
+                            <td class="p-2.5 text-sm font-bold text-text-light dark:text-text-dark">
+                                {{ autor.get_full_name }}
+                                {% if autor.pseudonimo %}
+                                    <br>
+                                    <span class="text-xs text-placeholder-light dark:text-placeholder-dark font-normal italic">
+                                        ({{ autor.pseudonimo }})
+                                    </span>
+                                {% endif %}
+                                {% if autor.pk == user.pk %}
+                                    <br>
+                                    <span class="text-xs text-gray-500 font-normal">
+                                        (Você)
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Cadastrado desde -->
+                            <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80">
+                                {{ autor.date_joined|date:"d/m/Y" }}
+                                <br>
+                                <span class="text-xs text-placeholder-light dark:text-placeholder-dark">
+                                    {{ autor.date_joined|naturaltime }}
+                                </span>
+                            </td>
+
+                            <!-- Textos Publicados -->
+                            <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                                {{ autor.total_textos_publicados }}
+                            </td>
+
+                            <!-- Exibições totais -->
+                            <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                                {{ autor.total_visualizacoes }}
+                            </td>
+
+                            <!-- Visualizações únicas -->
+                            <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                                {{ autor.visualizacoes_unicas }}
+                            </td>
+
+                            <!-- Tempo Total de Leitura -->
+                            <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                                {{ autor.tempo_total_leitura|formatar_tempo }}
+                            </td>
+
+                            <!-- Tempo Médio de Leitura -->
+                            <td class="p-2.5 text-xs text-text-light/80 dark:text-text-dark/80 text-center font-bold text-sm">
+                                {{ autor.tempo_total_leitura|calcular_tempo_medio:autor.visualizacoes_unicas }}
+                            </td>
+
+                            <!-- Editar -->
+                            <td class="p-2.5 text-center">
+                                {% if autor.pk == user.pk %}
+                                    <span
+                                        class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center gap-2 cursor-not-allowed"
+                                        title="Você não pode editar seu próprio perfil aqui. Use 'Minha Conta' no menu superior.">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                        </svg>
+                                        EDITAR
+                                    </span>
+                                {% else %}
+                                    <a
+                                        href="{% url 'painel_admin:editar_autor' autor.pk %}"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors text-xs inline-flex items-center justify-center gap-2"
+                                        title="Editar dados do autor">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                        </svg>
+                                        EDITAR
+                                    </a>
+                                {% endif %}
+                            </td>
+
+                            <!-- Excluir -->
+                            <td class="p-2.5 text-center">
+                                {% if autor.pk == user.pk %}
+                                    <span
+                                        class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center cursor-not-allowed"
+                                        title="Você não pode excluir sua própria conta aqui. Use 'Minha Conta' no menu superior.">
+                                        EXCLUIR
+                                    </span>
+                                {% else %}
+                                    <button
+                                        @click="
+                                            autorNome = '{{ autor.get_display_name }}';
+                                            autorTextos = {{ autor.total_textos_publicados }};
+                                            autorPk = {{ autor.pk }};
+                                            showDeleteModal = true;
+                                        "
+                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors text-xs"
+                                        title="Excluir autor permanentemente">
+                                        EXCLUIR
+                                    </button>
+                                {% endif %}
+                            </td>
+
+                            <!-- Suspender/Reativar -->
+                            <td class="p-2.5 text-center">
+                                {% if autor.pk == user.pk %}
+                                    <span
+                                        class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center cursor-not-allowed"
+                                        title="Você não pode suspender ou reativar sua própria conta.">
+                                        {% if autor.is_suspended %}REATIVAR{% else %}SUSPENDER{% endif %}
+                                    </span>
+                                {% else %}
+                                    <form method="post" action="{% url 'painel_admin:toggle_suspender_autor' autor.pk %}" class="inline">
+                                        {% csrf_token %}
+                                        <button
+                                            type="submit"
+                                            class="{% if autor.is_suspended %}bg-[#166534] hover:bg-[#14532d]{% else %}bg-[#d97706] hover:bg-[#b45309]{% endif %} text-white px-3 py-1.5 rounded-lg font-bold transition-colors text-xs"
+                                            title="{% if autor.is_suspended %}Reativar autor suspenso{% else %}Suspender autor{% endif %}">
+                                            {% if autor.is_suspended %}REATIVAR{% else %}SUSPENDER{% endif %}
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+
+                            <!-- Status -->
+                            <td class="p-2.5 text-center">
+                                {% if autor.is_active %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-600 text-white">
+                                        Ativo
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-600 text-white">
+                                        Pendente
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Admin -->
+                            <td class="p-2.5 text-center">
+                                {% if autor.pk == user.pk %}
+                                    <span
+                                        class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center gap-2 cursor-not-allowed"
+                                        title="Você não pode alterar suas próprias permissões administrativas.">
+                                        {% if autor.is_admin %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            </svg>
+                                            REMOVER ADMIN
+                                        {% else %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                                            </svg>
+                                            DAR ADMIN
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <form method="post" action="{% url 'painel_admin:toggle_admin_autor' autor.pk %}" class="inline">
+                                        {% csrf_token %}
+                                        <button
+                                            type="submit"
+                                            class="{% if autor.is_admin %}bg-red-600 hover:bg-red-700{% else %}bg-green-600 hover:bg-green-700{% endif %} text-white px-3 py-1.5 rounded-lg font-bold transition-colors text-xs inline-flex items-center justify-center gap-2"
+                                            title="{% if autor.is_admin %}Remover permissão administrativa{% else %}Dar permissão administrativa{% endif %}">
+                                            {% if autor.is_admin %}
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                </svg>
+                                                REMOVER ADMIN
+                                            {% else %}
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                                                </svg>
+                                                DAR ADMIN
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+
+                            <!-- Gerar Convite -->
+                            <td class="p-2.5 text-center">
+                                {% if autor.pk == user.pk %}
+                                    <!-- Usuário logado visualizando seu próprio cadastro -->
+                                    {% if autor.is_active %}
+                                        <!-- Já aceitou o convite -->
+                                        <button
+                                            disabled
+                                            class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60"
+                                            title="Você já aceitou o convite e ativou sua conta">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            </svg>
+                                            CONVITE JÁ ACEITO
+                                        </button>
+                                    {% else %}
+                                        <!-- Ainda não aceitou o convite -->
+                                        <span
+                                            class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-not-allowed"
+                                            title="Você não pode gerar convite para si mesmo.">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                                            </svg>
+                                            GERAR CONVITE
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if autor.is_active %}
+                                        <!-- Autor já aceitou o convite -->
+                                        <button
+                                            disabled
+                                            class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60"
+                                            title="Autor já aceitou o convite e ativou a conta">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            </svg>
+                                            CONVITE JÁ ACEITO
+                                        </button>
+                                    {% else %}
+                                        <!-- Autor ainda não aceitou o convite -->
+                                        <button
+                                            @click="
+                                                fetch('{% url 'painel_admin:gerar_link_boas_vindas' autor.pk %}')
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        navigator.clipboard.writeText(data.link);
+                                                        showLinkModal = true;
+                                                        setTimeout(() => { showLinkModal = false; }, 3000);
+                                                    });
+                                            "
+                                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors text-xs inline-flex items-center justify-center gap-1.5"
+                                            title="Gerar link de convite">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                                            </svg>
+                                            GERAR CONVITE
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+
+                            <!-- Enviar Convite -->
+                            <td class="p-2.5 text-center">
+                                {% if autor.pk == user.pk %}
+                                    <!-- Usuário logado visualizando seu próprio cadastro -->
+                                    {% if autor.is_active %}
+                                        <!-- Já aceitou o convite -->
+                                        <button
+                                            disabled
+                                            class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60"
+                                            title="Você já aceitou o convite e ativou sua conta">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            </svg>
+                                            JÁ ATIVO
+                                        </button>
+                                    {% else %}
+                                        <!-- Ainda não aceitou o convite -->
+                                        <span
+                                            class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-not-allowed"
+                                            title="Você não pode enviar convite para si mesmo.">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                                            </svg>
+                                            ENVIAR CONVITE
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if autor.is_active %}
+                                        <!-- Autor já aceitou o convite -->
+                                        <button
+                                            disabled
+                                            class="bg-gray-400 text-white px-3 py-1.5 rounded-lg font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60"
+                                            title="Autor já aceitou o convite e ativou a conta">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                            </svg>
+                                            JÁ ATIVO
+                                        </button>
+                                    {% else %}
+                                        <!-- Autor ainda não aceitou o convite -->
+                                        <button
+                                            @click="
+                                                fetch('{% url 'painel_admin:enviar_convite_email' autor.pk %}', {
+                                                    method: 'GET',
+                                                    headers: {
+                                                        'X-Requested-With': 'XMLHttpRequest'
+                                                    }
+                                                })
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        if (data.status === 'success') {
+                                                            alert('✅ ' + data.message);
+                                                        } else {
+                                                            alert('❌ ' + data.message);
+                                                        }
+                                                    })
+                                                    .catch(error => {
+                                                        alert('❌ Erro ao enviar e-mail. Tente novamente.');
+                                                        console.error(error);
+                                                    });
+                                            "
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors text-xs inline-flex items-center justify-center gap-1.5"
+                                            title="Enviar e-mail de boas-vindas com link de ativação">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                                            </svg>
+                                            ENVIAR CONVITE
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="13" class="p-8 text-center text-placeholder-light dark:text-placeholder-dark">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 mx-auto mb-4 opacity-50">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                                </svg>
+                                <p class="text-base">Nenhum autor encontrado.</p>
+                                {% if busca %}
+                                    <p class="text-sm mt-2">Tente alterar os filtros de busca.</p>
+                                {% else %}
+                                    <p class="text-sm mt-2">Clique em "Novo Autor" para começar.</p>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginação (abaixo da tabela) -->
+    {% if is_paginated %}
+    <div class="flex justify-end mt-6">
+        <div class="flex items-center gap-2">
+            <!-- Botão Primeira -->
+            {% if page_obj.has_previous %}
+                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page=1"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Primeira
+                </a>
+                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_obj.previous_page_number }}"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Anterior
+                </a>
+            {% else %}
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Primeira
+                </span>
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Anterior
+                </span>
+            {% endif %}
+
+            <!-- Números de Página -->
+            {% with current_page=page_obj.number total_pages=page_obj.paginator.num_pages %}
+                {% if total_pages <= 7 %}
+                    <!-- Mostrar todas as páginas se forem 7 ou menos -->
+                    {% for page_num in page_obj.paginator.page_range %}
+                        {% if page_num == current_page %}
+                            <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                {{ page_num }}
+                            </span>
+                        {% else %}
+                            <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_num }}"
+                               class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                {{ page_num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Lógica inteligente para muitas páginas -->
+                    {% if current_page <= 4 %}
+                        <!-- Início: mostrar 1 2 3 4 5 ... última -->
+                        {% for i in "12345" %}
+                            {% if forloop.counter == current_page %}
+                                <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                    {{ forloop.counter }}
+                                </span>
+                            {% else %}
+                                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ forloop.counter }}"
+                                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                    {{ forloop.counter }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ total_pages }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% elif current_page >= total_pages|add:"-3" %}
+                        <!-- Final: mostrar primeira ... n-4 n-3 n-2 n-1 n -->
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page=1"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        {% for i in "54321" %}
+                            {% with page_num=total_pages|add:forloop.counter|add:"-6" %}
+                                {% if page_num == current_page %}
+                                    <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                                        {{ page_num }}
+                                    </span>
+                                {% else %}
+                                    <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_num }}"
+                                       class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                                        {{ page_num }}
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% else %}
+                        <!-- Meio: mostrar 1 ... atual-1 atual atual+1 ... última -->
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page=1"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            1
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ current_page|add:"-1" }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"-1" }}
+                        </a>
+                        <span class="px-2.5 py-1 text-xs rounded-lg bg-primary text-white font-bold">
+                            {{ current_page }}
+                        </span>
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ current_page|add:"1" }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ current_page|add:"1" }}
+                        </a>
+                        <span class="px-2 text-placeholder-light dark:text-placeholder-dark">...</span>
+                        <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ total_pages }}"
+                           class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                            {{ total_pages }}
+                        </a>
+                    {% endif %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Botão Próxima e Última -->
+            {% if page_obj.has_next %}
+                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_obj.next_page_number }}"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Próxima
+                </a>
+                <a href="?busca={{ busca }}&per_page={{ per_page }}&esconder_classicos={{ esconder_classicos }}&order_by={{ order_by }}&esconder_classicos={{ esconder_classicos }}&page={{ page_obj.paginator.num_pages }}"
+                   class="px-2.5 py-1 text-xs rounded-lg border border-border-light dark:border-border-dark hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors text-text-light dark:text-text-dark">
+                    Última
+                </a>
+            {% else %}
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Próxima
+                </span>
+                <span class="px-2.5 py-1 text-xs rounded-lg border border-border-light/50 dark:border-border-dark/50 text-placeholder-light dark:text-placeholder-dark cursor-not-allowed">
+                    Última
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Modal de Confirmação de Exclusão (Único para todos os autores) -->
+    <div x-show="showDeleteModal"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="fixed inset-0 bg-gray-900/75 transition-opacity" @click="showDeleteModal = false"></div>
+
+            <div class="relative bg-background-light dark:bg-background-dark rounded-lg shadow-xl max-w-md w-full p-6">
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-2xl font-bold text-red-600 font-display">
+                        ⚠️ Confirmar Exclusão
+                    </h3>
+                    <button @click="showDeleteModal = false"
+                            class="text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Corpo -->
+                <div class="space-y-4">
+                    <p class="text-text-light dark:text-text-dark font-bold text-base">
+                        Você está prestes a excluir <span x-text="autorNome"></span> do sistema.
+                    </p>
+
+                    <p class="text-text-light dark:text-text-dark">
+                        <strong class="text-red-600">ATENÇÃO: Esta ação é IRREVERSÍVEL!</strong>
+                    </p>
+
+                    <p class="text-text-light dark:text-text-dark">
+                        Ao confirmar, os seguintes dados serão <strong>DELETADOS PERMANENTEMENTE</strong>:
+                    </p>
+
+                    <ul class="list-disc list-inside text-text-light dark:text-text-dark space-y-1 text-sm">
+                        <li>Conta do autor <strong x-text="autorNome"></strong></li>
+                        <li>Todos os <strong><span x-text="autorTextos"></span> textos publicados</strong></li>
+                        <li>Todos os comentários feitos pelo autor</li>
+                        <li>Foto de perfil e dados pessoais</li>
+                        <li>Histórico de visualizações</li>
+                    </ul>
+
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <p class="text-sm text-red-800 dark:text-red-200 font-bold">
+                            💡 Dica: Se você deseja apenas ocultar temporariamente o autor do site, use o botão "SUSPENDER" ao invés de excluir.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Botões -->
+                <div class="flex gap-4 mt-6">
+                    <button
+                        @click="showDeleteModal = false"
+                        class="flex-1 h-12 px-6 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark rounded-lg font-bold hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                        Cancelar
+                    </button>
+                    <form :action="'/painel-admin/gestao/autores/' + autorPk + '/excluir/'" method="post" class="flex-1">
+                        {% csrf_token %}
+                        <button
+                            type="submit"
+                            class="w-full h-12 px-6 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors">
+                            Confirmar Exclusão
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Link de Convite (Único, desaparece em 3 segundos) -->
+    <div x-show="showLinkModal"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center"
+         style="display: none;">
+        <div class="fixed inset-0 bg-gray-900/50" @click="showLinkModal = false"></div>
+
+        <div class="relative bg-background-light dark:bg-background-dark rounded-lg shadow-2xl max-w-md w-full p-8 mx-4">
+            <!-- Botão X para fechar -->
+            <button
+                @click="showLinkModal = false"
+                class="absolute top-4 right-4 text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="text-center space-y-4">
+                <div class="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-green-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                </div>
+
+                <p class="text-lg font-bold text-text-light dark:text-text-dark">
+                    Link de boas-vindas copiado para a área de transferência.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

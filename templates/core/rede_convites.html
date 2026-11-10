@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rede de Convites - LIVRE DIA{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background-light dark:bg-background-dark">
+    <!-- Hero Section -->
+    <div class="relative overflow-hidden">
+        <!-- Imagem de fundo -->
+        <div class="absolute inset-0">
+            <img src="{% static 'img/connections.jpg' %}" alt="" class="w-full h-full object-cover opacity-60">
+            <div class="absolute inset-0 bg-verde-floresta/70 dark:bg-verde-floresta/75"></div>
+        </div>
+
+        <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
+            <!-- Ícone -->
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-black/10 mb-8" style="filter: drop-shadow(0 0 8px #fff);">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-black">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                </svg>
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-black font-display mb-6" style="text-shadow: 0 0 10px #fff, 0 0 20px #fff;">
+                Rede de Convites
+            </h1>
+
+            <p class="text-xl sm:text-2xl text-black/90 font-light max-w-3xl mx-auto leading-relaxed" style="text-shadow: 0 0 8px #fff;">
+                Uma comunidade que cresce através de <strong class="font-semibold">conexões humanas genuínas</strong>,
+                onde cada autor convida talentos que admira.
+            </p>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+
+        <!-- Texto Institucional -->
+        <div class="prose prose-lg dark:prose-invert max-w-none mb-16">
+            <div class="bg-white dark:bg-secondary-dark/30 rounded-2xl p-8 sm:p-10 shadow-sm border border-border-light dark:border-border-dark">
+                <h2 class="text-2xl sm:text-3xl font-bold text-verde-floresta dark:text-green-400 font-display mb-6 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                    </svg>
+                    Curadoria Humana, Crescimento Orgânico
+                </h2>
+
+                <p class="text-text-light dark:text-text-dark text-lg leading-relaxed mb-6">
+                    No <strong class="text-verde-floresta dark:text-green-400">LIVRE DIA</strong>, acreditamos que a melhor forma de descobrir novos talentos
+                    é através de quem já faz parte da nossa comunidade. Por isso, criamos um sistema único de curadoria:
+                    <strong>cada autor pode convidar outros escritores</strong> que admira para fazer parte da plataforma.
+                </p>
+
+                <div class="grid sm:grid-cols-3 gap-6 my-8">
+                    <div class="text-center p-6 bg-verde-floresta/5 dark:bg-verde-floresta/10 rounded-xl">
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-verde-floresta/20 text-verde-floresta mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-text-light dark:text-text-dark mb-1">Sem Algoritmos</h3>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Nenhuma IA decide quem entra</p>
+                    </div>
+
+                    <div class="text-center p-6 bg-primary/5 dark:bg-primary/10 rounded-xl">
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/20 text-primary mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-text-light dark:text-text-dark mb-1">Feito com Afeto</h3>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Autores convidam quem admiram</p>
+                    </div>
+
+                    <div class="text-center p-6 bg-blue-500/5 dark:bg-blue-500/10 rounded-xl">
+                        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-text-light dark:text-text-dark mb-1">100% Humano</h3>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Crescimento genuíno e orgânico</p>
+                    </div>
+                </div>
+
+                <p class="text-text-light dark:text-text-dark text-lg leading-relaxed">
+                    Esse modelo garante que nossa comunidade cresça de forma <strong>orgânica e autêntica</strong>.
+                    Cada novo autor que chega foi reconhecido por alguém que já faz parte do LIVRE DIA,
+                    criando uma verdadeira rede de talentos conectados pela admiração mútua e pelo amor à escrita.
+                </p>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="flex flex-wrap justify-center gap-8 mb-12">
+            <div class="text-center">
+                <div class="text-4xl sm:text-5xl font-black text-verde-floresta dark:text-green-400 font-display">{{ total_autores }}</div>
+                <div class="text-sm text-placeholder-light dark:text-placeholder-dark mt-1">Autores na plataforma</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl sm:text-5xl font-black text-primary font-display">{{ total_convites_ativados }}</div>
+                <div class="text-sm text-placeholder-light dark:text-placeholder-dark mt-1">Conexões por convite</div>
+            </div>
+        </div>
+
+        <!-- Árvore de Convites -->
+        <div class="bg-white dark:bg-secondary-dark/30 rounded-2xl p-6 sm:p-8 shadow-sm border border-border-light dark:border-border-dark">
+            <h2 class="text-xl sm:text-2xl font-bold text-text-light dark:text-text-dark font-display mb-2 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-verde-floresta">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+                </svg>
+                Árvore de Conexões
+            </h2>
+            <p class="text-placeholder-light dark:text-placeholder-dark mb-6">
+                Toque em um autor para expandir ou recolher seus convidados
+            </p>
+
+            <!-- Container da Árvore -->
+            <div id="arvore-convites" class="space-y-2">
+                <!-- Renderizado via JavaScript -->
+            </div>
+
+            <!-- Fallback sem JavaScript -->
+            <noscript>
+                <div class="space-y-3">
+                    {% for convite in lista_convites %}
+                    <div class="flex items-center gap-3 p-3 bg-secondary-light/50 dark:bg-secondary-dark/50 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            {% if convite.convidante.foto %}
+                            <img src="{{ convite.convidante.foto.url }}" alt="" class="w-8 h-8 rounded-full object-cover">
+                            {% else %}
+                            <div class="w-8 h-8 rounded-full bg-verde-floresta text-white flex items-center justify-center text-xs font-bold">
+                                {{ convite.convidante.username|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                            <span class="font-medium text-text-light dark:text-text-dark">@{{ convite.convidante.username }}</span>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                        </svg>
+                        <div class="flex items-center gap-2">
+                            {% if convite.convidado.foto %}
+                            <img src="{{ convite.convidado.foto.url }}" alt="" class="w-8 h-8 rounded-full object-cover">
+                            {% else %}
+                            <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+                                {{ convite.convidado.username|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                            <span class="font-medium text-text-light dark:text-text-dark">@{{ convite.convidado.username }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </noscript>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// Dados da árvore vindos do Django
+const arvoresData = {{ arvores_json|safe }};
+
+// Estado global de nós expandidos
+const expandidos = new Set();
+
+// Cores por nível (classes Tailwind)
+const coresPorNivel = [
+    'verde-floresta',   // Nível 0 - Fundadores
+    'primary',          // Nível 1 - 1ª Geração
+    'blue-500',         // Nível 2 - 2ª Geração
+    'purple-500',       // Nível 3 - 3ª Geração
+    'pink-500',         // Nível 4 - 4ª Geração
+    'amber-500',        // Nível 5+ - 5ª Geração+
+];
+
+// Cores por nível (hex para estilos inline)
+const coresHex = [
+    '#3A4D39',  // Nível 0 - Verde Floresta
+    '#e69019',  // Nível 1 - Primary/Laranja
+    '#3b82f6',  // Nível 2 - Azul
+    '#a855f7',  // Nível 3 - Roxo
+    '#ec4899',  // Nível 4 - Rosa
+    '#f59e0b',  // Nível 5+ - Âmbar
+];
+
+// Expandir até o 3º nível por padrão
+function expandirAteNivel(nodes, nivelAtual, nivelMax) {
+    nodes.forEach(node => {
+        if (nivelAtual < nivelMax) {
+            expandidos.add(node.id);
+            if (node.filhos && node.filhos.length > 0) {
+                expandirAteNivel(node.filhos, nivelAtual + 1, nivelMax);
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Expandir até o 3º nível (níveis 0, 1 e 2)
+    expandirAteNivel(arvoresData, 0, 3);
+    renderArvore();
+});
+
+function toggleNode(id) {
+    if (expandidos.has(id)) {
+        expandidos.delete(id);
+    } else {
+        expandidos.add(id);
+    }
+    renderArvore();
+}
+
+function getCorNivel(nivel) {
+    return coresPorNivel[Math.min(nivel, coresPorNivel.length - 1)];
+}
+
+function renderNode(node, nivel) {
+    const temFilhos = node.filhos && node.filhos.length > 0;
+    const expandido = expandidos.has(node.id);
+    const cor = getCorNivel(nivel);
+    const corHex = coresHex[Math.min(nivel, coresHex.length - 1)];
+    const indent = nivel * 24;
+
+    let filhosHtml = '';
+    if (temFilhos && expandido) {
+        filhosHtml = `
+            <div class="filhos-container border-l-2 border-border-light dark:border-border-dark ml-3 mt-1">
+                ${node.filhos.map(filho => renderNode(filho, nivel + 1)).join('')}
+            </div>
+        `;
+    }
+
+    return `
+        <div class="node-container" style="margin-left: ${indent}px;">
+            <div class="flex items-center gap-3 p-3 rounded-lg transition-all ${temFilhos ? 'cursor-pointer hover:bg-secondary-light dark:hover:bg-secondary-dark group' : ''}"
+                 ${temFilhos ? `onclick="toggleNode(${node.id})"` : ''}>
+
+                ${temFilhos ? `
+                    <button class="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center
+                                  bg-secondary-light dark:bg-secondary-dark
+                                  text-placeholder-light dark:text-placeholder-dark
+                                  group-hover:bg-${cor}/20 group-hover:text-${cor}
+                                  transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                             class="w-4 h-4 transition-transform ${expandido ? 'rotate-90' : ''}">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </button>
+                ` : `
+                    <div class="w-6 h-6 flex items-center justify-center">
+                        <div class="w-2 h-2 rounded-full bg-${cor}"></div>
+                    </div>
+                `}
+
+                <div class="flex-shrink-0 w-10 h-10 rounded-full bg-${cor} text-white flex items-center justify-center text-sm font-bold overflow-hidden">
+                    ${node.foto ?
+                        `<img src="${node.foto}" alt="" class="w-full h-full object-cover">` :
+                        node.username.charAt(0).toUpperCase()
+                    }
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <a href="/@${node.username}" target="_blank" rel="noopener" onclick="event.stopPropagation()"
+                       onmouseover="this.style.color='${corHex}'" onmouseout="this.style.color=''"
+                       class="font-medium text-text-light dark:text-text-dark truncate transition-colors block">
+                        ${node.nome}
+                    </a>
+                    <div class="text-xs text-placeholder-light dark:text-placeholder-dark flex flex-wrap items-center gap-x-2">
+                        <a href="/@${node.username}" target="_blank" rel="noopener" onclick="event.stopPropagation()"
+                           onmouseover="this.style.color='${corHex}'" onmouseout="this.style.color=''"
+                           class="transition-colors">@${node.username}</a>
+                        ${node.data_convite ? `<span style="color: ${corHex}">em ${node.data_convite}</span>` : ''}
+                        ${temFilhos ? `<span class="px-1.5 py-0.5 rounded-full" style="background-color: ${corHex}20; color: ${corHex}">${node.total_filhos} convite${node.total_filhos > 1 ? 's' : ''}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+            ${filhosHtml}
+        </div>
+    `;
+}
+
+function renderArvore() {
+    const container = document.getElementById('arvore-convites');
+    container.innerHTML = arvoresData.map(arvore => renderNode(arvore, 0)).join('');
+}
+</script>
+
+<style>
+/* Animação suave para expandir/recolher */
+.filhos-container {
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Linha conectora vertical */
+.node-container {
+    position: relative;
+}
+
+/* Ajustes mobile */
+@media (max-width: 640px) {
+    .node-container {
+        margin-left: 0 !important;
+    }
+
+    .filhos-container {
+        margin-left: 1rem !important;
+    }
+}
+</style>
+{% endblock %}

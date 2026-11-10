@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}E-mail de Confirmação Enviado - LIVRE DIA{% endblock %}
+
+{% block content %}
+<div class="layout-content-container flex flex-col w-full max-w-[640px] flex-1 px-4">
+    <!-- Ícone e Título -->
+    <div class="flex flex-wrap justify-between gap-3 p-4 text-center mt-12">
+        <div class="flex w-full flex-col gap-6 items-center">
+            {% if email_confirmado %}
+            <!-- Ícone de Sucesso (Coffee) -->
+            <div class="flex items-center justify-center w-24 h-24">
+                <img src="{% static 'img/coffee.gif' %}" alt="Café" class="w-24 h-24">
+            </div>
+
+            <!-- Título de Sucesso -->
+            <p class="text-text-light dark:text-text-dark text-4xl sm:text-5xl font-black leading-tight tracking-[-0.033em] font-display">
+                E-mail Confirmado com Sucesso!
+            </p>
+            {% else %}
+            <!-- Ícone de Envelope -->
+            <div class="flex items-center justify-center w-24 h-24 rounded-full bg-primary/10">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-primary">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                </svg>
+            </div>
+
+            <!-- Título -->
+            <p class="text-text-light dark:text-text-dark text-4xl sm:text-5xl font-black leading-tight tracking-[-0.033em] font-display">
+                E-mail de Confirmação Enviado!
+            </p>
+            {% endif %}
+
+            <!-- Mensagem Principal -->
+            <div class="flex flex-col gap-4 text-center max-w-md">
+                {% if email_confirmado %}
+                <!-- Mensagem de sucesso -->
+                <p class="text-text-light dark:text-text-dark text-lg font-normal leading-relaxed">
+                    Seu e-mail foi confirmado com sucesso!
+                </p>
+                <p class="text-green-600 dark:text-green-400 text-xl font-bold">
+                    {{ email }}
+                </p>
+                <p class="text-placeholder-light dark:text-placeholder-dark text-base leading-relaxed mt-4">
+                    Agora você pode aproveitar todos os recursos do LIVRE DIA.
+                </p>
+                {% else %}
+                <!-- Mensagem de e-mail enviado -->
+                <p class="text-text-light dark:text-text-dark text-lg font-normal leading-relaxed">
+                    Enviamos um e-mail de confirmação para:
+                </p>
+                <p class="text-primary text-xl font-bold">
+                    {{ email }}
+                </p>
+
+                <p class="text-placeholder-light dark:text-placeholder-dark text-base leading-relaxed mt-6">
+                    Por favor, verifique sua caixa de entrada e clique no link de confirmação para ativar sua conta.
+                </p>
+                <p class="text-placeholder-light dark:text-placeholder-dark text-sm leading-relaxed">
+                    <strong>Dica:</strong> Não esquece de verificar também sua pasta de spam ou lixo eletrônico!
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="flex flex-col gap-4 p-4 mt-8 max-w-md mx-auto w-full">
+        {% if email_confirmado %}
+        <!-- Botão para fazer login (quando email já foi confirmado) -->
+        <a href="{% url 'usuarios:login' %}" class="w-full flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary hover:bg-primary/90 text-white text-base font-bold leading-normal transition-colors">
+            <span class="truncate">Entre agora!</span>
+        </a>
+        {% else %}
+        <!-- Botão Reenviar E-mail (quando email ainda não foi confirmado) -->
+        <form method="post" action="{% url 'usuarios:reenviar_confirmacao' %}">
+            {% csrf_token %}
+            <button type="submit" class="w-full flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-secondary-light dark:bg-secondary-dark text-text-light dark:text-text-dark text-base font-bold leading-normal hover:bg-secondary-light/80 dark:hover:bg-secondary-dark/80 transition-colors">
+                <span class="truncate">📧 Não Recebeu? Reenviar E-mail</span>
+            </button>
+        </form>
+
+        <!-- Link para Voltar -->
+        <a href="{% url 'core:home' %}" class="text-center text-primary hover:text-primary/80 text-base font-medium transition-colors">
+            Voltar à Página Inicial
+        </a>
+        {% endif %}
+    </div>
+
+    {% if not email_confirmado %}
+    <!-- Mensagem Extra (apenas quando email não foi confirmado) -->
+    <div class="flex justify-center p-4 mt-8">
+        <p class="text-placeholder-light dark:text-placeholder-dark text-sm text-center max-w-md">
+            O link de confirmação é válido por <strong>7 dias</strong>. Após confirmar, você poderá fazer login normalmente no LIVRE DIA.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

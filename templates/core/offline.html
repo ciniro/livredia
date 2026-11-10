@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sem Conexão - LIVRE DIA{% endblock %}
+
+{% block content %}
+<div class="layout-content-container flex flex-col max-w-4xl mx-auto px-4 py-16">
+    <div class="flex flex-col items-center justify-center text-center gap-8">
+        <!-- Ícone de Sem Conexão -->
+        <div class="w-32 h-32 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-gray-400 dark:text-gray-500">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+        </div>
+
+        <!-- Título -->
+        <h1 class="text-3xl md:text-4xl font-bold font-display text-text-light dark:text-text-dark">
+            Você está offline
+        </h1>
+
+        <!-- Descrição -->
+        <p class="text-lg text-text-light/70 dark:text-text-dark/70 max-w-md">
+            Parece que você está sem conexão com a internet. Verifique sua conexão e tente novamente.
+        </p>
+
+        <!-- Botão Tentar Novamente -->
+        <button onclick="window.location.reload()"
+                class="px-8 py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-colors flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Tentar novamente
+        </button>
+
+        <!-- Dica -->
+        <div class="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg max-w-md">
+            <p class="text-sm text-blue-800 dark:text-blue-200">
+                <strong>Dica:</strong> Páginas que você visitou recentemente podem estar disponíveis offline.
+                Use o botão voltar do navegador para acessá-las.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

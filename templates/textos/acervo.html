@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}Acervo de Textos - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Previne flash de conteúdo não estilizado (FOUC) com Alpine.js */
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background-light dark:bg-background-dark py-8 px-4">
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Cabeçalho da Página -->
+        <div class="mb-8">
+            <h1 class="text-4xl md:text-5xl font-display font-bold text-text-light dark:text-text-dark mb-2">
+                Acervo de Textos
+            </h1>
+            <p class="text-lg text-placeholder-light dark:text-placeholder-dark">
+                Explore nossa coleção de textos autênticos, escritos por autores humanos.
+            </p>
+        </div>
+
+        <!-- Painel de Filtros e Ordenação -->
+        <div class="bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark rounded-lg p-6 mb-6 shadow-sm">
+            <form
+                id="filtros-form"
+                hx-get="{% url 'acervo_textos' %}"
+                hx-target="#lista-textos"
+                hx-push-url="true"
+                hx-indicator="#loading-indicator"
+                class="space-y-6"
+            >
+
+                <!-- Linha 1: Filtros de Busca -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                    <!-- Filtro por Autor -->
+                    <div>
+                        <label for="autor" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Filtrar por Autor
+                        </label>
+                        <select
+                            name="autor"
+                            id="autor"
+                            class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+                            hx-get="{% url 'acervo_textos' %}"
+                            hx-target="#lista-textos"
+                            hx-push-url="true"
+                            hx-indicator="#loading-indicator"
+                            hx-include="#filtros-form"
+                        >
+                            <option value="">Todos os autores</option>
+                            {% for autor in autores %}
+                                <option value="{{ autor.id }}" {% if filtro_autor|stringformat:"s" == autor.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ autor.get_full_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Filtro por Título -->
+                    <div>
+                        <label for="titulo" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Buscar por Título
+                        </label>
+                        <input
+                            type="text"
+                            name="titulo"
+                            id="titulo"
+                            value="{{ filtro_titulo }}"
+                            placeholder="Digite o título..."
+                            class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark"
+                        >
+                    </div>
+
+                    <!-- Filtro por Tag -->
+                    <div>
+                        <label for="tag" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Filtrar por Tema
+                        </label>
+                        <select
+                            name="tag"
+                            id="tag"
+                            class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+                            hx-get="{% url 'acervo_textos' %}"
+                            hx-target="#lista-textos"
+                            hx-push-url="true"
+                            hx-indicator="#loading-indicator"
+                            hx-include="#filtros-form"
+                        >
+                            <option value="">Todos os temas</option>
+                            {% for tag in tags %}
+                                <option value="{{ tag.slug }}" {% if filtro_tag == tag.slug %}selected{% endif %}>
+                                    {{ tag.nome }} ({{ tag.num_textos }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Filtro por Pseudônimo -->
+                    <div>
+                        <label for="pseudonimo" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Filtrar por Pseudônimo
+                        </label>
+                        <select
+                            name="pseudonimo"
+                            id="pseudonimo"
+                            class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+                            hx-get="{% url 'acervo_textos' %}"
+                            hx-target="#lista-textos"
+                            hx-push-url="true"
+                            hx-indicator="#loading-indicator"
+                            hx-include="#filtros-form"
+                        >
+                            <option value="">Todos os pseudônimos</option>
+                            {% for autor in pseudonimos %}
+                                <option value="{{ autor.id }}" {% if filtro_pseudonimo|stringformat:"s" == autor.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ autor.pseudonimo }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Linha 2: Filtros de Data e Ordenação -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                    <!-- Data Inicial -->
+                    <div class="min-w-0">
+                        <label for="data_inicio" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Data inicial
+                        </label>
+                        <input
+                            type="date"
+                            name="data_inicio"
+                            id="data_inicio"
+                            value="{{ filtro_data_inicio }}"
+                            class="w-full min-w-0 max-w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+                        >
+                    </div>
+
+                    <!-- Data Final -->
+                    <div class="min-w-0">
+                        <label for="data_fim" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Data final
+                        </label>
+                        <input
+                            type="date"
+                            name="data_fim"
+                            id="data_fim"
+                            value="{{ filtro_data_fim }}"
+                            class="w-full min-w-0 max-w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+                        >
+                    </div>
+
+                    <!-- Ordenação -->
+                    <div>
+                        <label for="ordenar" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Ordenar por
+                        </label>
+                        <select
+                            name="ordenar"
+                            id="ordenar"
+                            class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+                            hx-get="{% url 'acervo_textos' %}"
+                            hx-target="#lista-textos"
+                            hx-push-url="true"
+                            hx-indicator="#loading-indicator"
+                            hx-include="#filtros-form"
+                        >
+                            <option value="recentes" {% if ordenar == 'recentes' %}selected{% endif %}>Mais recentes</option>
+                            <option value="antigos" {% if ordenar == 'antigos' %}selected{% endif %}>Menos recentes</option>
+                            <option value="views" {% if ordenar == 'views' %}selected{% endif %}>Mais views</option>
+                            <option value="autor" {% if ordenar == 'autor' %}selected{% endif %}>Autor (A-Z)</option>
+                        </select>
+                    </div>
+
+                    <!-- Textos por Página -->
+                    <div>
+                        <label for="per_page" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Quantidade de obras exibidas
+                        </label>
+                        <select
+                            name="per_page"
+                            id="per_page"
+                            class="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark"
+                            hx-get="{% url 'acervo_textos' %}"
+                            hx-target="#lista-textos"
+                            hx-push-url="true"
+                            hx-indicator="#loading-indicator"
+                            hx-include="#filtros-form"
+                        >
+                            <option value="30" {% if per_page == 30 %}selected{% endif %}>30</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Linha 3: Botões de Ação -->
+                <div class="flex flex-wrap gap-3">
+                    <button
+                        type="submit"
+                        class="px-6 py-2 bg-verde-floresta text-white font-medium rounded-lg hover:bg-verde-floresta-hover transition"
+                    >
+                        Aplicar Filtros
+                    </button>
+
+                    <a
+                        href="{% url 'acervo_textos' %}"
+                        class="px-6 py-2 bg-border-light dark:bg-border-dark text-text-light dark:text-text-dark font-medium rounded-lg hover:opacity-80 transition"
+                    >
+                        Limpar Filtros
+                    </a>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div class="flex justify-end mb-4">
+            <div id="loading-indicator" class="htmx-indicator">
+                <svg class="animate-spin h-5 w-5 text-[#e69019]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Lista de Textos (HTMX Target) -->
+        <div id="lista-textos">
+            {% include 'textos/partials/_lista_textos.html' %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

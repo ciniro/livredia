@@ -1,0 +1,202 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Editar Tema de Leitura - Painel Admin{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col h-full">
+    <!-- Header -->
+    <div class="flex items-center gap-4 px-6 py-4 border-b border-border-light dark:border-border-dark">
+        <a href="{% url 'painel_admin:temas_leitura' %}"
+           class="flex h-10 w-10 items-center justify-center rounded-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-text-light dark:text-text-dark">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            </svg>
+        </a>
+        <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-bold leading-tight text-text-light dark:text-text-dark font-display">
+                Editar Tema de Leitura
+            </h1>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Atualizar dados do tema {{ object.nome_exibicao }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Formulário -->
+    <div class="flex-1 overflow-auto px-6 py-6">
+        <form method="post" enctype="multipart/form-data" class="max-w-2xl mx-auto">
+            {% csrf_token %}
+
+            <!-- Instruções para edição de arquivo CSS -->
+            <div class="mb-6 p-5 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                    </svg>
+                    <div class="flex-1">
+                        <p class="font-bold text-base text-blue-900 dark:text-blue-200 mb-2">📝 Regras para criar o arquivo CSS do tema</p>
+                        <div class="text-sm text-blue-800 dark:text-blue-300 space-y-2 leading-relaxed">
+                            <p><strong>1. Nome da classe CSS:</strong> Deve ser <code class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded">.tema-{slug}</code></p>
+                            <p class="ml-4 text-xs">Exemplo: Se o slug for <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded">{{ object.slug }}</code>, a classe será <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded">.tema-{{ object.slug }}</code></p>
+
+                            <p><strong>2. Modo escuro:</strong> Sempre inclua versão dark mode com <code class="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-800 rounded">.dark .tema-{slug}</code></p>
+
+                            <p><strong>3. Estrutura obrigatória do arquivo CSS:</strong></p>
+                            <pre class="mt-2 p-3 bg-blue-100 dark:bg-blue-800 rounded text-xs overflow-x-auto"><code>/* Tema {Nome} - Descrição */
+.tema-{{ object.slug }} {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+.dark .tema-{{ object.slug }} {
+    background-color: #000000;
+    color: #ffffff;
+}</code></pre>
+
+                            <p class="text-xs italic mt-2">⚠️ Se a classe CSS não corresponder ao slug, o tema não funcionará!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensagens de Erro Global -->
+            {% if form.non_field_errors %}
+            <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                    </svg>
+                    <div class="flex-1">
+                        {% for error in form.non_field_errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Slug -->
+            <div class="mb-5">
+                <label for="{{ form.slug.id_for_label }}" class="flex gap-1 pb-2 text-sm font-medium leading-normal text-text-light dark:text-text-dark">
+                    {{ form.slug.label }}
+                    <span class="text-red-600">*</span>
+                </label>
+                {{ form.slug }}
+                {% if form.slug.errors %}
+                <p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.slug.errors.0 }}</p>
+                {% elif form.slug.help_text %}
+                <p class="mt-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">{{ form.slug.help_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Nome de Exibição -->
+            <div class="mb-5">
+                <label for="{{ form.nome_exibicao.id_for_label }}" class="flex gap-1 pb-2 text-sm font-medium leading-normal text-text-light dark:text-text-dark">
+                    {{ form.nome_exibicao.label }}
+                    <span class="text-red-600">*</span>
+                </label>
+                {{ form.nome_exibicao }}
+                {% if form.nome_exibicao.errors %}
+                <p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.nome_exibicao.errors.0 }}</p>
+                {% elif form.nome_exibicao.help_text %}
+                <p class="mt-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">{{ form.nome_exibicao.help_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Arquivo CSS -->
+            <div class="mb-5">
+                <label for="{{ form.arquivo_css.id_for_label }}" class="flex gap-1 pb-2 text-sm font-medium leading-normal text-text-light dark:text-text-dark">
+                    {{ form.arquivo_css.label }}
+                </label>
+
+                <!-- Exibir arquivo atual -->
+                {% if object.arquivo_css %}
+                <div class="mb-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-green-600 dark:text-green-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-green-900 dark:text-green-200">Arquivo atual:</p>
+                            <p class="text-sm text-green-700 dark:text-green-300 font-mono">{{ object.arquivo_css }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {{ form.arquivo_css }}
+                {% if form.arquivo_css.errors %}
+                <p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.arquivo_css.errors.0 }}</p>
+                {% else %}
+                <p class="mt-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">
+                    {% if object.arquivo_css %}
+                        Deixe em branco para manter o arquivo atual. Faça upload apenas se quiser substituir.
+                    {% else %}
+                        Faça upload do arquivo CSS do tema.
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Descrição -->
+            <div class="mb-5">
+                <label for="{{ form.descricao.id_for_label }}" class="flex gap-1 pb-2 text-sm font-medium leading-normal text-text-light dark:text-text-dark">
+                    {{ form.descricao.label }}
+                </label>
+                {{ form.descricao }}
+                {% if form.descricao.errors %}
+                <p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.descricao.errors.0 }}</p>
+                {% elif form.descricao.help_text %}
+                <p class="mt-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">{{ form.descricao.help_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Ordem -->
+            <div class="mb-5">
+                <label for="{{ form.ordem.id_for_label }}" class="flex gap-1 pb-2 text-sm font-medium leading-normal text-text-light dark:text-text-dark">
+                    {{ form.ordem.label }}
+                </label>
+                {{ form.ordem }}
+                {% if form.ordem.errors %}
+                <p class="mt-1.5 text-sm text-red-600 dark:text-red-400">{{ form.ordem.errors.0 }}</p>
+                {% elif form.ordem.help_text %}
+                <p class="mt-1.5 text-xs text-placeholder-light dark:text-placeholder-dark">{{ form.ordem.help_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Checkbox Ativo -->
+            <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div class="flex items-start gap-3">
+                    {{ form.ativo }}
+                    <label for="{{ form.ativo.id_for_label }}" class="flex-1 cursor-pointer">
+                        <span class="block text-sm font-medium text-text-light dark:text-text-dark">
+                            {{ form.ativo.label }}
+                        </span>
+                        {% if form.ativo.help_text %}
+                        <span class="block mt-1 text-xs text-placeholder-light dark:text-placeholder-dark">
+                            {{ form.ativo.help_text }}
+                        </span>
+                        {% endif %}
+                    </label>
+                </div>
+                {% if form.ativo.errors %}
+                <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ form.ativo.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Botões -->
+            <div class="flex gap-3 pt-4">
+                <a href="{% url 'painel_admin:temas_leitura' %}"
+                   class="flex-1 flex items-center justify-center h-12 px-5 rounded-lg bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark text-base font-bold leading-normal border border-border-light dark:border-border-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="flex-1 flex items-center justify-center h-12 px-5 rounded-lg bg-primary text-white text-base font-bold leading-normal hover:bg-primary/90 transition-colors">
+                    Salvar Alterações
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

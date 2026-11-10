@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Seus comentários - @{{ perfil_usuario.username }} - Livre Dia{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-background-light dark:bg-background-dark">
+    <!-- Banner do Perfil (Full Width) -->
+    <div class="relative w-screen h-[32rem] overflow-hidden" style="margin-left: calc(-50vw + 50%);">
+        <!-- Imagem de Capa -->
+        {% if capa_escolhida %}
+        <div class="absolute inset-0 w-full h-full bg-cover"
+             style="background-image: url('{% load static %}{% static capa_escolhida.caminho_imagem %}'); background-position: center {{ alinhamento_vertical_capa }}; aspect-ratio: 21/9;">
+        </div>
+        {% else %}
+        <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-500/20 to-blue-600/40"></div>
+        {% endif %}
+
+        <!-- Conteúdo sobreposto no banner -->
+        <div class="absolute inset-0 flex flex-col items-center justify-end pb-8 z-10">
+            <!-- Foto de Perfil -->
+            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white mb-4 shadow-lg">
+                {% if perfil_usuario.foto %}
+                    <img src="{{ perfil_usuario.foto.url }}" alt="Foto de {{ perfil_usuario.get_display_name }}" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center bg-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-white">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Painel de Informações -->
+            <div class="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-5 shadow-xl max-w-[90%] sm:max-w-md">
+                <h1 class="text-2xl font-black font-display text-black mb-1 text-center">
+                    {{ perfil_usuario.get_full_name }}
+                </h1>
+
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-md">
+                        {{ perfil_usuario.get_role_display }}
+                    </span>
+                    <p class="text-sm text-black font-bold">
+                        @{{ perfil_usuario.username }}
+                    </p>
+                </div>
+
+                <p class="text-xs text-black/70 font-medium text-center">
+                    Membro desde {{ membro_desde }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Título da Página -->
+        <div class="mb-6">
+            <a href="{% url 'perfil_publico' perfil_usuario.username %}" class="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-semibold text-sm mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                </svg>
+                Voltar para o perfil
+            </a>
+
+            <h2 class="font-display text-3xl font-bold text-text-light dark:text-text-dark mb-2 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-9 h-9 text-emerald-600 dark:text-emerald-400">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                </svg>
+                <span>Seus comentários</span>
+                {% if total_comentarios > 0 %}
+                <span class="text-xl text-text-light/60 dark:text-text-dark/60 font-normal">({{ total_comentarios }})</span>
+                {% endif %}
+            </h2>
+            <p class="text-text-light/70 dark:text-text-dark/70">Todos os comentários que você fez em textos do Livre Dia</p>
+        </div>
+
+        <!-- Lista de Comentários -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            {% if comentarios %}
+                <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for comentario in comentarios %}
+                    <div class="p-5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" id="coment-{{ comentario.id }}">
+                        <div class="flex items-start gap-4">
+                            <!-- Ícone de comentário (ANTES do texto) -->
+                            <div class="flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-emerald-600 dark:text-emerald-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                                </svg>
+                            </div>
+
+                            <!-- Indicador de comentário anônimo -->
+                            <div class="flex-shrink-0 mt-2">
+                                {% if comentario.publicado_anonimamente %}
+                                <div class="w-3 h-3 bg-gray-400 rounded-full" title="Comentário anônimo"></div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Conteúdo do comentário (clicável) -->
+                            <a href="{% url 'textos:leitura_texto' comentario.texto.pk %}" class="flex-1 min-w-0">
+                                <p class="text-base font-semibold text-text-light dark:text-text-dark mb-1">
+                                    Em: "{{ comentario.texto.titulo }}"
+                                    {% if comentario.texto.autor %}
+                                    <span class="font-normal text-text-light/60 dark:text-text-dark/60">
+                                        por @{{ comentario.texto.autor.username }}
+                                    </span>
+                                    {% endif %}
+                                </p>
+                                <p class="text-base text-text-light/80 dark:text-text-dark/80 mb-2">
+                                    {% if comentario.conteudo|length > 150 %}
+                                        {{ comentario.conteudo|slice:":150" }}...
+                                    {% else %}
+                                        {{ comentario.conteudo }}
+                                    {% endif %}
+                                </p>
+                                <div class="flex items-center gap-3 text-sm text-text-light/60 dark:text-text-dark/60">
+                                    <span>{{ comentario.data_publicacao|date:"d/m/Y às H:i" }}</span>
+                                    {% if comentario.publicado_anonimamente %}
+                                    <span class="text-gray-500">(anônimo)</span>
+                                    {% endif %}
+                                    <span class="text-xs px-2 py-1 rounded-full {% if comentario.status == 'APROVADO' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300{% elif comentario.status == 'PENDENTE' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300{% else %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300{% endif %}">
+                                        {{ comentario.get_status_display }}
+                                    </span>
+                                </div>
+                            </a>
+
+                            <!-- Botão X vermelho para excluir -->
+                            <button
+                                hx-delete="{% url 'usuarios:excluir_comentario' comentario.id %}"
+                                hx-target="#coment-{{ comentario.id }}"
+                                hx-swap="outerHTML swap:0.3s"
+                                class="flex-shrink-0 p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                title="Excluir comentário"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Paginação -->
+                {% if is_paginated %}
+                <div class="p-6 border-t border-gray-200 dark:border-gray-700">
+                    <nav class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            {% if page_obj.has_previous %}
+                            <a href="?page=1" class="px-3 py-2 text-sm font-medium text-text-light dark:text-text-dark bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                Primeira
+                            </a>
+                            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-2 text-sm font-medium text-text-light dark:text-text-dark bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                Anterior
+                            </a>
+                            {% endif %}
+                        </div>
+
+                        <span class="text-sm text-text-light/70 dark:text-text-dark/70">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+
+                        <div class="flex items-center gap-2">
+                            {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-2 text-sm font-medium text-text-light dark:text-text-dark bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                Próxima
+                            </a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-2 text-sm font-medium text-text-light dark:text-text-dark bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                Última
+                            </a>
+                            {% endif %}
+                        </div>
+                    </nav>
+                </div>
+                {% endif %}
+            {% else %}
+                <p class="text-text-light/60 dark:text-text-dark/60 text-center py-16 text-lg">
+                    Nada nesta seção
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Botão Voltar -->
+        <div class="flex justify-center mt-8">
+            <a href="{% url 'perfil_publico' perfil_usuario.username %}" class="flex items-center gap-2 px-6 py-3 bg-gray-200 dark:bg-gray-700 text-text-light dark:text-text-dark rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                </svg>
+                Voltar para o perfil
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

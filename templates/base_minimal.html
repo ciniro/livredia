@@ -1,0 +1,180 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="{% if user.is_authenticated %}{{ tema_plataforma|default:'light' }}{% endif %}" lang="pt-BR">
+<script>
+    // Detecta tema do sistema para usuários não logados
+    (function() {
+        var isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
+        if (!isAuthenticated) {
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.add(prefersDark ? 'dark' : 'light');
+        }
+    })();
+</script>
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}LIVRE DIA{% endblock %}</title>
+
+    <!-- Content Security Policy para Cloudflare Turnstile, Google Fonts, YouTube e imagens externas -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval'
+            https://challenges.cloudflare.com;
+        style-src 'self' 'unsafe-inline'
+            https://fonts.googleapis.com;
+        font-src 'self'
+            https://fonts.gstatic.com;
+        img-src 'self' data: blob: https:
+            https://ui-avatars.com;
+        frame-src 'self'
+            https://challenges.cloudflare.com
+            https://www.youtube.com
+            https://youtube.com
+            https://www.youtube-nocookie.com;
+        connect-src 'self'
+            https://challenges.cloudflare.com;
+    ">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+
+    <!-- Tailwind CSS (compilado localmente) -->
+    <link rel="stylesheet" href="{% static 'css/tailwind.min.css' %}"/>
+
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+
+    <!-- Toastr.js - Notificações Toast -->
+    <link rel="stylesheet" href="{% static 'css/vendor/toastr.min.css' %}"/>
+
+    <!-- Alpine.js -->
+    <script defer src="{% static 'js/vendor/alpine.min.js' %}"></script>
+
+    <!-- HTMX - Interatividade Server-driven -->
+    <script src="{% static 'js/vendor/htmx.min.js' %}"></script>
+
+    <!-- Cropper.js -->
+    <link rel="stylesheet" href="{% static 'css/vendor/cropper.min.css' %}"/>
+
+    <style>
+        body {
+            font-family: 'Noto Sans', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Newsreader', serif;
+        }
+
+        /* Estilos para autocomplete do navegador - garante consistência visual */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active,
+        textarea:-webkit-autofill,
+        textarea:-webkit-autofill:hover,
+        textarea:-webkit-autofill:focus,
+        select:-webkit-autofill,
+        select:-webkit-autofill:hover,
+        select:-webkit-autofill:focus {
+            /* Modo claro */
+            -webkit-text-fill-color: #1b150e !important;
+            -webkit-box-shadow: 0 0 0px 1000px #fcfaf8 inset !important;
+            box-shadow: 0 0 0px 1000px #fcfaf8 inset !important;
+            border-color: #e7ddd0 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* Autocomplete no modo escuro */
+        .dark input:-webkit-autofill,
+        .dark input:-webkit-autofill:hover,
+        .dark input:-webkit-autofill:focus,
+        .dark input:-webkit-autofill:active,
+        .dark textarea:-webkit-autofill,
+        .dark textarea:-webkit-autofill:hover,
+        .dark textarea:-webkit-autofill:focus,
+        .dark select:-webkit-autofill,
+        .dark select:-webkit-autofill:hover,
+        .dark select:-webkit-autofill:focus {
+            -webkit-text-fill-color: #f3eee7 !important;
+            -webkit-box-shadow: 0 0 0px 1000px #211a11 inset !important;
+            box-shadow: 0 0 0px 1000px #211a11 inset !important;
+            border-color: #4a4137 !important;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark font-sans">
+    <div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+
+            <!-- Main Content (sem header e footer) -->
+            <main class="flex flex-1 justify-center py-10 sm:py-20">
+                {% block content %}{% endblock %}
+            </main>
+
+        </div>
+    </div>
+
+    <!-- jQuery (necessário para Toastr) -->
+    <script src="{% static 'js/vendor/jquery.min.js' %}"></script>
+
+    <!-- Toastr.js -->
+    <script src="{% static 'js/vendor/toastr.min.js' %}"></script>
+
+    <!-- Cropper.js -->
+    <script src="{% static 'js/vendor/cropper.min.js' %}"></script>
+
+    <!-- Image Cropper Modal (LIVRE DIA) -->
+    <script src="{% static 'js/image-cropper.js' %}"></script>
+
+    <!-- Configuração do Toastr -->
+    <script>
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": true,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "3000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+    </script>
+
+    <!-- Configuração HTMX - CSRF Token -->
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
+
+    <!-- Mensagens Django via Toastr -->
+    {% if messages %}
+        <script>
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                    toastr.success("{{ message|escapejs }}");
+                {% elif message.tags == 'error' %}
+                    toastr.error("{{ message|escapejs }}");
+                {% elif message.tags == 'warning' %}
+                    toastr.warning("{{ message|escapejs }}");
+                {% elif message.tags == 'info' %}
+                    toastr.info("{{ message|escapejs }}");
+                {% else %}
+                    toastr.info("{{ message|escapejs }}");
+                {% endif %}
+            {% endfor %}
+        </script>
+    {% endif %}
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

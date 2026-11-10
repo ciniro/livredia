@@ -1,0 +1,15 @@
+[Unit]
+Description=Daphne ASGI Server for LIVRE DIA WebSocket
+After=network.target redis-server.service
+
+[Service]
+User=livredia
+Group=www-data
+WorkingDirectory=/home/livredia/apps/livredia
+EnvironmentFile=/home/livredia/apps/livredia/.env
+ExecStart=/home/livredia/apps/livredia/venv/bin/daphne -u /home/livredia/apps/livredia/daphne.sock config.asgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

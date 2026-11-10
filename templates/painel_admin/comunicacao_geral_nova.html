@@ -1,0 +1,1276 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Nova Comunicação - Painel Admin{% endblock %}
+
+{% block extra_head %}
+<!-- Quill.js CSS -->
+<link href="{% static 'css/vendor/quill.snow.css' %}" rel="stylesheet">
+<!-- Quill.js JS -->
+<script src="{% static 'js/vendor/quill.min.js' %}"></script>
+<!-- Quill Image Resize Module -->
+<script src="{% static 'js/vendor/quill-image-resize.min.js' %}"></script>
+{% endblock %}
+
+{% block admin_content %}
+<div class="flex flex-col h-full" x-data="comunicacaoGeral()">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-border-light dark:border-border-dark">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-2xl font-bold leading-tight text-text-light dark:text-text-dark font-display">
+                Nova Comunicação
+            </h1>
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Crie e envie um e-mail para usuários da plataforma
+            </p>
+        </div>
+
+        <!-- Botão Voltar -->
+        <a href="{% url 'painel_admin:comunicacao_geral_lista' %}"
+           class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-500 text-white text-sm font-bold leading-normal tracking-wide hover:bg-gray-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Voltar
+        </a>
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="flex-1 overflow-auto px-6 py-6">
+        <div class="max-w-4xl mx-auto space-y-6">
+
+            <!-- Card de Filtros (EM CIMA) -->
+            <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden">
+                <div class="bg-amber-500/10 dark:bg-amber-500/20 px-6 py-4 border-b border-border-light dark:border-border-dark">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-amber-600">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                            </svg>
+                            <h2 class="text-lg font-bold text-text-light dark:text-text-dark">Filtros e Público-Alvo</h2>
+                        </div>
+
+                        <!-- Contador de Destinatários -->
+                        <div class="flex items-center gap-3 bg-primary/10 rounded-full px-4 py-2 self-start sm:self-auto">
+                            <span class="text-sm text-text-light dark:text-text-dark">Destinatários:</span>
+                            <span x-text="totalDestinatarios" class="text-xl font-black text-primary"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Tipo de Comunicação -->
+                    <div>
+                        <label class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Tipo de Comunicação *
+                        </label>
+                        <div class="relative">
+                            <select x-model="tipo" @change="atualizarContador()"
+                                    class="form-select w-full rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-12 pl-4 pr-10 text-base font-normal leading-normal appearance-none cursor-pointer">
+                                <option value="NOVIDADE">Novidade do LIVRE DIA</option>
+                                <option value="PARCEIROS">Anúncio de parceiros</option>
+                                <option value="AMBOS">Ambos</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-placeholder-light dark:text-placeholder-dark">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-xs text-placeholder-light dark:text-placeholder-dark">
+                            Usuários que optaram por receber este tipo de comunicação
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Filtro por Sexo -->
+                        <div>
+                            <label class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                                Sexo
+                            </label>
+                            <div class="relative">
+                                <select x-model="filtroSexo" @change="atualizarContador()"
+                                        class="form-select w-full rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-12 pl-4 pr-10 text-base font-normal leading-normal appearance-none cursor-pointer">
+                                    <option value="">Todos</option>
+                                    {% for sexo in sexos %}
+                                    <option value="{{ sexo.0 }}">{{ sexo.1 }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-placeholder-light dark:text-placeholder-dark">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filtro por Tempo de Leitura -->
+                        <div>
+                            <label class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                                Tempo de Leitura
+                            </label>
+                            <div class="relative">
+                                <select x-model="filtroTempoLeitura" @change="atualizarContador()"
+                                        class="form-select w-full rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-12 pl-4 pr-10 text-base font-normal leading-normal appearance-none cursor-pointer">
+                                    <option value="">Todos</option>
+                                    <option value="POUCO">Pouco (< 1 hora)</option>
+                                    <option value="MEDIO">Médio (1-10 horas)</option>
+                                    <option value="MUITO">Muito (> 10 horas)</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-placeholder-light dark:text-placeholder-dark">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Faixa Etária (Slider) -->
+                    <div>
+                        <label class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Faixa Etária: <span x-text="idadeMin" class="text-primary font-bold"></span> a <span x-text="idadeMax" class="text-primary font-bold"></span> anos
+                        </label>
+                        <div class="relative h-10 flex items-center">
+                            <!-- Track background -->
+                            <div class="absolute w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                            <!-- Track filled -->
+                            <div class="absolute h-2 bg-primary rounded-full"
+                                 :style="`left: ${(idadeMin / 120) * 100}%; width: ${((idadeMax - idadeMin) / 120) * 100}%`"></div>
+                            <!-- Slider Min -->
+                            <input type="range" min="0" max="120" x-model="idadeMin"
+                                   @input="if(parseInt(idadeMin) > parseInt(idadeMax)) idadeMin = idadeMax; atualizarContador()"
+                                   class="range-slider-min absolute w-full h-2 appearance-none bg-transparent cursor-pointer z-20">
+                            <!-- Slider Max -->
+                            <input type="range" min="0" max="120" x-model="idadeMax"
+                                   @input="if(parseInt(idadeMax) < parseInt(idadeMin)) idadeMax = idadeMin; atualizarContador()"
+                                   class="range-slider-max absolute w-full h-2 appearance-none bg-transparent cursor-pointer z-30">
+                        </div>
+                        <div class="flex justify-between text-xs text-placeholder-light dark:text-placeholder-dark mt-1">
+                            <span>0 anos</span>
+                            <span>120 anos</span>
+                        </div>
+                    </div>
+
+                    <!-- Filtrar por Seguidores de Autores -->
+                    <div>
+                        <label class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                            Enviar para Seguidores de <span class="font-normal text-placeholder-light dark:text-placeholder-dark">(clique para selecionar)</span>
+                        </label>
+                        <div class="flex flex-wrap gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-border-light dark:border-border-dark max-h-48 overflow-y-auto">
+                            {% for autor in autores %}
+                            <button type="button"
+                                    @click="toggleAutor({{ autor.id }})"
+                                    class="px-3 py-1.5 rounded-full text-xs font-medium transition-all border whitespace-nowrap"
+                                    :class="autoresSelecionados.includes({{ autor.id }}) ? 'bg-primary text-white border-primary' : 'bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border-border-light dark:border-border-dark hover:border-primary'">
+                                {{ autor.get_full_name|default:autor.username }}
+                            </button>
+                            {% empty %}
+                            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Nenhum autor com seguidores</p>
+                            {% endfor %}
+                        </div>
+                        <p class="mt-1 text-xs text-placeholder-light dark:text-placeholder-dark">
+                            Selecione autores para enviar apenas para seus seguidores. Deixe vazio para enviar a todos.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulário de Conteúdo -->
+            <form id="form-comunicacao" method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <!-- Card Principal -->
+                <div class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-xl overflow-hidden">
+                    <div class="bg-primary/10 dark:bg-primary/20 px-6 py-4 border-b border-border-light dark:border-border-dark">
+                        <h2 class="text-lg font-bold text-text-light dark:text-text-dark">Conteúdo do E-mail</h2>
+                    </div>
+
+                    <div class="p-6 space-y-6">
+                        <!-- Título -->
+                        <div>
+                            <label for="titulo" class="block text-sm font-medium text-text-light dark:text-text-dark mb-2">
+                                Título da Comunicação *
+                            </label>
+                            <input type="text" name="titulo" id="titulo" required x-model="titulo"
+                                   class="form-input w-full rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark h-12 px-4 text-base font-normal leading-normal"
+                                   placeholder="Título do e-mail">
+                            <p class="mt-1 text-xs text-placeholder-light dark:text-placeholder-dark">
+                                Este será o assunto do e-mail enviado
+                            </p>
+                        </div>
+
+                        <!-- Editor de Conteúdo -->
+                        <div class="flex flex-col">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2">
+                                <p class="text-text-light dark:text-text-dark text-sm font-medium leading-normal">
+                                    Conteúdo *
+                                </p>
+                                <!-- Botões: Toggle HTML e Ajuda -->
+                                <div class="flex items-center gap-2 sm:gap-3">
+                                    <!-- Botão Toggle HTML -->
+                                    <button type="button" id="toggle-html-btn" class="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-text-light dark:text-text-dark bg-secondary-light dark:bg-secondary-dark hover:bg-border-light dark:hover:bg-border-dark rounded-lg transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+                                        </svg>
+                                        <span class="hidden sm:inline">Visualizar HTML</span>
+                                        <span class="sm:hidden">HTML</span>
+                                    </button>
+
+                                    <!-- Botão Ajuda -->
+                                    <button type="button" @click="$dispatch('open-help-modal')" class="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                                        </svg>
+                                        <span>AJUDA</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Container do Quill.js (WYSIWYG) -->
+                            <div id="quill-editor" class="bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg" style="min-height: 400px;"></div>
+
+                            <!-- Editor de HTML (code editor) -->
+                            <textarea id="html-editor" class="hidden w-full min-h-[400px] p-4 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-text-light dark:text-text-dark font-mono text-sm focus:outline-0 focus:ring-2 focus:ring-primary/50" style="resize: vertical;"></textarea>
+
+                            <!-- Textarea hidden -->
+                            <textarea name="conteudo" id="quill-editor-content" class="hidden"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="flex flex-wrap items-center gap-4 justify-end">
+                    <!-- Botão Pré-visualizar -->
+                    <button type="button" @click="previsualizar()"
+                            class="flex items-center justify-center h-12 px-6 bg-gray-500 text-white text-base font-bold rounded-lg hover:bg-gray-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        Pré-visualizar
+                    </button>
+
+                    <!-- Botão Enviar Teste -->
+                    <button type="button" @click="enviarTeste()" :disabled="enviandoTeste"
+                            class="flex items-center justify-center h-12 px-6 bg-amber-500 text-white text-base font-bold rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50">
+                        <template x-if="!enviandoTeste">
+                            <span class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                                </svg>
+                                Enviar Teste
+                            </span>
+                        </template>
+                        <template x-if="enviandoTeste">
+                            <span class="flex items-center">
+                                <svg class="animate-spin w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Enviando...
+                            </span>
+                        </template>
+                    </button>
+
+                    <!-- Botão Enviar -->
+                    <button type="button" @click="abrirModalConfirmacao()"
+                            :disabled="totalDestinatarios === 0"
+                            class="flex items-center justify-center h-12 px-6 text-white text-base font-bold rounded-lg transition-colors"
+                            :class="totalDestinatarios === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-verde-floresta hover:bg-verde-floresta/90'">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                        </svg>
+                        Enviar para&nbsp;<span x-text="totalDestinatarios"></span>&nbsp;<span x-text="totalDestinatarios === 1 ? 'destinatário' : 'destinatários'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Envio -->
+    <div x-show="modalAberto" x-cloak class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-background-light dark:bg-background-dark rounded-xl max-w-md w-full mx-4 overflow-hidden">
+            <div class="p-6">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-amber-600">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-text-light dark:text-text-dark">Confirmar Envio</h3>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Esta ação não pode ser desfeita</p>
+                    </div>
+                </div>
+
+                <p class="text-text-light dark:text-text-dark mb-6">
+                    Você está prestes a enviar esta comunicação para <strong x-text="totalDestinatarios" class="text-primary"></strong> usuários.
+                    Deseja continuar?
+                </p>
+
+                <div class="flex gap-3 justify-end">
+                    <button type="button" @click="modalAberto = false"
+                            class="px-4 py-2 text-sm font-medium text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" @click="enviarParaTodos()" :disabled="enviando"
+                            class="px-4 py-2 text-sm font-bold text-white bg-verde-floresta hover:bg-verde-floresta/90 rounded-lg transition-colors disabled:opacity-50">
+                        <span x-show="!enviando">Confirmar Envio</span>
+                        <span x-show="enviando">Enviando...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Inserir Link -->
+<div x-data="{
+    modalLinkAberto: false,
+    urlLink: '',
+    textoLink: '',
+    inserirLink() {
+        if (this.urlLink) {
+            window.dispatchEvent(new CustomEvent('inserir-link', {
+                detail: { url: this.urlLink, texto: this.textoLink }
+            }));
+            this.urlLink = '';
+            this.textoLink = '';
+            this.modalLinkAberto = false;
+        }
+    }
+}" @open-link-modal.window="modalLinkAberto = true; textoLink = $event.detail?.texto || ''" x-cloak>
+    <div x-show="modalLinkAberto" @click="modalLinkAberto = false" class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+    <div x-show="modalLinkAberto" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-lg w-full border border-border-light dark:border-border-dark">
+            <div class="bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                    </svg>
+                    Inserir Link
+                </h2>
+                <button @click="modalLinkAberto = false" class="text-white hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium pb-2">Texto do Link <span class="text-placeholder-light">(opcional)</span></p>
+                    <input x-model="textoLink" type="text" placeholder="Texto que aparecerá no link" class="form-input w-full rounded-lg h-12 px-4 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark" />
+                </label>
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium pb-2">URL do Link *</p>
+                    <input x-model="urlLink" @keydown.enter="inserirLink()" type="text" placeholder="https://exemplo.com" class="form-input w-full rounded-lg h-12 px-4 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark" />
+                </label>
+            </div>
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalLinkAberto = false" class="px-6 py-2 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg font-medium">Cancelar</button>
+                <button @click="inserirLink()" class="px-6 py-2 bg-primary text-white rounded-lg font-bold">Inserir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Inserir Imagem -->
+<div x-data="{
+    modalImagemAberto: false,
+    urlImagem: '',
+    inserirImagem() {
+        if (this.urlImagem) {
+            window.dispatchEvent(new CustomEvent('inserir-imagem', { detail: { url: this.urlImagem } }));
+            this.urlImagem = '';
+            this.modalImagemAberto = false;
+        }
+    }
+}" @open-image-modal.window="modalImagemAberto = true" x-cloak>
+    <div x-show="modalImagemAberto" @click="modalImagemAberto = false" class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+    <div x-show="modalImagemAberto" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-lg w-full border border-border-light dark:border-border-dark">
+            <div class="bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                    </svg>
+                    Inserir Imagem
+                </h2>
+                <button @click="modalImagemAberto = false" class="text-white hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium pb-2">URL da Imagem *</p>
+                    <input x-model="urlImagem" @keydown.enter="inserirImagem()" type="url" placeholder="https://exemplo.com/imagem.jpg" class="form-input w-full rounded-lg h-12 px-4 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark" />
+                </label>
+                <div class="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p class="text-sm font-bold text-primary mb-2">Como trabalhar com imagens:</p>
+                    <ul class="text-xs text-text-light dark:text-text-dark space-y-1 list-disc list-inside">
+                        <li><strong>Redimensionar:</strong> Clique na imagem e arraste os cantos</li>
+                        <li><strong>Remover:</strong> Clique na imagem e pressione Delete</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalImagemAberto = false" class="px-6 py-2 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg font-medium">Cancelar</button>
+                <button @click="inserirImagem()" class="px-6 py-2 bg-primary text-white rounded-lg font-bold">Inserir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Inserir Vídeo -->
+<div x-data="{
+    modalVideoAberto: false,
+    urlVideo: '',
+    inserirVideo() {
+        if (this.urlVideo) {
+            window.dispatchEvent(new CustomEvent('inserir-video', { detail: { url: this.urlVideo } }));
+            this.urlVideo = '';
+            this.modalVideoAberto = false;
+        }
+    }
+}" @open-video-modal.window="modalVideoAberto = true" x-cloak>
+    <div x-show="modalVideoAberto" @click="modalVideoAberto = false" class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+    <div x-show="modalVideoAberto" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-lg w-full border border-border-light dark:border-border-dark">
+            <div class="bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                    Inserir Vídeo
+                </h2>
+                <button @click="modalVideoAberto = false" class="text-white hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <label class="flex flex-col">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium pb-2">URL do Vídeo (YouTube) *</p>
+                    <input x-model="urlVideo" @keydown.enter="inserirVideo()" type="url" placeholder="https://www.youtube.com/watch?v=abc123" class="form-input w-full rounded-lg h-12 px-4 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark" />
+                </label>
+                <div class="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p class="text-sm font-bold text-primary mb-2">Como inserir vídeos do YouTube:</p>
+                    <ul class="text-xs text-text-light dark:text-text-dark space-y-1 list-disc list-inside">
+                        <li>Cole a URL completa do YouTube</li>
+                        <li>Ou use a URL curta (youtu.be/...)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end gap-3">
+                <button @click="modalVideoAberto = false" class="px-6 py-2 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark rounded-lg font-medium">Cancelar</button>
+                <button @click="inserirVideo()" class="px-6 py-2 bg-primary text-white rounded-lg font-bold">Inserir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ajuda -->
+<div x-data="{ modalAberto: false }" @open-help-modal.window="modalAberto = true" x-cloak>
+    <div x-show="modalAberto" @click="modalAberto = false" class="fixed inset-0 z-50 bg-black bg-opacity-50"></div>
+    <div x-show="modalAberto" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-border-light dark:border-border-dark">
+            <div class="sticky top-0 bg-primary text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                    </svg>
+                    Guia do Editor
+                </h2>
+                <button @click="modalAberto = false" class="text-white hover:text-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-6 text-text-light dark:text-text-dark">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Cabeçalhos (H1-H6)</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Cria títulos de diferentes níveis</p>
+                    </div>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Negrito, Itálico, etc.</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Formatação básica de texto</p>
+                    </div>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Cores</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Cor do texto e cor de fundo</p>
+                    </div>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Listas</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Ordenadas (1,2,3) ou não-ordenadas</p>
+                    </div>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Links</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Adiciona links clicáveis</p>
+                    </div>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Imagens</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Insere imagens via URL</p>
+                    </div>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Vídeos</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Incorpora vídeos do YouTube</p>
+                    </div>
+                    <div class="p-3 bg-secondary-light dark:bg-secondary-dark rounded-lg">
+                        <p class="font-bold mb-1">Limpar Formatação</p>
+                        <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Remove toda formatação do texto</p>
+                    </div>
+                </div>
+                <div class="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                    <p class="text-sm font-bold text-primary mb-2">Dicas:</p>
+                    <ul class="text-sm space-y-1 list-disc list-inside">
+                        <li>Use "Visualizar HTML" para ver/editar o código fonte</li>
+                        <li>Ctrl+Z para desfazer alterações</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-end">
+                <button @click="modalAberto = false" class="px-6 py-2 bg-primary text-white rounded-lg font-bold">Entendi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Alerta/Feedback -->
+<div x-data="{
+    modalAlertaAberto: false,
+    tipoAlerta: 'info',
+    tituloAlerta: '',
+    mensagemAlerta: '',
+    mostrarAlerta(tipo, titulo, mensagem) {
+        this.tipoAlerta = tipo;
+        this.tituloAlerta = titulo;
+        this.mensagemAlerta = mensagem;
+        this.modalAlertaAberto = true;
+    }
+}" @mostrar-alerta.window="mostrarAlerta($event.detail.tipo, $event.detail.titulo, $event.detail.mensagem)" x-cloak>
+    <!-- Overlay suave -->
+    <div x-show="modalAlertaAberto"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="modalAlertaAberto = false"
+         class="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"></div>
+    <!-- Modal -->
+    <div x-show="modalAlertaAberto"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-xl max-w-sm w-full border border-border-light dark:border-border-dark overflow-hidden pointer-events-auto">
+            <!-- Header compacto -->
+            <div class="px-5 py-4 flex items-center gap-3">
+                <!-- Icone -->
+                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                     :class="{
+                        'bg-amber-100 dark:bg-amber-500/20': tipoAlerta === 'aviso',
+                        'bg-red-100 dark:bg-red-500/20': tipoAlerta === 'erro',
+                        'bg-green-100 dark:bg-verde-floresta/20': tipoAlerta === 'sucesso',
+                        'bg-blue-100 dark:bg-primary/20': tipoAlerta === 'info'
+                     }">
+                    <!-- Icone Aviso -->
+                    <template x-if="tipoAlerta === 'aviso'">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-amber-600">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                    </template>
+                    <!-- Icone Erro -->
+                    <template x-if="tipoAlerta === 'erro'">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-red-600">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
+                    </template>
+                    <!-- Icone Sucesso -->
+                    <template x-if="tipoAlerta === 'sucesso'">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-verde-floresta">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </template>
+                    <!-- Icone Info -->
+                    <template x-if="tipoAlerta === 'info'">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                        </svg>
+                    </template>
+                </div>
+                <!-- Titulo e Mensagem -->
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-base font-bold text-text-light dark:text-text-dark" x-text="tituloAlerta"></h3>
+                    <p class="text-sm text-placeholder-light dark:text-placeholder-dark mt-0.5" x-text="mensagemAlerta"></p>
+                </div>
+            </div>
+            <!-- Botao -->
+            <div class="px-5 py-3 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark flex justify-end">
+                <button @click="modalAlertaAberto = false"
+                        class="px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+                        :class="{
+                            'bg-amber-500 hover:bg-amber-600 text-white': tipoAlerta === 'aviso',
+                            'bg-red-500 hover:bg-red-600 text-white': tipoAlerta === 'erro',
+                            'bg-verde-floresta hover:bg-verde-floresta/90 text-white': tipoAlerta === 'sucesso',
+                            'bg-primary hover:bg-primary/90 text-white': tipoAlerta === 'info'
+                        }">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if repetir.conteudo %}
+<!-- Campo oculto para armazenar conteúdo a ser repetido -->
+<textarea id="conteudo-repetir" class="hidden">{{ repetir.conteudo|safe }}</textarea>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Funcao helper para mostrar alertas via modal
+function mostrarAlerta(tipo, titulo, mensagem) {
+    window.dispatchEvent(new CustomEvent('mostrar-alerta', {
+        detail: { tipo, titulo, mensagem }
+    }));
+}
+
+// Componente Alpine.js para gerenciar o formulário
+function comunicacaoGeral() {
+    return {
+        // Filtros
+        tipo: '{{ repetir.tipo|default:"NOVIDADE" }}',
+        filtroSexo: '{{ repetir.filtro_sexo|default:"" }}',
+        filtroTempoLeitura: '{{ repetir.filtro_tempo_leitura|default:"" }}',
+        idadeMin: {{ repetir.filtro_idade_min|default:0 }},
+        idadeMax: {{ repetir.filtro_idade_max|default:120 }},
+        autoresSelecionados: {% if repetir.filtro_segue_autores_ids %}{{ repetir.filtro_segue_autores_ids|safe }}{% else %}[]{% endif %},
+
+        // Conteúdo
+        titulo: '{{ repetir.titulo|default:""|escapejs }}',
+
+        // Estado
+        totalDestinatarios: {{ total_potencial }},
+        modalAberto: false,
+        enviando: false,
+        enviandoTeste: false,
+
+        init() {
+            // Se houver conteúdo para repetir, carregar no editor após inicialização
+            {% if repetir.conteudo %}
+            setTimeout(() => {
+                if (window.quillEditor) {
+                    const conteudoRepetir = document.getElementById('conteudo-repetir');
+                    if (conteudoRepetir) {
+                        window.quillEditor.root.innerHTML = conteudoRepetir.value;
+                    }
+                }
+            }, 500);
+            {% endif %}
+
+            // Atualizar contador inicial
+            this.atualizarContador();
+        },
+
+        toggleAutor(autorId) {
+            const index = this.autoresSelecionados.indexOf(autorId);
+            if (index > -1) {
+                this.autoresSelecionados.splice(index, 1);
+            } else {
+                this.autoresSelecionados.push(autorId);
+            }
+            this.atualizarContador();
+        },
+
+        async atualizarContador() {
+            try {
+                const response = await fetch('{% url "painel_admin:comunicacao_geral_contar" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(this.getFormData())
+                });
+
+                const result = await response.json();
+                this.totalDestinatarios = result.total;
+            } catch (error) {
+                console.error('Erro ao contar destinatários:', error);
+            }
+        },
+
+        getFormData() {
+            return {
+                titulo: this.titulo,
+                conteudo: window.quillEditor ? window.quillEditor.root.innerHTML : '',
+                tipo: this.tipo,
+                filtro_sexo: this.filtroSexo,
+                filtro_idade_min: this.idadeMin > 0 ? this.idadeMin : null,
+                filtro_idade_max: this.idadeMax < 120 ? this.idadeMax : null,
+                filtro_segue_autores: this.autoresSelecionados,
+                filtro_tempo_leitura: this.filtroTempoLeitura,
+            };
+        },
+
+        validarFormulario() {
+            if (!this.titulo.trim()) {
+                mostrarAlerta('aviso', 'Campo obrigatório', 'Por favor, preencha o título da comunicação antes de continuar.');
+                return false;
+            }
+
+            const conteudo = window.quillEditor ? window.quillEditor.root.innerHTML : '';
+            if (!conteudo || conteudo === '<p><br></p>') {
+                mostrarAlerta('aviso', 'Campo obrigatório', 'Por favor, preencha o conteúdo do e-mail antes de continuar.');
+                return false;
+            }
+
+            return true;
+        },
+
+        async previsualizar() {
+            if (!this.validarFormulario()) return;
+
+            try {
+                // Enviar dados via AJAX para salvar na sessão
+                const response = await fetch('{% url "painel_admin:comunicacao_geral_preview" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        titulo: this.titulo,
+                        conteudo: window.quillEditor.root.innerHTML
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Abrir preview em nova aba
+                    window.open('{% url "painel_admin:comunicacao_geral_preview" %}', '_blank');
+                } else {
+                    mostrarAlerta('erro', 'Erro na pré-visualização', result.error || 'Ocorreu um erro desconhecido ao gerar a pré-visualização.');
+                }
+            } catch (error) {
+                mostrarAlerta('erro', 'Erro na pré-visualização', 'Não foi possível gerar a pré-visualização: ' + error.message);
+            }
+        },
+
+        async enviarTeste() {
+            if (!this.validarFormulario()) return;
+
+            this.enviandoTeste = true;
+
+            try {
+                const response = await fetch('{% url "painel_admin:comunicacao_geral_enviar_teste" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(this.getFormData())
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    mostrarAlerta('sucesso', 'E-mail de teste enviado', result.message);
+                } else {
+                    mostrarAlerta('erro', 'Erro no envio', result.message);
+                }
+            } catch (error) {
+                mostrarAlerta('erro', 'Erro no envio', 'Não foi possível enviar o e-mail de teste: ' + error.message);
+            } finally {
+                this.enviandoTeste = false;
+            }
+        },
+
+        abrirModalConfirmacao() {
+            if (!this.validarFormulario()) return;
+            this.modalAberto = true;
+        },
+
+        async enviarParaTodos() {
+            this.enviando = true;
+
+            try {
+                const response = await fetch('{% url "painel_admin:comunicacao_geral_enviar" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(this.getFormData())
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Redirecionar apos sucesso (nao precisa de modal pois vai mudar de pagina)
+                    window.location.href = '{% url "painel_admin:comunicacao_geral_lista" %}';
+                } else {
+                    mostrarAlerta('erro', 'Erro no envio', result.message);
+                    this.modalAberto = false;
+                }
+            } catch (error) {
+                mostrarAlerta('erro', 'Erro no envio', 'Não foi possível enviar a comunicação: ' + error.message);
+                this.modalAberto = false;
+            } finally {
+                this.enviando = false;
+            }
+        }
+    }
+}
+
+// Inicialização do Quill.js (separado do Alpine.js)
+document.addEventListener('DOMContentLoaded', function() {
+    let isHtmlMode = false;
+
+    // Registrar módulo de redimensionamento de imagens
+    if (window.ImageResize) {
+        Quill.register('modules/imageResize', window.ImageResize.default);
+    }
+
+    // Configurar formato customizado de vídeo para aceitar URLs do YouTube
+    const BlockEmbed = Quill.import('blots/block/embed');
+
+    class VideoBlot extends BlockEmbed {
+        static create(value) {
+            console.log('VideoBlot.create() chamado com URL:', value);
+            const node = super.create();
+            const sanitizedUrl = this.sanitize(value);
+            console.log('URL sanitizada:', sanitizedUrl);
+
+            node.setAttribute('frameborder', '0');
+            node.setAttribute('allowfullscreen', true);
+            node.setAttribute('src', sanitizedUrl);
+            node.setAttribute('width', '640');
+            node.setAttribute('height', '360');
+            node.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+            node.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
+            // Estilos para redimensionamento e visualizacao
+            node.style.maxWidth = '100%';
+            node.style.resize = 'both';
+            node.style.overflow = 'auto';
+
+            console.log('VideoBlot criado:', node);
+            return node;
+        }
+
+        static sanitize(url) {
+            // Converter URLs do YouTube para formato embed
+            if (url.includes('youtube.com/watch')) {
+                const videoId = url.split('v=')[1]?.split('&')[0];
+                if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+            } else if (url.includes('youtu.be/')) {
+                const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+                if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+            } else if (url.includes('youtube.com/embed/') || url.includes('youtube-nocookie.com/embed/')) {
+                return url;
+            }
+            return url;
+        }
+
+        static value(node) {
+            return node.getAttribute('src');
+        }
+    }
+
+    VideoBlot.blotName = 'video';
+    VideoBlot.tagName = 'iframe';
+    Quill.register(VideoBlot);
+
+    // Inicializar Quill.js com toolbar completa
+    window.quillEditor = new Quill('#quill-editor', {
+        theme: 'snow',
+        modules: {
+            imageResize: {
+                displaySize: true,
+                modules: ['Resize', 'DisplaySize', 'Toolbar'],
+                handleSelector: 'img, iframe'
+            },
+            toolbar: {
+                container: [
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }],
+                    [{ 'align': [] }],
+                    ['blockquote', 'code-block'],
+                    ['link', 'image', 'video'],
+                    ['clean']
+                ],
+                handlers: {
+                    image: function() {
+                        window.dispatchEvent(new CustomEvent('open-image-modal'));
+                    },
+                    video: function() {
+                        window.dispatchEvent(new CustomEvent('open-video-modal'));
+                    },
+                    link: function(value) {
+                        const selection = this.quill.getSelection();
+                        const text = selection ? this.quill.getText(selection.index, selection.length) : '';
+                        window.dispatchEvent(new CustomEvent('open-link-modal', {
+                            detail: { texto: text }
+                        }));
+                    }
+                }
+            }
+        },
+        placeholder: 'Escreva o conteúdo do e-mail...'
+    });
+
+    // Elementos do DOM
+    var textareaConteudo = document.getElementById('quill-editor-content');
+    var htmlEditor = document.getElementById('html-editor');
+    var quillContainer = document.getElementById('quill-editor');
+    var toggleBtn = document.getElementById('toggle-html-btn');
+    var toggleBtnText = toggleBtn.querySelector('span');
+
+    // Listener para inserir link
+    window.addEventListener('inserir-link', function(event) {
+        const url = event.detail.url;
+        const texto = event.detail.texto;
+
+        if (url) {
+            const range = window.quillEditor.getSelection() || { index: window.quillEditor.getLength() };
+
+            if (range.length > 0) {
+                window.quillEditor.formatText(range.index, range.length, 'link', url);
+                window.quillEditor.setSelection(range.index + range.length);
+            } else if (texto && texto.trim() !== '') {
+                window.quillEditor.insertText(range.index, texto);
+                window.quillEditor.formatText(range.index, texto.length, 'link', url);
+                window.quillEditor.setSelection(range.index + texto.length);
+            } else {
+                window.quillEditor.insertText(range.index, url);
+                window.quillEditor.formatText(range.index, url.length, 'link', url);
+                window.quillEditor.setSelection(range.index + url.length);
+            }
+        }
+    });
+
+    // Listener para inserir imagem
+    window.addEventListener('inserir-imagem', function(event) {
+        console.log('Evento inserir-imagem recebido:', event.detail);
+        const url = event.detail.url;
+        if (url) {
+            console.log('Inserindo imagem com URL:', url);
+            const range = window.quillEditor.getSelection() || { index: window.quillEditor.getLength() };
+            console.log('Posicao de insercao:', range);
+            try {
+                window.quillEditor.insertEmbed(range.index, 'image', url);
+                window.quillEditor.setSelection(range.index + 1);
+                console.log('Imagem inserida com sucesso');
+            } catch (error) {
+                console.error('Erro ao inserir imagem:', error);
+            }
+        }
+    });
+
+    // Listener para inserir vídeo
+    window.addEventListener('inserir-video', function(event) {
+        console.log('Evento inserir-video recebido:', event.detail);
+        const url = event.detail.url;
+        if (url) {
+            console.log('Inserindo video com URL:', url);
+            const range = window.quillEditor.getSelection() || { index: window.quillEditor.getLength() };
+            console.log('Posicao de insercao:', range);
+            try {
+                window.quillEditor.insertEmbed(range.index, 'video', url);
+                window.quillEditor.setSelection(range.index + 1);
+                console.log('Video inserido com sucesso');
+            } catch (error) {
+                console.error('Erro ao inserir video:', error);
+            }
+        }
+    });
+
+    // Monitorar erros de carregamento de imagens no editor
+    const editorElement = document.querySelector('#quill-editor .ql-editor');
+    if (editorElement) {
+        // Usar MutationObserver para detectar novas imagens
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeName === 'IMG') {
+                        node.addEventListener('error', function() {
+                            console.error('Erro ao carregar imagem:', node.src);
+                            node.style.border = '2px solid red';
+                            node.style.backgroundColor = '#fee2e2';
+                            node.alt = 'Erro ao carregar imagem';
+                        });
+                        node.addEventListener('load', function() {
+                            console.log('Imagem carregada com sucesso:', node.src);
+                        });
+                    }
+                    if (node.nodeName === 'IFRAME') {
+                        console.log('Iframe adicionado ao editor:', node.src);
+                    }
+                });
+            });
+        });
+        observer.observe(editorElement, { childList: true, subtree: true });
+    }
+
+    // Toggle entre modos WYSIWYG e HTML
+    toggleBtn.addEventListener('click', function() {
+        isHtmlMode = !isHtmlMode;
+
+        if (isHtmlMode) {
+            htmlEditor.value = window.quillEditor.root.innerHTML;
+            quillContainer.classList.add('hidden');
+            htmlEditor.classList.remove('hidden');
+            toggleBtnText.textContent = 'Visualizar Editor';
+        } else {
+            try {
+                window.quillEditor.clipboard.dangerouslyPasteHTML(htmlEditor.value);
+            } catch (error) {
+                window.quillEditor.root.innerHTML = htmlEditor.value;
+            }
+            htmlEditor.classList.add('hidden');
+            quillContainer.classList.remove('hidden');
+            toggleBtnText.textContent = 'Visualizar HTML';
+        }
+    });
+
+    // Sincronizar editores
+    window.quillEditor.on('text-change', function() {
+        if (!isHtmlMode) {
+            htmlEditor.value = window.quillEditor.root.innerHTML;
+        }
+    });
+
+    htmlEditor.addEventListener('input', function() {
+        if (isHtmlMode) {
+            try {
+                window.quillEditor.clipboard.dangerouslyPasteHTML(htmlEditor.value);
+            } catch (error) {
+                window.quillEditor.root.innerHTML = htmlEditor.value;
+            }
+        }
+    });
+});
+</script>
+
+<style>
+/* Estilos do editor Quill */
+.ql-editor {
+    min-height: 400px;
+    font-family: 'Literata', Georgia, serif;
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.ql-toolbar {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.ql-container {
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* Dark mode para Quill.js */
+.dark .ql-toolbar {
+    background-color: #374151;
+    border-color: #4b5563;
+}
+
+.dark .ql-container {
+    border-color: #4b5563;
+}
+
+.dark .ql-editor {
+    color: #f3f4f6;
+}
+
+.dark .ql-editor.ql-blank::before {
+    color: #9ca3af;
+}
+
+.dark .ql-stroke {
+    stroke: #d1d5db;
+}
+
+.dark .ql-fill {
+    fill: #d1d5db;
+}
+
+.dark .ql-picker-label {
+    color: #d1d5db;
+}
+
+.dark .ql-picker-options {
+    background-color: #374151;
+    border-color: #4b5563;
+}
+
+.dark .ql-picker-item {
+    color: #d1d5db;
+}
+
+/* Estilos de listas */
+.ql-editor ol,
+.ql-editor ul {
+    padding-left: 1.5em !important;
+    margin: 1em 0 !important;
+}
+
+.ql-editor ol {
+    list-style-type: decimal !important;
+}
+
+.ql-editor ul {
+    list-style-type: disc !important;
+}
+
+/* Estilos para vídeos (iframes do YouTube) */
+.ql-editor iframe {
+    max-width: 100%;
+    margin: 1em auto;
+    border: 2px solid #e69019;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
+.ql-editor iframe:hover {
+    outline: 2px solid #e69019;
+    outline-offset: 2px;
+}
+
+/* Estilos para links */
+.ql-editor a {
+    color: #e69019;
+    text-decoration: underline;
+}
+
+/* Estilos para cabeçalhos */
+.ql-editor h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
+.ql-editor h2 { font-size: 1.5em; font-weight: bold; margin: 0.75em 0; }
+.ql-editor h3 { font-size: 1.17em; font-weight: bold; margin: 0.83em 0; }
+.ql-editor h4 { font-size: 1em; font-weight: bold; margin: 1em 0; }
+
+/* Estilos para blockquotes */
+.ql-editor blockquote {
+    border-left: 4px solid #3A4D39;
+    padding-left: 1em;
+    margin: 1em 0;
+    font-style: italic;
+}
+
+/* Estilos para imagens */
+.ql-editor img {
+    cursor: pointer;
+    border-radius: 4px;
+    max-width: 100%;
+    height: auto;
+    position: relative;
+    transition: opacity 0.2s, box-shadow 0.2s;
+}
+
+.ql-editor img:hover {
+    opacity: 0.9;
+    box-shadow: 0 0 0 3px rgba(230, 144, 25, 0.3);
+}
+
+.ql-editor img.ql-selected {
+    box-shadow: 0 0 0 3px #e69019;
+}
+
+/* Estilo para imagens que falham ao carregar */
+.ql-editor img[src=""],
+.ql-editor img:not([src]) {
+    min-width: 200px;
+    min-height: 100px;
+    background-color: #f3f4f6;
+    border: 2px dashed #d1d5db;
+    display: block;
+}
+
+/* Placeholder visual enquanto imagem carrega */
+.ql-editor img {
+    background-color: #f9fafb;
+}
+
+/* Ocultar tooltip padrão do Quill */
+.ql-tooltip {
+    display: none !important;
+}
+
+/* Range Slider Dual Handle */
+.range-slider-min,
+.range-slider-max {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+}
+
+.range-slider-min::-webkit-slider-thumb,
+.range-slider-max::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    border: 2px solid white;
+}
+
+.range-slider-min::-webkit-slider-thumb {
+    background: #886752;
+}
+
+.range-slider-max::-webkit-slider-thumb {
+    background: #2d5a27;
+}
+
+.range-slider-min::-moz-range-thumb,
+.range-slider-max::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    border: 2px solid white;
+}
+
+.range-slider-min::-moz-range-thumb {
+    background: #886752;
+}
+
+.range-slider-max::-moz-range-thumb {
+    background: #2d5a27;
+}
+
+.range-slider-min:focus,
+.range-slider-max:focus {
+    outline: none;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,83 @@
+/*
+ * Tailwind CSS - Arquivo de entrada
+ * Livre Dia - Versão 1.1
+ *
+ * Este arquivo é compilado pelo Tailwind CSS CLI para gerar tailwind.min.css
+ */
+
+@import "tailwindcss";
+
+/* Dark mode: usar apenas classe .dark, ignorar preferência do sistema */
+@variant dark (&:where(.dark, .dark *));
+
+/* Escanear templates Django e arquivos JavaScript */
+@source "../../templates";
+@source "../js";
+
+/* Configuração do tema personalizado */
+@theme {
+    /* Cores personalizadas do projeto */
+    --color-primary: #e69019;
+    --color-verde-floresta: #3A4D39;
+    --color-verde-floresta-hover: #2d3d2d;
+    --color-verde-floresta-light: #6b8f6a;
+    --color-background-light: #fcfaf8;
+    --color-background-dark: #211a11;
+    --color-text-light: #1b150e;
+    --color-text-dark: #f3eee7;
+    --color-border-light: #e7ddd0;
+    --color-border-dark: #4a4137;
+    --color-secondary-light: #f3eee7;
+    --color-secondary-dark: #32291e;
+    --color-placeholder-light: #97794e;
+    --color-placeholder-dark: #a18a6c;
+
+    /* Fontes personalizadas */
+    --font-display: "Newsreader", serif;
+    --font-sans: "Noto Sans", sans-serif;
+
+    /* Border radius */
+    --radius-DEFAULT: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-full: 9999px;
+}
+
+/* Alpine.js x-cloak - Ocultar elementos até inicialização */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Estilo para inputs do tipo date - ícone do calendário */
+input[type="date"] {
+    position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Dark mode - ícone do calendário com cor clara */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+/* Utilitário para esconder scrollbar mantendo scroll funcional */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE e Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari e Opera */
+}

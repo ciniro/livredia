@@ -1,0 +1,6 @@
+/* Tema Jornal - Preto no branco com fonte serifada */
+.tema-jornal {
+    background-color: #ffffff;
+    color: #000000;
+    font-family: Georgia, serif;
+}

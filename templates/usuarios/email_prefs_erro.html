@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Conta Incorreta - LIVRE DIA{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-secondary-light dark:bg-secondary-dark flex items-center justify-center px-4 py-12">
+    <div class="max-w-md w-full bg-background-light dark:bg-background-dark rounded-xl shadow-lg border border-border-light dark:border-border-dark overflow-hidden">
+        <!-- Header -->
+        <div class="bg-amber-500/20 px-6 py-5 border-b border-border-light dark:border-border-dark">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-amber-500/30 flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-amber-600">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-text-light dark:text-text-dark">Conta Incorreta</h1>
+                    <p class="text-sm text-placeholder-light dark:text-placeholder-dark">Este link pertence a outra conta</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6 space-y-4">
+            <div class="bg-secondary-light dark:bg-secondary-dark rounded-lg p-4 space-y-3">
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-placeholder-light dark:text-placeholder-dark">Logado como:</span>
+                    <span class="text-sm font-semibold text-text-light dark:text-text-dark">{{ usuario_logado.email }}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-placeholder-light dark:text-placeholder-dark">Link para:</span>
+                    <span class="text-sm font-semibold text-primary">{{ usuario_token.email }}</span>
+                </div>
+            </div>
+
+            <p class="text-sm text-text-light dark:text-text-dark">
+                Para gerenciar as preferencias de e-mail da conta <strong>{{ usuario_token.email }}</strong>,
+                voce precisa fazer logout e entrar com essa conta.
+            </p>
+        </div>
+
+        <!-- Actions -->
+        <div class="px-6 py-4 bg-secondary-light dark:bg-secondary-dark border-t border-border-light dark:border-border-dark flex flex-col sm:flex-row gap-3">
+            <a href="{% url 'usuarios:logout' %}"
+               class="flex-1 text-center px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors">
+                Fazer Logout
+            </a>
+            <a href="{% url 'core:home' %}"
+               class="flex-1 text-center px-4 py-2.5 bg-secondary-light dark:bg-secondary-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark font-medium rounded-lg hover:bg-border-light dark:hover:bg-border-dark transition-colors">
+                Voltar ao Inicio
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

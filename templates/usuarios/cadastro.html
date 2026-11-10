@@ -1,0 +1,487 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastro de Leitor - LIVRE DIA{% endblock %}
+
+{% block content %}
+<div class="layout-content-container flex flex-col w-full max-w-[640px] flex-1 px-4">
+    <div class="flex flex-wrap justify-between gap-3 p-4 text-center">
+        <div class="flex w-full flex-col gap-3">
+            <p class="text-text-light dark:text-text-dark text-4xl sm:text-5xl font-black leading-tight tracking-[-0.033em] font-display">
+                Crie sua conta de Leitor
+            </p>
+            <p class="text-placeholder-light dark:text-placeholder-dark text-lg font-normal leading-normal">
+                Junte-se à comunidade LIVRE DIA para explorar conteúdo autêntico.
+            </p>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 1: Cadastrar com Google -->
+    <div class="p-4">
+        <a href="{% url 'google_login' %}"
+           class="w-full flex items-center justify-center gap-3 h-14 px-5 rounded-lg border-2 border-border-light dark:border-border-dark bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <!-- Ícone do Google (SVG colorido) -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-6 h-6">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span class="text-text-light dark:text-text-dark text-base font-bold">Cadastrar com Google</span>
+        </a>
+        <p class="text-xs text-placeholder-light dark:text-placeholder-dark text-center mt-3">
+            Cadastro rápido usando sua conta Google. Você ainda precisará completar algumas informações.
+        </p>
+    </div>
+
+    <!-- Separador "OU" -->
+    <div class="px-4 flex items-center gap-4 my-4">
+        <div class="flex-1 h-px bg-border-light dark:bg-border-dark"></div>
+        <span class="text-sm text-placeholder-light dark:text-placeholder-dark font-bold uppercase tracking-wider">ou</span>
+        <div class="flex-1 h-px bg-border-light dark:bg-border-dark"></div>
+    </div>
+
+    <!-- SEÇÃO 2: Cadastrar com dados manuais -->
+    <div class="px-4 mb-4">
+        <p class="text-text-light dark:text-text-dark text-lg font-bold text-center">
+            Cadastre-se com seus dados
+        </p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="flex flex-col gap-6 p-4" autocomplete="off">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 gap-6">
+            <!-- Username (ID de Usuário) - Campo Destacado -->
+            <div class="bg-primary/5 dark:bg-primary/10 p-6 rounded-xl border-2 border-primary/30">
+                <label class="flex flex-col">
+                    <p class="text-primary dark:text-primary text-lg font-bold leading-normal pb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        {{ form.username.label }}
+                    </p>
+                    <div class="relative">
+                        <!-- Símbolo @ na frente -->
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                            <span class="text-primary dark:text-primary text-xl font-bold">@</span>
+                        </div>
+                        <!-- Input -->
+                        {{ form.username }}
+                        <!-- Ícone de validação (check ou X) -->
+                        <div id="username-validation-icon" class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none" style="display: none;">
+                            <!-- Check (sucesso) -->
+                            <svg id="username-check" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-green-600 dark:text-green-400" style="display: none;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <!-- X (erro) -->
+                            <svg id="username-error" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-red-600 dark:text-red-400" style="display: none;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Mensagens de erro do backend -->
+                    {% if form.username.errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400 mt-2">{{ form.username.errors.0 }}</p>
+                    {% endif %}
+                    <!-- Mensagem de erro em tempo real (JavaScript) -->
+                    <p id="username-error-message" class="text-sm text-red-600 dark:text-red-400 mt-2" style="display: none;"></p>
+                    <!-- Mensagem de ajuda -->
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        {{ form.username.help_text }}
+                    </p>
+                </label>
+            </div>
+
+            <!-- Nome Completo -->
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    {{ form.nome_completo.label }}
+                </p>
+                {{ form.nome_completo }}
+                {% if form.nome_completo.errors %}
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.nome_completo.errors.0 }}</p>
+                {% endif %}
+            </label>
+
+            <!-- E-mail -->
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    {{ form.email.label }}
+                </p>
+                <div class="relative">
+                    {{ form.email }}
+                    <!-- Ícone de envelope no canto direito -->
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-placeholder-light dark:text-placeholder-dark">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                        </svg>
+                    </div>
+                </div>
+                {% if form.email.errors %}
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.email.errors.0 }}</p>
+                {% endif %}
+            </label>
+
+            <!-- Senha e Confirmar Senha -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <label class="flex flex-col min-w-40 flex-1">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        {{ form.password1.label }}
+                    </p>
+                    <div class="relative">
+                        <!-- Ícone de cadeado à esquerda -->
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-placeholder-light dark:text-placeholder-dark">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                            </svg>
+                        </div>
+                        {{ form.password1 }}
+                        <!-- Toggle de visibilidade (olho) à direita -->
+                        <button type="button" id="toggle-password1" tabindex="-1" class="absolute inset-y-0 right-0 flex items-center pr-4 text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark transition-colors">
+                            <!-- Ícone de olho (mostrar senha) -->
+                            <svg id="eye-open-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            <!-- Ícone de olho riscado (ocultar senha) -->
+                            <svg id="eye-closed-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 hidden">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
+                    {% if form.password1.errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.password1.errors.0 }}</p>
+                    {% endif %}
+                </label>
+
+                <label class="flex flex-col min-w-40 flex-1">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        {{ form.password2.label }}
+                    </p>
+                    <div class="relative">
+                        <!-- Ícone de cadeado à esquerda -->
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-placeholder-light dark:text-placeholder-dark">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                            </svg>
+                        </div>
+                        {{ form.password2 }}
+                        <!-- Toggle de visibilidade (olho) à direita -->
+                        <button type="button" id="toggle-password2" tabindex="-1" class="absolute inset-y-0 right-0 flex items-center pr-4 text-placeholder-light dark:text-placeholder-dark hover:text-text-light dark:hover:text-text-dark transition-colors">
+                            <!-- Ícone de olho (mostrar senha) -->
+                            <svg id="eye-open-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                            </svg>
+                            <!-- Ícone de olho riscado (ocultar senha) -->
+                            <svg id="eye-closed-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 hidden">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
+                    {% if form.password2.errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.password2.errors.0 }}</p>
+                    {% endif %}
+                </label>
+            </div>
+
+            <!-- Dicas de senha forte -->
+            <div class="bg-secondary-light dark:bg-secondary-dark p-4 rounded-lg border border-border-light dark:border-border-dark">
+                <p class="text-sm font-medium text-text-light dark:text-text-dark mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-primary">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                    </svg>
+                    Sua senha deve ter:
+                </p>
+                <ul class="text-xs text-placeholder-light dark:text-placeholder-dark space-y-1 ml-6 list-disc">
+                    <li>Pelo menos 8 caracteres</li>
+                    <li>Não pode ser muito parecida com seu nome ou email</li>
+                    <li>Não pode ser uma senha muito comum (ex: "12345678")</li>
+                    <li>Não pode ser totalmente numérica</li>
+                </ul>
+            </div>
+
+            <!-- Foto (Opcional) -->
+            <div>
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    {{ form.foto.label }}
+                </p>
+                <div class="flex items-center gap-4">
+                    <!-- Preview da foto -->
+                    <div id="current-photo-display" class="flex items-center justify-center w-20 h-20 rounded-full border-2 border-dashed border-border-light dark:border-border-dark bg-secondary-light dark:bg-secondary-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-placeholder-light dark:text-placeholder-dark">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                    </div>
+                    <!-- Área de upload -->
+                    <div id="photo-preview-container" class="flex-1">
+                        <label class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border-light dark:border-border-dark rounded-lg cursor-pointer hover:bg-secondary-light dark:hover:bg-secondary-dark transition-colors" for="dropzone-file">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-placeholder-light dark:text-placeholder-dark">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                            </svg>
+                            <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">Clique para alterar foto</p>
+                        </label>
+                    </div>
+                </div>
+                {{ form.foto }}
+
+                <!-- Botão Remover Foto (aparece apenas quando foto foi carregada) -->
+                <div id="remove-photo-section" style="display: none;" class="mt-3 flex flex-col">
+                    <button type="button" id="remove-photo-btn" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                        Remover foto
+                    </button>
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        Ao remover, será usado avatar com suas iniciais
+                    </p>
+                </div>
+
+                {% if form.foto.errors %}
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.foto.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Cidade e País -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <label class="flex flex-col min-w-40 flex-1">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        {{ form.cidade.label }}
+                    </p>
+                    {{ form.cidade }}
+                    {% if form.cidade.errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.cidade.errors.0 }}</p>
+                    {% endif %}
+                </label>
+
+                <label class="flex flex-col min-w-40 flex-1">
+                    <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                        {{ form.pais.label }}
+                    </p>
+                    {{ form.pais }}
+                    {% if form.pais.errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.pais.errors.0 }}</p>
+                    {% endif %}
+                </label>
+            </div>
+
+            <!-- Sexo -->
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    {{ form.sexo.label }}
+                </p>
+                {{ form.sexo }}
+                {% if form.sexo.errors %}
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.sexo.errors.0 }}</p>
+                {% else %}
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        Usado para personalizar mensagens e selos de reconhecimento
+                    </p>
+                {% endif %}
+            </label>
+
+            <!-- Data de Nascimento -->
+            <label class="flex flex-col min-w-40 flex-1">
+                <p class="text-text-light dark:text-text-dark text-base font-medium leading-normal pb-2">
+                    {{ form.data_nascimento.label }}
+                </p>
+                {{ form.data_nascimento }}
+                {% if form.data_nascimento.errors %}
+                    <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ form.data_nascimento.errors.0 }}</p>
+                {% else %}
+                    <p class="text-xs text-placeholder-light dark:text-placeholder-dark mt-2">
+                        {{ form.data_nascimento.help_text }}
+                    </p>
+                {% endif %}
+            </label>
+        </div>
+
+        <!-- Checkbox de Termos -->
+        <div class="flex items-center gap-3 pt-4">
+            {{ form.aceito_termos }}
+            <label class="text-sm text-text-light dark:text-text-dark cursor-pointer" for="terms">
+                Li e aceito os <a class="font-medium text-primary hover:underline" href="{% url 'core:pagina_termos' %}" target="_blank">Termos de Uso e Responsabilidade</a>.
+            </label>
+        </div>
+        {% if form.aceito_termos.errors %}
+            <p class="text-sm text-red-600 dark:text-red-400 -mt-2">{{ form.aceito_termos.errors.0 }}</p>
+        {% endif %}
+
+        <!-- Botão de Cadastro -->
+        <button class="flex w-full mt-4 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 px-4 bg-primary text-white dark:text-text-light text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors" type="submit">
+            <span class="truncate">Cadastrar</span>
+        </button>
+
+        <!-- Link para Login -->
+        <div class="text-center">
+            <p class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                Já tem uma conta?
+                <a href="{% url 'usuarios:login' %}" class="font-medium text-primary hover:underline">
+                    Faça login
+                </a>
+            </p>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Validação de Username em Tempo Real
+    document.addEventListener('DOMContentLoaded', function() {
+        const usernameInput = document.getElementById('id_username');
+        const validationIcon = document.getElementById('username-validation-icon');
+        const checkIcon = document.getElementById('username-check');
+        const errorIcon = document.getElementById('username-error');
+        const errorMessage = document.getElementById('username-error-message');
+
+        let typingTimer;
+        const doneTypingInterval = 500; // 500ms após parar de digitar
+
+        // Função para mostrar check (sucesso)
+        function showSuccess(message) {
+            validationIcon.style.display = 'flex';
+            checkIcon.style.display = 'block';
+            errorIcon.style.display = 'none';
+            errorMessage.style.display = 'none';
+            // Adicionar borda verde
+            usernameInput.classList.remove('border-red-500', 'dark:border-red-400');
+            usernameInput.classList.add('border-green-500', 'dark:border-green-400');
+        }
+
+        // Função para mostrar erro
+        function showError(message) {
+            validationIcon.style.display = 'flex';
+            checkIcon.style.display = 'none';
+            errorIcon.style.display = 'block';
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            // Adicionar borda vermelha
+            usernameInput.classList.remove('border-green-500', 'dark:border-green-400');
+            usernameInput.classList.add('border-red-500', 'dark:border-red-400');
+        }
+
+        // Função para esconder validação
+        function hideValidation() {
+            validationIcon.style.display = 'none';
+            errorMessage.style.display = 'none';
+            // Remover bordas coloridas
+            usernameInput.classList.remove('border-green-500', 'dark:border-green-400', 'border-red-500', 'dark:border-red-400');
+        }
+
+        // Converter para minúsculas automaticamente
+        usernameInput.addEventListener('input', function(e) {
+            this.value = this.value.toLowerCase();
+
+            // Limpar timer anterior
+            clearTimeout(typingTimer);
+
+            // Esconder validação enquanto digita
+            hideValidation();
+
+            // Iniciar novo timer
+            const username = this.value.trim();
+            if (username.length > 0) {
+                typingTimer = setTimeout(function() {
+                    validarUsername(username);
+                }, doneTypingInterval);
+            }
+        });
+
+        // Validar ao sair do campo
+        usernameInput.addEventListener('blur', function() {
+            const username = this.value.trim();
+            if (username.length > 0) {
+                clearTimeout(typingTimer);
+                validarUsername(username);
+            }
+        });
+
+        // Função de validação AJAX
+        function validarUsername(username) {
+            // Fazer requisição AJAX
+            fetch(`/contas/api/verificar-username/?username=${encodeURIComponent(username)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.available) {
+                        showSuccess(data.message);
+                    } else {
+                        showError(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao validar username:', error);
+                    showError('Erro ao validar. Tente novamente.');
+                });
+        }
+    });
+
+    // Botão Remover Foto
+    document.addEventListener('DOMContentLoaded', function() {
+        const removePhotoBtn = document.getElementById('remove-photo-btn');
+        const removePhotoSection = document.getElementById('remove-photo-section');
+        const fileInput = document.getElementById('dropzone-file');
+        const currentPhotoDisplay = document.getElementById('current-photo-display');
+
+        if (removePhotoBtn) {
+            removePhotoBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                // Limpar o input de arquivo
+                fileInput.value = '';
+
+                // Criar novo DataTransfer vazio para limpar o input
+                const dataTransfer = new DataTransfer();
+                fileInput.files = dataTransfer.files;
+
+                // Voltar ao ícone padrão
+                currentPhotoDisplay.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-placeholder-light dark:text-placeholder-dark">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                `;
+
+                // Resetar classes do container
+                currentPhotoDisplay.className = 'flex items-center justify-center w-20 h-20 rounded-full border-2 border-dashed border-border-light dark:border-border-dark bg-secondary-light dark:bg-secondary-dark';
+
+                // Esconder botão de remover
+                removePhotoSection.style.display = 'none';
+            });
+        }
+    });
+
+    // Toggle de Visibilidade de Senha
+    document.addEventListener('DOMContentLoaded', function() {
+        // Função genérica para configurar toggle de senha
+        function setupPasswordToggle(toggleBtnId, passwordInputId, eyeOpenId, eyeClosedId) {
+            const toggleBtn = document.getElementById(toggleBtnId);
+            const passwordInput = document.getElementById(passwordInputId);
+            const eyeOpen = document.getElementById(eyeOpenId);
+            const eyeClosed = document.getElementById(eyeClosedId);
+
+            if (toggleBtn && passwordInput && eyeOpen && eyeClosed) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Alternar tipo do input
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        eyeOpen.classList.add('hidden');
+                        eyeClosed.classList.remove('hidden');
+                    } else {
+                        passwordInput.type = 'password';
+                        eyeOpen.classList.remove('hidden');
+                        eyeClosed.classList.add('hidden');
+                    }
+                });
+            }
+        }
+
+        // Configurar toggles para ambos os campos de senha
+        setupPasswordToggle('toggle-password1', 'id_password1', 'eye-open-1', 'eye-closed-1');
+        setupPasswordToggle('toggle-password2', 'id_password2', 'eye-open-2', 'eye-closed-2');
+    });
+</script>
+{% endblock %}

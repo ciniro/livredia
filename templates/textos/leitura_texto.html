@@ -1,0 +1,2187 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load tempo_filters %}
+
+{% block title %}{{ texto.titulo }} - LIVRE DIA{% endblock %}
+
+{% block extra_head %}
+<!-- Previne flash de conteúdo não estilizado (FOUC) com Alpine.js -->
+<style>
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
+
+<script src="{% static 'js/vendor/htmx.min.js' %}"></script>
+
+<!-- html2canvas - Para download do Cartão da Biblioteca -->
+<script src="{% static 'js/vendor/html2canvas.min.js' %}"></script>
+
+<!-- Google Fonts - Item 3.6 do ROADMAP (Cartão da Biblioteca) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Caveat:wght@400;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+
+<!-- Carregar CSS dos temas dinamicamente do banco de dados (sistema modular) -->
+{% for tema in temas %}
+<link rel="stylesheet" href="{% static 'css/themes/' %}{{ tema.arquivo_css }}">
+{% endfor %}
+
+<!-- CSS Customizado para Modo Foco - Item 3.4 do ROADMAP -->
+<style>
+    /* Garantir que o modo foco ocupe tela cheia */
+    .modo-foco-ativo {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        z-index: 9999 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* ========================================
+       CSS DO CARTÃO DA BIBLIOTECA - Item 3.6 do ROADMAP
+       ======================================== */
+
+    /* Modal Backdrop */
+    .cartao-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    /* Cartão - Simulando papel antigo de biblioteca */
+    .cartao-biblioteca {
+        width: 100%;
+        max-width: 400px;
+        min-height: 600px;
+        background-image: url('{% static "img/textura_papel.jpeg" %}');
+        background-size: cover;
+        background-color: #f4ecd8; /* Tom sépia/pergaminho */
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        padding: 2rem 1.5rem;
+        overflow-y: auto;
+        max-height: 90vh;
+        position: relative;
+    }
+
+    /* Título - Fonte de máquina de escrever */
+    .cartao-titulo {
+        font-family: 'Special Elite', monospace;
+        font-size: 1.5rem;
+        text-align: center;
+        color: #2c2c2c;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.5px;
+    }
+
+    /* Contador de assinaturas */
+    .cartao-contador {
+        font-family: 'Special Elite', monospace;
+        font-size: 0.85rem;
+        text-align: center;
+        color: #5a5a5a;
+        margin-bottom: 1rem;
+    }
+
+    /* Mensagem motivacional - Fonte serif */
+    .cartao-mensagem {
+        font-family: 'Merriweather', serif;
+        font-size: 0.9rem;
+        text-align: center;
+        color: #3a3a3a;
+        font-style: italic;
+        line-height: 1.6;
+        margin: 1.5rem 0;
+        padding: 0 0.5rem;
+    }
+
+    /* Container da tabela com scroll */
+    .cartao-tabela-container {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-bottom: 1rem;
+    }
+
+    /* Tabela de assinaturas */
+    .cartao-tabela {
+        width: 100%;
+        font-family: 'Merriweather', serif;
+        font-size: 0.8rem;
+        border-collapse: collapse;
+    }
+
+    .cartao-tabela thead th {
+        border-bottom: 2px dashed #8b7355;
+        padding: 0.5rem 0.25rem;
+        text-align: left;
+        font-weight: 600;
+        color: #2c2c2c;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .cartao-tabela tbody td {
+        border-bottom: 1px dashed #c4b5a0;
+        padding: 0.4rem 0.25rem;
+        font-family: 'Caveat', cursive; /* Letra cursiva */
+        font-size: 1.05rem;
+        color: #2c2c2c;
+        vertical-align: middle;
+    }
+
+    /* Assinatura do usuário logado em negrito */
+    .cartao-assinatura-destaque {
+        font-weight: 700 !important;
+    }
+
+    /* Link do @ */
+    .cartao-tabela a {
+        color: #8b7355;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .cartao-tabela a:hover {
+        color: #5a4a3a;
+        text-decoration: underline;
+    }
+
+    /* Divisor tracejado acima dos botões */
+    .cartao-divisor {
+        border-top: 2px dashed #c4b5a0;
+        margin: 1.5rem 0 1rem 0;
+    }
+
+    /* Área de botões (abaixo do divisor) */
+    .cartao-area-botoes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        align-items: center;
+        padding: 0.5rem 0;
+    }
+
+    /* Botões de ação - Versão discreta e menor */
+    .cartao-botao {
+        font-family: 'Merriweather', serif;
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.25rem;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    /* Botão neutro (padrão para todos exceto Assinar) */
+    .cartao-botao-neutro {
+        background-color: transparent;
+        color: #6b5a4a;
+        border: 1px solid #c4b5a0;
+    }
+
+    .cartao-botao-neutro:hover {
+        background-color: rgba(139, 115, 85, 0.05);
+        border-color: #8b7355;
+    }
+
+    /* Botão de Assinar - Com destaque (mantém a cor primária) */
+    .cartao-botao-assinar {
+        background-color: #e69019;
+        color: white;
+        border: 2px solid #d17f0f;
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(230, 144, 25, 0.3);
+        justify-content: center;
+    }
+
+    .cartao-botao-assinar:hover {
+        background-color: #d17f0f;
+        border-color: #b86d0d;
+        box-shadow: 0 3px 6px rgba(230, 144, 25, 0.4);
+    }
+
+    /* Ícones dos botões */
+    .cartao-botao svg {
+        width: 0.875rem;
+        height: 0.875rem;
+        flex-shrink: 0;
+    }
+
+    /* Ícone do botão Assinar (maior) */
+    .cartao-botao-assinar svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    /* Animação de escrita (typewriter) */
+    @keyframes typewriter {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .typewriter-char {
+        animation: typewriter 0.1s forwards;
+        opacity: 0;
+    }
+
+    /* Responsividade Mobile */
+    @media (max-width: 640px) {
+        .cartao-biblioteca {
+            max-width: 95%;
+            padding: 1.5rem 1rem;
+            min-height: 500px;
+        }
+
+        .cartao-titulo {
+            font-size: 1.25rem;
+        }
+
+        .cartao-contador {
+            font-size: 0.75rem;
+        }
+
+        .cartao-mensagem {
+            font-size: 0.85rem;
+        }
+
+        .cartao-tabela {
+            font-size: 0.7rem;
+        }
+
+        .cartao-tabela tbody td {
+            font-size: 0.95rem;
+            padding: 0.3rem 0.15rem;
+        }
+
+        .cartao-tabela thead th {
+            padding: 0.4rem 0.15rem;
+        }
+
+        .cartao-botao {
+            font-size: 0.7rem;
+            padding: 0.35rem 0.7rem;
+        }
+
+        .cartao-botao svg {
+            width: 0.75rem;
+            height: 0.75rem;
+        }
+
+        .cartao-botao-assinar {
+            font-size: 0.8rem;
+            padding: 0.45rem 0.9rem;
+        }
+
+        .cartao-botao-assinar svg {
+            width: 0.875rem;
+            height: 0.875rem;
+        }
+
+        .cartao-area-botoes {
+            gap: 0.4rem;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="flex-1 justify-center py-10 px-4 sm:px-6 lg:px-8"
+      x-data="{
+          tema: '{{ tema_inicial }}',
+          nivelZoom: {{ zoom_inicial }},
+          modoFoco: false,
+          mostrarTextoFoco: false,
+          blocoAberto: null,
+          copiado: { bibtex: false, abnt: false },
+          // Item 5 do ROADMAP - Compartilhar
+          dropdownCompartilhar: false,
+          linkCopiado: false,
+          // Item 3.6 do ROADMAP - Cartão da Biblioteca
+          modalCartaoAberto: false,
+          mostrarConfirmacao: false,
+          assinaturas: [],
+          totalAssinaturas: 0,
+          usuarioAssinou: false,
+          acabouDeAssinar: false,
+          carregando: false,
+          usuarioLogado: {{ user.is_authenticated|lower }},
+          favoritado: {{ texto_favoritado|lower }},
+          lido: {{ texto_lido|lower }},
+          naListaLeitura: {{ na_lista_leitura|lower }},
+          seguindoAutor: {{ seguindo_autor|lower }},
+          bioExpandida: false,
+          modalTipoEsgotado: false,
+          tipoEsgotado: '',
+          modalLoginNecessario: false,
+          modalDominioPublico: false,
+          async init() {
+              // Carregar estado de assinatura ao inicializar a página
+              // para que o botão mostre o texto correto desde o início
+              if (this.usuarioLogado) {
+                  await this.verificarSeUsuarioAssinou();
+              }
+
+              // Verificar se há parâmetro 'tipo_esgotado' na URL
+              const urlParams = new URLSearchParams(window.location.search);
+              const tipo = urlParams.get('tipo_esgotado');
+              if (tipo) {
+                  this.tipoEsgotado = tipo;
+                  this.modalTipoEsgotado = true;
+              }
+          },
+          getMensagemTipoEsgotado() {
+              const mensagens = {
+                  'aleatorio': 'Uau, você leu todos os textos da plataforma! Não temos mais recomendações, mas podemos sortear um outro texto qualquer, pode ser?',
+                  'autor': 'Uau, você leu todos os textos deste autor! Não temos mais recomendações, mas podemos sortear um outro texto qualquer, pode ser?',
+                  'semelhante': 'Uau, você leu todos os textos de pessoas que escrevem sobre os seus temas prediletos! Não temos mais recomendações, mas podemos sortear um outro texto qualquer, pode ser?'
+              };
+              return mensagens[this.tipoEsgotado] || mensagens['aleatorio'];
+          },
+          fecharModalTipoEsgotado() {
+              this.modalTipoEsgotado = false;
+              // Remover parâmetro da URL sem recarregar a página
+              const url = new URL(window.location);
+              url.searchParams.delete('tipo_esgotado');
+              window.history.replaceState({}, '', url);
+          },
+          fecharModalLoginNecessario() {
+              this.modalLoginNecessario = false;
+          },
+          get fontSize() {
+              // Fórmula EXATA da tela de configurações (Item 3.2 do ROADMAP)
+              // Converte nivel (1-10) para rem (0.75-1.5)
+              // Fórmula: fontSize = 0.75 + (nivelZoom - 1) * 0.0833
+              return (0.75 + (this.nivelZoom - 1) * 0.0833).toFixed(4);
+          },
+          toggleModoFoco() {
+              // Item 3.4 do ROADMAP - Alternar modo foco
+              this.modoFoco = !this.modoFoco;
+
+              if (this.modoFoco) {
+                  // Ao entrar no modo foco: mostrar texto por 1 segundo
+                  this.mostrarTextoFoco = true;
+                  setTimeout(() => {
+                      this.mostrarTextoFoco = false;
+                  }, 1000);
+
+                  // Prevenir scroll do body
+                  document.body.style.overflow = 'hidden';
+              } else {
+                  // Ao sair do modo foco: restaurar scroll
+                  document.body.style.overflow = '';
+              }
+          },
+          toggleBloco(tipo) {
+              // Item 3.5 do ROADMAP - Alternar blocos de citação
+              // Apenas um bloco pode estar aberto por vez
+              if (this.blocoAberto === tipo) {
+                  this.blocoAberto = null; // Recolher se já estiver aberto
+              } else {
+                  this.blocoAberto = tipo; // Abrir o bloco clicado
+              }
+          },
+          copiarCitacao(tipo, ref) {
+              // Item 3.5 do ROADMAP - Copiar citação para área de transferência
+              navigator.clipboard.writeText(this.$refs[ref].textContent);
+              // Mostrar feedback visual
+              this.copiado[tipo] = true;
+              // Voltar ao estado original após 2 segundos
+              setTimeout(() => {
+                  this.copiado[tipo] = false;
+              }, 2000);
+          },
+          // ==== CARTÃO DA BIBLIOTECA - Item 3.6 do ROADMAP ====
+          async abrirModalCartao() {
+              this.modalCartaoAberto = true;
+              this.mostrarConfirmacao = false;
+              this.acabouDeAssinar = false;
+              await this.carregarAssinaturas();
+          },
+          fecharModalCartao() {
+              this.modalCartaoAberto = false;
+              this.mostrarConfirmacao = false;
+          },
+          async verificarSeUsuarioAssinou() {
+              // Verificação rápida apenas do estado de assinatura
+              // Usada na inicialização da página para atualizar o texto do botão
+              try {
+                  const response = await fetch('/texto/{{ texto.pk }}/cartao/assinaturas/');
+                  const data = await response.json();
+                  this.usuarioAssinou = data.usuario_assinou;
+              } catch (error) {
+                  console.error('Erro ao verificar assinatura:', error);
+              }
+          },
+          async carregarAssinaturas() {
+              try {
+                  this.carregando = true;
+                  const response = await fetch('/texto/{{ texto.pk }}/cartao/assinaturas/');
+                  const data = await response.json();
+                  this.assinaturas = data.assinaturas;
+                  this.totalAssinaturas = data.total;
+                  this.usuarioAssinou = data.usuario_assinou;
+              } catch (error) {
+                  console.error('Erro ao carregar assinaturas:', error);
+              } finally {
+                  this.carregando = false;
+              }
+          },
+          mostrarTelaConfirmacao() {
+              this.mostrarConfirmacao = true;
+          },
+          cancelarConfirmacao() {
+              this.mostrarConfirmacao = false;
+          },
+          async confirmarAssinatura() {
+              this.mostrarConfirmacao = false;
+              await this.assinarCartao();
+          },
+          async assinarCartao() {
+              try {
+                  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                  const response = await fetch('/texto/{{ texto.pk }}/assinar-cartao/', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRFToken': csrftoken
+                      }
+                  });
+                  const data = await response.json();
+
+                  if (data.success) {
+                      // Adicionar nova assinatura no início da lista (ordem cronológica)
+                      this.assinaturas.push(data.assinatura);
+                      this.totalAssinaturas++;
+                      this.usuarioAssinou = true;
+                      this.acabouDeAssinar = true;
+
+                      // Animar a escrita da nova assinatura
+                      await this.$nextTick();
+                      this.animarEscrita(this.assinaturas.length - 1);
+                  } else {
+                      alert(data.message);
+                  }
+              } catch (error) {
+                  console.error('Erro ao assinar cartão:', error);
+                  alert('Ocorreu um erro ao registrar sua assinatura. Por favor, tente novamente.');
+              }
+          },
+          animarEscrita(index) {
+              // Efeito typewriter - animar escrita de cada caractere
+              // Aguardar Alpine.js renderizar o conteúdo
+              setTimeout(() => {
+                  const row = document.querySelector(`[data-assinatura-index='${index}']`);
+                  if (!row) return;
+
+                  // Guardar os textos originais antes de limpar
+                  const assinatura = this.assinaturas[index];
+                  const textos = [
+                      // Nome completo + localização
+                      assinatura.nome_completo + (assinatura.localizacao ? ', ' + assinatura.localizacao : ''),
+                      // Username
+                      '@' + assinatura.username,
+                      // Data formatada
+                      this.formatarData(assinatura.data_assinatura)
+                  ];
+
+                  const cells = row.querySelectorAll('td');
+                  cells.forEach((cell, cellIndex) => {
+                      const text = textos[cellIndex];
+                      const originalHTML = cell.innerHTML; // Guardar HTML original (links, etc)
+
+                      // Limpar apenas o texto, mantendo estrutura se necessário
+                      if (cellIndex === 1) {
+                          // Para @username, manter o link mas limpar o texto
+                          const link = cell.querySelector('a');
+                          if (link) {
+                              link.textContent = '';
+                              let charIndex = 0;
+                              const interval = setInterval(() => {
+                                  if (charIndex < text.length) {
+                                      link.textContent += text[charIndex];
+                                      charIndex++;
+                                  } else {
+                                      clearInterval(interval);
+                                  }
+                              }, 50); // 50ms por caractere (mais lento)
+                          }
+                      } else {
+                          // Para outras células, animar diretamente
+                          cell.textContent = '';
+                          let charIndex = 0;
+                          const interval = setInterval(() => {
+                              if (charIndex < text.length) {
+                                  cell.textContent += text[charIndex];
+                                  charIndex++;
+                              } else {
+                                  clearInterval(interval);
+                              }
+                          }, 50); // 50ms por caractere (mais lento)
+                      }
+                  });
+              }, 100); // Aguardar 100ms para Alpine.js renderizar
+          },
+          formatarData(isoDate) {
+              const date = new Date(isoDate);
+              return date.toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+              });
+          },
+          getContadorAssinaturas() {
+              if (this.totalAssinaturas === 0) {
+                  return 'Seja o primeiro a deixar sua marca neste cartão!';
+              } else if (this.totalAssinaturas === 1) {
+                  return '1 leitor deixou sua assinatura neste cartão';
+              } else {
+                  return `${this.totalAssinaturas} leitores assinaram este cartão`;
+              }
+          },
+          async downloadCartao() {
+              // Captura o cartão da biblioteca como imagem e faz download
+              const cartao = document.getElementById('cartao-biblioteca');
+              if (!cartao) {
+                  alert('Erro ao capturar o cartão. Tente novamente.');
+                  return;
+              }
+
+              try {
+                  // Usa html2canvas para capturar o elemento como imagem
+                  const canvas = await html2canvas(cartao, {
+                      backgroundColor: '#FDFBF6',
+                      scale: 2, // Maior qualidade
+                      logging: false,
+                      useCORS: true,
+                      allowTaint: true
+                  });
+
+                  // Converte canvas para blob
+                  canvas.toBlob((blob) => {
+                      // Cria URL temporário para download
+                      const url = URL.createObjectURL(blob);
+
+                      // Cria link de download
+                      const link = document.createElement('a');
+                      const tituloTexto = '{{ texto.titulo|escapejs }}'.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                      link.download = `cartao_biblioteca_${tituloTexto}.png`;
+                      link.href = url;
+
+                      // Trigger download
+                      document.body.appendChild(link);
+                      link.click();
+
+                      // Cleanup
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                  }, 'image/png');
+              } catch (error) {
+                  console.error('Erro ao gerar imagem:', error);
+                  alert('Erro ao gerar a imagem do cartão. Tente novamente.');
+              }
+          },
+          async toggleFavorito() {
+              if (!this.usuarioLogado) {
+                  this.modalLoginNecessario = true;
+                  return;
+              }
+              try {
+                  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                  const response = await fetch('/texto/{{ texto.pk }}/toggle-favorito/', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRFToken': csrftoken
+                      }
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                      this.favoritado = data.favoritado;
+                  } else {
+                      alert(data.message || 'Erro ao salvar nos melhores');
+                  }
+              } catch (error) {
+                  console.error('Erro:', error);
+                  alert('Ocorreu um erro. Tente novamente.');
+              }
+          },
+          async toggleLido() {
+              if (!this.usuarioLogado) {
+                  this.modalLoginNecessario = true;
+                  return;
+              }
+              try {
+                  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                  const response = await fetch('/texto/{{ texto.pk }}/toggle-lido/', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRFToken': csrftoken
+                      }
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                      this.lido = data.lido;
+                  } else {
+                      alert(data.message || 'Erro ao marcar como lido');
+                  }
+              } catch (error) {
+                  console.error('Erro:', error);
+                  alert('Ocorreu um erro. Tente novamente.');
+              }
+          },
+          async toggleLeituraPosterior() {
+              // Item 4 do ROADMAP - Toggle ler mais tarde / remover da lista
+              if (!this.usuarioLogado) {
+                  this.modalLoginNecessario = true;
+                  return;
+              }
+              try {
+                  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                  const response = await fetch('/texto/{{ texto.pk }}/toggle-leitura-posterior/', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRFToken': csrftoken
+                      }
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                      this.naListaLeitura = data.na_lista;
+                  } else {
+                      alert(data.message || 'Erro ao salvar para ler mais tarde');
+                  }
+              } catch (error) {
+                  console.error('Erro:', error);
+                  alert('Ocorreu um erro. Tente novamente.');
+              }
+          },
+          async toggleSeguirAutor() {
+              // Item 3.1 do ROADMAP - Toggle seguir/deixar de seguir autor
+              if (!this.usuarioLogado) {
+                  this.modalLoginNecessario = true;
+                  return;
+              }
+              try {
+                  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                  const response = await fetch('/texto/autor/{{ texto.autor.pk }}/toggle-seguir/', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRFToken': csrftoken
+                      }
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                      this.seguindoAutor = data.seguindo;
+                  } else if (data.requires_login) {
+                      this.modalLoginNecessario = true;
+                  } else {
+                      alert(data.message || 'Erro ao seguir autor');
+                  }
+              } catch (error) {
+                  console.error('Erro:', error);
+                  alert('Ocorreu um erro. Tente novamente.');
+              }
+          },
+          // Item 5 do ROADMAP - Compartilhar
+          compartilhar() {
+              // Abre/fecha dropdown de compartilhamento
+              this.dropdownCompartilhar = !this.dropdownCompartilhar;
+          },
+          copiarLink() {
+              const url = window.location.href;
+              navigator.clipboard.writeText(url).then(() => {
+                  this.linkCopiado = true;
+                  setTimeout(() => {
+                      this.linkCopiado = false;
+                  }, 2000);
+              }).catch(err => {
+                  console.error('Erro ao copiar link:', err);
+                  alert('Erro ao copiar link. Tente novamente.');
+              });
+          }
+      }">
+    <div class="layout-content-container flex flex-col max-w-4xl mx-auto">
+        <div class="flex flex-col gap-8">
+            <!-- Banner de Pré-visualização (apenas para rascunhos) -->
+            {% if is_preview %}
+            <div class="bg-yellow-100 dark:bg-yellow-900/30 border-l-4 border-yellow-500 text-yellow-800 dark:text-yellow-200 p-4 rounded-lg shadow-md">
+                <div class="flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 flex-shrink-0 mt-0.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                    </svg>
+                    <div class="flex-1">
+                        <p class="font-bold text-lg mb-1">⚠️ Pré-visualização - Texto não publicado</p>
+                        <p class="text-sm leading-relaxed">Este texto está em formato de rascunho e não é visível para o público. Apenas você (como {% if texto.autor.sexo == 'M' %}autor{% elif texto.autor.sexo == 'F' %}autora{% elif texto.autor.sexo == 'O' %}autore{% else %}autor{% endif %}) pode visualizá-lo neste momento. Para torná-lo público, publique-o através da sua área de {% if texto.autor.sexo == 'M' %}autor{% elif texto.autor.sexo == 'F' %}autora{% elif texto.autor.sexo == 'O' %}autore{% else %}autor{% endif %}.</p>
+                    </div>
+                    <!-- Botão Fechar Aba -->
+                    <button onclick="window.close()" class="flex-shrink-0 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium text-sm rounded-lg transition-colors flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                        Fechar
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cabeçalho do Texto -->
+            <div class="flex flex-col gap-4 items-center text-center">
+                <h1 class="font-display text-5xl font-bold text-accent-light dark:text-accent-dark leading-tight tracking-[-0.033em]">
+                    {{ texto.titulo }}
+                </h1>
+                {% if texto.subtitulo %}
+                <h3 class="font-display text-2xl text-text-light dark:text-text-dark/80">
+                    {{ texto.subtitulo }}
+                </h3>
+                {% endif %}
+
+                <!-- Data de Publicação (apenas para textos publicados) -->
+                {% if not is_preview and texto.data_publicacao %}
+                <div class="text-sm text-placeholder-light dark:text-placeholder-dark">
+                    Escrito na {{ texto.data_publicacao|periodo_do_dia }} de {{ texto.data_publicacao|date:"d \d\e F \d\e Y" }}{% if texto.local_escrita %} em {{ texto.local_escrita }}{% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Selos: Livre de IA e Domínio Público -->
+            {% if texto.selo_livre_ia or texto.is_dominio_publico %}
+            <div class="flex items-center justify-center gap-4 flex-wrap">
+                <!-- Selo Livre de IA -->
+                {% if texto.selo_livre_ia %}
+                <div class="flex items-center gap-2 p-2 rounded-lg bg-green-100 text-green-800 border border-green-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                    </svg>
+                    <span class="text-xs font-bold uppercase">Selo LIVRE DE IA</span>
+                </div>
+                {% endif %}
+
+                <!-- Selo Domínio Público -->
+                {% if texto.is_dominio_publico %}
+                <button
+                    @click="modalDominioPublico = true"
+                    class="flex items-center gap-2 p-2 rounded-lg border border-amber-500 hover:bg-amber-50 transition-colors cursor-pointer"
+                    style="background-color: #CD853F20; color: #8B4513;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                    </svg>
+                    <span class="text-xs font-bold uppercase">Domínio Público</span>
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Tags/Temas do Texto -->
+            {% if texto.tags.exists %}
+            <div class="flex flex-wrap items-center justify-center gap-2 px-4 mt-4">
+                {% for tag in texto.tags.all %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 mr-1">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+                    </svg>
+                    {{ tag.nome }}
+                </span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Informações do Autor -->
+            <div class="flex justify-center p-4">
+                <div class="flex items-start gap-4 rounded-lg max-w-2xl w-full">
+                    <!-- Coluna: Foto + Botão Seguir (Item 3.1 do ROADMAP) -->
+                    <div class="flex flex-col items-center gap-2 flex-shrink-0 min-w-[100px]">
+                        <!-- Foto do Autor (clicável) -->
+                        <a href="/@{{ texto.autor.username }}/" class="w-16 h-16 bg-center bg-no-repeat aspect-square bg-cover rounded-full hover:ring-2 hover:ring-primary transition-all" title="Ver perfil de {{ texto.autor.get_display_name }}"
+                             style="background-image: url('{{ texto.autor.get_avatar_url }}');">
+                        </a>
+                        <!-- Botão Seguir/Deixar de seguir (Item 3.1 do ROADMAP) -->
+                        <!-- Só aparece se o usuário logado NÃO for o próprio autor -->
+                        {% if user != texto.autor %}
+                        <button @click="toggleSeguirAutor"
+                                :class="seguindoAutor
+                                    ? 'px-3 py-1.5 text-xs font-semibold text-white bg-primary hover:bg-orange-600 rounded transition-colors flex items-center gap-1.5 whitespace-nowrap'
+                                    : 'px-3 py-1.5 text-xs font-semibold text-white bg-gray-700 hover:bg-gray-600 rounded transition-colors flex items-center gap-1.5 whitespace-nowrap'">
+                            <!-- Ícone Link (sempre visível) -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                            </svg>
+                            <span x-text="seguindoAutor ? 'Seguindo' : 'Seguir'"></span>
+                        </button>
+                        {% endif %}
+
+                        <!-- Botão Compartilhar (Item 5 do ROADMAP) -->
+                        <button @click="dropdownCompartilhar = true"
+                                class="px-3 py-1.5 text-xs font-semibold text-white bg-green-700 hover:bg-green-800 rounded transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                            </svg>
+                            <span>Compartilhar</span>
+                        </button>
+
+                        <!-- Botão Apoie (Item 1 do ROADMAP) - Só aparece se autor tiver PIX -->
+                        {% if texto.autor.monetizacao_pix and qrcode_base64 %}
+                        <a href="#secao-apoie"
+                           class="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                           onclick="event.preventDefault(); document.getElementById('secao-apoie').scrollIntoView({ behavior: 'smooth', block: 'center' });">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+                            </svg>
+                            <span>Apoie</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                    <!-- Coluna: Informações do Autor -->
+                    <div class="flex flex-col gap-1 flex-1">
+                        <p class="font-display text-lg font-bold text-accent-light dark:text-accent-dark">
+                            {% if texto.display_autoria == 'REAL' %}
+                                {{ texto.autor.get_full_name }}
+                            {% elif texto.display_autoria == 'PSEUDONIMO' %}
+                                {{ texto.autor.pseudonimo|default:texto.autor.get_full_name }}
+                            {% else %}
+                                {{ texto.autor.get_full_name }}{% if texto.autor.pseudonimo %} ({{ texto.autor.pseudonimo }}){% endif %}
+                            {% endif %}
+                        </p>
+                        <!-- ID do usuário (@username) clicável - Item 3.1 do ROADMAP -->
+                        <a href="/@{{ texto.autor.username }}/" class="text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors">
+                            @{{ texto.autor.username }}
+                        </a>
+                        {% if texto.autor.bio %}
+                        <div class="text-sm text-text-light dark:text-text-dark/80 leading-relaxed">
+                            {% if texto.autor.bio|wordcount > 100 %}
+                                <!-- Bio longa (>100 palavras): com expansão/recolhimento -->
+                                <p x-show="!bioExpandida" class="line-clamp-4 text-justify">
+                                    {{ texto.autor.bio }}
+                                </p>
+                                <p x-show="bioExpandida" class="whitespace-pre-line text-justify">
+                                    {{ texto.autor.bio }}
+                                </p>
+                                <!-- Botão Ver mais/Ver menos -->
+                                <div class="flex justify-end">
+                                    <button @click="bioExpandida = !bioExpandida"
+                                            class="text-xs text-primary hover:text-orange-600 font-semibold mt-1 transition-colors flex items-center gap-1">
+                                        <span x-text="bioExpandida ? 'Ver menos' : 'Ver mais'"></span>
+                                        <!-- Ícone Chevron Down (Expandir) -->
+                                        <svg x-show="!bioExpandida" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                        </svg>
+                                        <!-- Ícone Chevron Up (Recolher) -->
+                                        <svg x-show="bioExpandida" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            {% else %}
+                                <!-- Bio curta (≤100 palavras): exibir completa sem truncar -->
+                                <p class="whitespace-pre-line text-justify">
+                                    {{ texto.autor.bio }}
+                                </p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verificação de Restrição de Idade -->
+            {% if requer_maioridade and not user.is_authenticated %}
+                <!-- Usuário não logado + texto requer maioridade -->
+                <div class="p-8 md:p-12 lg:p-16">
+                    <div class="max-w-2xl mx-auto bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-500 rounded-xl p-8 text-center space-y-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-16 h-16 mx-auto text-blue-600 dark:text-blue-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                        </svg>
+                        <h3 class="text-2xl font-bold text-blue-700 dark:text-blue-300">Conteúdo para Maiores de 18 Anos</h3>
+                        <p class="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {% if texto.autor.sexo == 'M' %}O autor indicou{% elif texto.autor.sexo == 'F' %}A autora indicou{% elif texto.autor.sexo == 'O' %}O autore indicou{% else %}O autor indicou{% endif %} que este texto contém conteúdo sensível recomendado apenas para leitores maiores de 18 anos. Para prosseguir com a leitura, faça login ou cadastre-se informando sua data de nascimento.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                            <a href="{% url 'usuarios:login' %}?next={{ request.path }}" class="px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                                ENTRAR
+                            </a>
+                            <a href="{% url 'usuarios:cadastro_leitor' %}?next={{ request.path }}" class="px-6 py-3 bg-verde-floresta text-white rounded-lg font-bold hover:bg-verde-floresta/90 transition-colors">
+                                CADASTRE-SE
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% elif requer_maioridade and usuario_menor_18 %}
+                <!-- Usuário logado mas menor de 18 anos -->
+                <div class="p-8 md:p-12 lg:p-16">
+                    <div class="max-w-2xl mx-auto bg-red-50 dark:bg-red-900/20 border-2 border-red-600 rounded-xl p-8 text-center space-y-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-16 h-16 mx-auto text-red-600 dark:text-red-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                        <h3 class="text-2xl font-bold text-red-700 dark:text-red-300">Acesso Restrito</h3>
+                        <p class="text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                            Este texto é restrito apenas para maiores de 18 anos, pois possui conteúdo sensível.
+                        </p>
+                    </div>
+                </div>
+            {% else %}
+            <!-- Container Unificado: Controles + Texto compartilhando tema - Item 3.3 do ROADMAP -->
+            <!-- Modo Foco: Item 3.4 do ROADMAP -->
+            <div :class="[
+                `tema-${tema}`,
+                'rounded-lg overflow-hidden transition-all duration-300 relative',
+                modoFoco ? 'modo-foco-ativo' : ''
+            ]">
+                <!-- Barra de Controles de Leitura - Item 3.2 do ROADMAP -->
+                <div class="py-2 border-b border-black/10 dark:border-white/10">
+                    <div class="flex justify-center items-center gap-4 px-4">
+                        <!-- Controles de Fonte com Exibidor Numérico (Item 3.2 do ROADMAP) -->
+                        <div class="flex items-center gap-2">
+                            <!-- Botão Diminuir Zoom -->
+                            <button @click="nivelZoom = Math.max(1, nivelZoom - 1)"
+                                    class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                    title="Diminuir fonte">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
+                                </svg>
+                            </button>
+
+                            <!-- Exibidor Numérico do Nível de Zoom (10%-100%) -->
+                            <output title="Nível de zoom">
+                                <span x-text="`${nivelZoom * 10}%`"></span>
+                            </output>
+
+                            <!-- Botão Aumentar Zoom -->
+                            <button @click="nivelZoom = Math.min(10, nivelZoom + 1)"
+                                    class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                    title="Aumentar fonte">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="h-6 border-l border-black/10 dark:border-white/10"></div>
+
+                        <!-- Seletor de Tema (carregado dinamicamente do banco de dados) -->
+                        <select x-model="tema"
+                                class="form-select bg-transparent border-none focus:ring-0 focus:outline-none pr-8 cursor-pointer">
+                            {% for tema_obj in temas %}
+                            <option value="{{ tema_obj.slug }}">{{ tema_obj.nome_exibicao }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <div class="h-6 border-l border-black/10 dark:border-white/10"></div>
+
+                        <!-- Botão Modo Foco - Item 3.4 do ROADMAP -->
+                        <button @click="toggleModoFoco()"
+                                class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                :title="modoFoco ? 'Sair do modo foco' : 'Ativar modo foco'">
+                            <!-- Ícone arrows-pointing-out (entrar no modo foco) -->
+                            <svg x-show="!modoFoco" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                            </svg>
+                            <!-- Ícone arrows-pointing-in (sair do modo foco) -->
+                            <svg x-show="modoFoco" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Conteúdo do Texto - Item 3.2 do ROADMAP -->
+                <!-- fontSize calculado dinamicamente -->
+                <!-- Modo Foco: flex-1 overflow-y-auto para ocupar espaço restante -->
+
+                {% if requer_maioridade and mostrar_modal_confirmacao %}
+                    <!-- Usuário logado e maior de 18 - mostrar conteúdo com controle Alpine.js -->
+                    <div x-data="{
+                        mostrarTexto: false,
+                        desativarAvisosEMostrar() {
+                            // MELHORIA 73: Desativar avisos e mostrar texto
+                            fetch('{% url "usuarios:desativar_avisos_maioridade" %}', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': '{{ csrf_token }}',
+                                    'Content-Type': 'application/json'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    this.mostrarTexto = true;
+                                } else {
+                                    console.error('Erro ao desativar avisos:', data.error);
+                                    // Mesmo com erro, mostrar o texto (usuário confirmou)
+                                    this.mostrarTexto = true;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Erro na requisição:', error);
+                                // Mesmo com erro, mostrar o texto (usuário confirmou)
+                                this.mostrarTexto = true;
+                            });
+                        }
+                    }">
+                        <!-- Conteúdo do texto (inicialmente oculto) -->
+                        <article x-show="mostrarTexto"
+                                 x-transition
+                                 :class="[
+                                    'prose prose-lg lg:prose-xl max-w-none font-body leading-relaxed space-y-6 text-justify transition-all duration-300',
+                                    modoFoco ? 'flex-1 overflow-y-auto p-8 md:p-12 lg:p-16 pb-16' : 'p-6 pb-16'
+                                 ]"
+                                 :style="`font-size: ${fontSize}rem;`">
+                            {{ texto.conteudo|safe }}
+                        </article>
+
+                        <!-- Modal de confirmação de idade -->
+                        <div x-show="!mostrarTexto"
+                             class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-8 space-y-6">
+                                <div class="text-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-16 h-16 mx-auto text-amber-600 dark:text-amber-400 mb-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                    </svg>
+                                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Conteúdo Sensível</h3>
+                                    <p class="text-base text-gray-700 dark:text-gray-300 leading-relaxed mb-2">
+                                        {% if texto.autor.sexo == 'M' %}O autor indicou{% elif texto.autor.sexo == 'F' %}A autora indicou{% elif texto.autor.sexo == 'O' %}O autore indicou{% else %}O autor indicou{% endif %} que este texto possui conteúdo sensível e é recomendado apenas para maiores de 18 anos.
+                                    </p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-4">
+                                        Você confirma sua data de nascimento em <strong class="text-primary">{{ data_nascimento_formatada }}</strong>?
+                                    </p>
+                                </div>
+                                <div class="flex flex-col gap-3">
+                                    <button @click="mostrarTexto = true"
+                                            class="w-full px-6 py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary/90 transition-colors">
+                                        SIM, exibir o texto
+                                    </button>
+                                    <button @click="desativarAvisosEMostrar()"
+                                            class="w-full px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors">
+                                        SIM, exibir o texto e não mostrar essa mensagem novamente
+                                    </button>
+                                    <a href="{% url 'usuarios:minha_conta' %}#data-nascimento"
+                                       class="w-full px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-center">
+                                        NÃO, corrigir minha data de nascimento
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Texto normal (sem restrição ou já passou pela verificação) -->
+                    <article :class="[
+                        'prose prose-lg lg:prose-xl max-w-none font-body leading-relaxed space-y-6 text-justify transition-all duration-300',
+                        modoFoco ? 'flex-1 overflow-y-auto p-8 md:p-12 lg:p-16 pb-16' : 'p-6 pb-16'
+                    ]"
+                             :style="`font-size: ${fontSize}rem;`">
+                        {{ texto.conteudo|safe }}
+                    </article>
+                {% endif %}
+
+                <!-- Overlay "Modo Foco" - Item 3.4 do ROADMAP -->
+                <!-- Aparece por 1 segundo ao entrar no modo foco -->
+                <div x-show="mostrarTextoFoco"
+                     x-transition:enter="transition ease-out duration-500"
+                     x-transition:enter-start="opacity-0 scale-90"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-300"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-90"
+                     class="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none z-10">
+                    <div class="bg-white dark:bg-gray-800 px-8 py-4 rounded-lg shadow-2xl">
+                        <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                            Modo Foco
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Botões de Citação - Discretos no canto inferior direito dentro do bloco -->
+                <div x-show="!modoFoco" class="absolute bottom-2 right-2 flex gap-2 z-20">
+                    <!-- Botão PDF -->
+                    <a href="{% url 'textos:download_pdf' texto.pk %}"
+                       class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-gray-50 hover:bg-gray-100 border border-red-300 rounded transition-all shadow-sm"
+                       title="Baixar texto completo em PDF">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        PDF
+                    </a>
+
+                    <!-- Botão BibTeX -->
+                    <button @click="toggleBloco('bibtex')"
+                            class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 bg-gray-50 hover:bg-gray-100 border border-blue-300 rounded transition-all shadow-sm"
+                            title="Mostrar referência BibTeX">
+                        BibTeX
+                        <svg :class="blocoAberto === 'bibtex' ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 transition-transform">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </button>
+
+                    <!-- Botão ABNT -->
+                    <button @click="toggleBloco('abnt')"
+                            class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-700 bg-gray-50 hover:bg-gray-100 border border-green-300 rounded transition-all shadow-sm"
+                            title="Mostrar referência ABNT">
+                        ABNT
+                        <svg :class="blocoAberto === 'abnt' ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 transition-transform">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bloco BibTeX (expansível) - Versão compacta -->
+            <div x-show="blocoAberto === 'bibtex'"
+                 @click.outside="blocoAberto = null"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-2"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                 x-transition:leave-end="opacity-0 transform -translate-y-2"
+                 class="w-full max-w-lg ml-auto bg-gray-50 dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700 mb-4"
+                 x-cloak>
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-xs font-bold text-gray-700 dark:text-gray-300">Referência BibTeX</h4>
+                    <button @click="copiarCitacao('bibtex', 'bibtexContent')"
+                            class="flex items-center gap-1 text-[10px] px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all"
+                            :class="copiado.bibtex ? 'bg-yellow-800 hover:bg-yellow-900' : 'bg-blue-600 hover:bg-blue-700'"
+                            title="Copiar para área de transferência">
+                        <span x-text="copiado.bibtex ? 'Copiado!' : 'Copiar'"></span>
+                        <svg x-show="copiado.bibtex" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-2.5 h-2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                    </button>
+                </div>
+                <pre x-ref="bibtexContent" class="text-[10px] font-mono text-gray-800 dark:text-gray-200 overflow-x-auto bg-white dark:bg-gray-900 p-2 rounded border border-gray-300 dark:border-gray-600">@online{<span>{{ texto.autor.last_name|lower|cut:" " }}_{{ texto.titulo|slice:":20"|lower|cut:" " }}_{% if texto.data_publicacao %}{{ texto.data_publicacao.year }}{% else %}{% now "Y" %}{% endif %}</span>,
+  author       = {<span>{% if texto.display_autoria == 'REAL' %}{{ texto.autor.get_full_name }}{% elif texto.display_autoria == 'PSEUDONIMO' %}{{ texto.autor.pseudonimo|default:texto.autor.get_full_name }}{% else %}{% if texto.autor.pseudonimo %}{{ texto.autor.get_full_name }} ({{ texto.autor.pseudonimo }}){% else %}{{ texto.autor.get_full_name }}{% endif %}{% endif %}</span>},
+  title        = {<span>{{ texto.titulo }}</span>},{% if texto.subtitulo %}
+  subtitle     = {<span>{{ texto.subtitulo }}</span>},{% endif %}
+  date         = {<span>{% if texto.data_publicacao %}{{ texto.data_publicacao|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}</span>},
+  organization = {Plataforma Livre Dia},
+  url          = {https://livredia.com.br/texto/{{ texto.pk }}/},
+  urldate      = {<span>{% now "Y-m-d" %}</span>}
+}</pre>
+            </div>
+
+            <!-- Bloco ABNT (expansível) - Versão compacta -->
+            <div x-show="blocoAberto === 'abnt'"
+                 @click.outside="blocoAberto = null"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform -translate-y-2"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                 x-transition:leave-end="opacity-0 transform -translate-y-2"
+                 class="w-full max-w-lg ml-auto bg-gray-50 dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-200 dark:border-gray-700 mb-4"
+                 x-cloak>
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-xs font-bold text-gray-700 dark:text-gray-300">Referência ABNT</h4>
+                    <button @click="copiarCitacao('abnt', 'abntContent')"
+                            class="flex items-center gap-1 text-[10px] px-2 py-0.5 bg-green-600 text-white rounded hover:bg-green-700 transition-all"
+                            :class="copiado.abnt ? 'bg-yellow-800 hover:bg-yellow-900' : 'bg-green-600 hover:bg-green-700'"
+                            title="Copiar para área de transferência">
+                        <span x-text="copiado.abnt ? 'Copiado!' : 'Copiar'"></span>
+                        <svg x-show="copiado.abnt" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-2.5 h-2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                    </button>
+                </div>
+                <p x-ref="abntContent" class="text-[10px] text-gray-800 dark:text-gray-200 leading-relaxed bg-white dark:bg-gray-900 p-2 rounded border border-gray-300 dark:border-gray-600">{{ texto.autor.last_name|upper }}, {{ texto.autor.first_name }}. <strong>{{ texto.titulo }}{% if texto.subtitulo %}: {{ texto.subtitulo }}{% endif %}</strong>. Plataforma Livre Dia{% if texto.data_publicacao %}, {{ texto.data_publicacao|date:"d" }} {% if texto.data_publicacao.month == 1 %}jan.{% elif texto.data_publicacao.month == 2 %}fev.{% elif texto.data_publicacao.month == 3 %}mar.{% elif texto.data_publicacao.month == 4 %}abr.{% elif texto.data_publicacao.month == 5 %}maio{% elif texto.data_publicacao.month == 6 %}jun.{% elif texto.data_publicacao.month == 7 %}jul.{% elif texto.data_publicacao.month == 8 %}ago.{% elif texto.data_publicacao.month == 9 %}set.{% elif texto.data_publicacao.month == 10 %}out.{% elif texto.data_publicacao.month == 11 %}nov.{% elif texto.data_publicacao.month == 12 %}dez.{% endif %} {{ texto.data_publicacao.year }}{% endif %}. Disponível em: &lt;https://livredia.com.br/texto/{{ texto.pk }}/&gt;. Acesso em: {% now "d" %} {% now "M" as mes %}{% if mes == "Jan" %}jan.{% elif mes == "Feb" %}fev.{% elif mes == "Mar" %}mar.{% elif mes == "Apr" %}abr.{% elif mes == "May" %}maio{% elif mes == "Jun" %}jun.{% elif mes == "Jul" %}jul.{% elif mes == "Aug" %}ago.{% elif mes == "Sep" %}set.{% elif mes == "Oct" %}out.{% elif mes == "Nov" %}nov.{% elif mes == "Dec" %}dez.{% endif %} {% now "Y" %}.</p>
+            </div>
+
+            <!-- Área de Downloads/Citações - Item 3.5 do ROADMAP -->
+            <!-- Botões reorganizados: Cartão em cima, Downloads embaixo (Item 2.1 do ROADMAP) -->
+            <div class="flex flex-col gap-4 py-6">
+                <!-- Layout de Botões: Coluna centralizada -->
+                <div class="flex flex-col items-center gap-4">
+                    <!-- Linha 0: Botões de Ação Rápida (Item 2.2 do ROADMAP) -->
+                    <!-- Layout responsivo:
+                         - Telas menores: 2 botões (linha 1) + 3 botões (linha 2)
+                         - Telas maiores (sm:): Todos os 5 botões na mesma linha -->
+                    <div class="flex flex-col sm:flex-row gap-2 justify-center items-center">
+                        <!-- Grupo 1: Favorito + Lido -->
+                        <div class="flex gap-2">
+                            <!-- 2.2.1: Botão Salvar nos Melhores -->
+                            <button type="button" @click="toggleFavorito()" class="w-28 sm:w-32 px-3 h-14 sm:px-4 sm:h-16 rounded-lg border-2 shadow-md hover:shadow-lg transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5 bg-amber-100 text-amber-700 border-amber-700" x-bind:class="{ 'bg-amber-700 text-white': favoritado, 'bg-amber-100 text-amber-700': !favoritado }">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 sm:w-6 sm:h-6" x-show="!favoritado" style="display:none">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 sm:w-6 sm:h-6" x-show="favoritado" style="display:none">
+                                    <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                                </svg>
+                                <span class="text-[9px] sm:text-[10px] font-semibold mt-0.5 whitespace-nowrap" x-text="favoritado ? 'Salvo nos melhores' : 'Salvar nos melhores'">Salvar nos melhores</span>
+                            </button>
+
+                            <!-- Item 4 do ROADMAP: Botão Ler Mais Tarde -->
+                            <button type="button" @click="toggleLeituraPosterior()" class="w-28 sm:w-32 px-3 h-14 sm:px-4 sm:h-16 rounded-lg border-2 shadow-md hover:shadow-lg transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5 bg-stone-200 text-stone-800 border-stone-800" x-bind:class="{ 'bg-stone-800 text-white': naListaLeitura, 'bg-stone-200 text-stone-800': !naListaLeitura }">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 sm:w-6 sm:h-6" x-show="!naListaLeitura" style="display:none">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 sm:w-6 sm:h-6" x-show="naListaLeitura" style="display:none">
+                                    <path fill-rule="evenodd" d="M6.32 2.577a49.255 49.255 0 0111.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 01-1.085.67L12 18.089l-7.165 3.583A.75.75 0 013.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="text-[9px] sm:text-[10px] font-semibold mt-0.5 whitespace-nowrap" x-text="naListaLeitura ? 'Remover da lista' : 'Ler mais tarde'">Ler mais tarde</span>
+                            </button>
+
+                            <!-- 2.2.2: Botão Marcar como Lido -->
+                            <button type="button" @click="toggleLido()" class="w-28 sm:w-32 px-3 h-14 sm:px-4 sm:h-16 rounded-lg border-2 shadow-md hover:shadow-lg transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5" style="background-color: #e8edd5; color: #6b7c3f; border-color: #6b7c3f;" x-bind:style="lido ? 'background-color: #6b7c3f; color: white; border-color: #6b7c3f;' : 'background-color: #e8edd5; color: #6b7c3f; border-color: #6b7c3f;'">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 sm:w-6 sm:h-6" x-show="!lido" style="display:none">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18V6A2.25 2.25 0 016 3.75h1.5m9 0h-9" />
+                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 sm:w-6 sm:h-6" x-show="lido" style="display:none">
+                                    <path fill-rule="evenodd" d="M6 3a3 3 0 00-3 3v12a3 3 0 003 3h12a3 3 0 003-3V6a3 3 0 00-3-3H6zm1.5 1.5a.75.75 0 00-.75.75V16.5a.75.75 0 001.085.67L12 15.089l4.165 2.083a.75.75 0 001.085-.671V5.25a.75.75 0 00-.75-.75h-9z" clip-rule="evenodd" />
+                                </svg>
+                                <span class="text-[9px] sm:text-[10px] font-semibold mt-0.5 whitespace-nowrap" x-text="lido ? 'Já lido' : 'Marcar como lido'">Marcar como lido</span>
+                            </button>
+                        </div>
+
+                        <!-- Grupo 2: Semelhante + Autor + Aleatório -->
+                        <div class="flex gap-2">
+                            <!-- 2.2.3: Botão Ler Outro Semelhante -->
+                            <a href="{% url 'textos:sorteia_texto' texto.pk 'semelhante' %}" class="w-28 sm:w-32 px-3 h-14 sm:px-4 sm:h-16 rounded-lg border-2 shadow-md hover:shadow-lg transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5 bg-emerald-100 text-emerald-700 border-emerald-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 sm:w-6 sm:h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v2.25A2.25 2.25 0 006 10.5zm0 9.75h2.25A2.25 2.25 0 0010.5 18v-2.25a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25V18A2.25 2.25 0 006 20.25zm9.75-9.75H18a2.25 2.25 0 002.25-2.25V6A2.25 2.25 0 0018 3.75h-2.25A2.25 2.25 0 0013.5 6v2.25a2.25 2.25 0 002.25 2.25z" />
+                                </svg>
+                                <span class="text-[9px] sm:text-[10px] font-semibold mt-0.5 whitespace-nowrap">Ler outro semelhante</span>
+                            </a>
+
+                            <!-- 2.2.4: Botão Ler Outro do Autor -->
+                            <a href="{% url 'textos:sorteia_texto' texto.pk 'autor' %}" class="w-28 sm:w-32 px-3 h-14 sm:px-4 sm:h-16 rounded-lg border-2 shadow-md hover:shadow-lg transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5 bg-purple-100 text-purple-700 border-purple-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 sm:w-6 sm:h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
+                                </svg>
+                                <span class="text-[9px] sm:text-[10px] font-semibold mt-0.5 whitespace-nowrap">Ler outro {% if texto.autor.sexo == 'M' %}do autor{% elif texto.autor.sexo == 'F' %}da autora{% elif texto.autor.sexo == 'O' %}de autore{% else %}do autor{% endif %}</span>
+                            </a>
+
+                            <!-- 2.2.5: Botão Ler Outro Aleatório -->
+                            <a href="{% url 'textos:sorteia_texto' texto.pk 'aleatorio' %}" class="w-28 sm:w-32 px-3 h-14 sm:px-4 sm:h-16 rounded-lg border-2 shadow-md hover:shadow-lg transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5 bg-slate-200 text-slate-700 border-slate-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 sm:w-6 sm:h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                </svg>
+                                <span class="text-[9px] sm:text-[10px] font-semibold mt-0.5 whitespace-nowrap">Ler outro aleatório</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Linha 1: Botão Cartão da Biblioteca centralizado -->
+                    <div class="flex justify-center">
+                        <!-- Botão Cartão da Biblioteca - Item 3.6 do ROADMAP -->
+                        <!-- DESTAQUE: Verde floresta + Laranja, centralizado -->
+                        <!-- Texto muda: "Assine..." (logado + não assinou) ou "Ver..." (não logado OU já assinou) -->
+                        <button @click="abrirModalCartao()"
+                                class="flex items-center gap-2 px-6 py-3 text-base font-bold text-white rounded-full transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                                style="background: linear-gradient(135deg, #3A4D39 0%, #e69019 100%);"
+                                :title="!usuarioLogado || usuarioAssinou ? 'Ver o cartão da biblioteca' : 'Assine o cartão da biblioteca!'">
+                            <!-- Heroicon: identification (cartão de identificação) -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z" />
+                            </svg>
+                            <span x-text="!usuarioLogado || usuarioAssinou ? 'Ver o cartão da biblioteca' : 'Assine o cartão da biblioteca!'"></span>
+                        </button>
+                    </div>
+
+                    <!-- Widget de Doação PIX compacto (Item 1 do ROADMAP) -->
+                    <!-- Aparece após o botão do cartão -->
+                    {% include 'textos/_widget_doacao_pix.html' %}
+                </div>
+            </div>
+
+            <!-- Seção de Comentários -->
+            <div class="border-t border-border-light dark:border-border-dark pt-8 mt-8">
+                <h2 class="font-display text-3xl font-bold text-accent-light dark:text-accent-dark mb-4">
+                    Comentários
+                </h2>
+
+                {% if texto.permite_comentarios %}
+                    <!-- Bloco Informativo: Configurações de Comentários -->
+                    <div class="mb-6 p-4 rounded-lg bg-secondary-light/50 dark:bg-secondary-dark/30 border border-border-light dark:border-border-dark">
+                        <div class="flex items-start gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-primary flex-shrink-0 mt-0.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                            </svg>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-text-light dark:text-text-dark mb-2">
+                                    Como funcionam os comentários neste texto
+                                </p>
+                                <p class="text-xs text-text-light/70 dark:text-text-dark/70 mb-3 leading-relaxed">
+                                    {% if texto.autor.sexo == 'M' %}O autor deste texto definiu{% elif texto.autor.sexo == 'F' %}A autora deste texto definiu{% elif texto.autor.sexo == 'O' %}O autore deste texto definiu{% else %}O autor deste texto definiu{% endif %} as seguintes preferências para comentários. Essas configurações são individuais para cada texto publicado:
+                                </p>
+                                <ul class="text-xs text-text-light/80 dark:text-text-dark/80 space-y-2">
+                                    {% if texto.moderacao_automatica %}
+                                        <li class="flex items-start gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span class="leading-relaxed"><strong>Aprovação automática ativada:</strong> Seus comentários serão publicados imediatamente após o envio, sem necessidade de revisão prévia {% if texto.autor.sexo == 'M' %}do autor{% elif texto.autor.sexo == 'F' %}da autora{% elif texto.autor.sexo == 'O' %}de autore{% else %}do autor{% endif %}. Todos os leitores poderão vê-los instantaneamente.</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="flex items-start gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span class="leading-relaxed"><strong>Moderação manual ativada:</strong> {% if texto.autor.sexo == 'M' %}O autor prefere{% elif texto.autor.sexo == 'F' %}A autora prefere{% elif texto.autor.sexo == 'O' %}O autore prefere{% else %}O autor prefere{% endif %} revisar os comentários antes de publicá-los. Seu comentário ficará pendente e visível apenas para você até que {% if texto.autor.sexo == 'M' %}o autor o aprove{% elif texto.autor.sexo == 'F' %}a autora o aprove{% elif texto.autor.sexo == 'O' %}o autore o aprove{% else %}o autor o aprove{% endif %}. Outros leitores só o verão após aprovação.</span>
+                                        </li>
+                                    {% endif %}
+
+                                    {% if texto.permite_comentarios_anonimos %}
+                                        <li class="flex items-start gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span class="leading-relaxed"><strong>Comentários anônimos permitidos:</strong> Você pode escolher se deseja comentar com seu nome visível ou de forma anônima. Ao marcar a opção "Publicar como Anônimo", seu comentário será exibido sem identificação.</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="flex items-start gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span class="leading-relaxed"><strong>Identificação obrigatória:</strong> {% if texto.autor.sexo == 'M' %}O autor requer{% elif texto.autor.sexo == 'F' %}A autora requer{% elif texto.autor.sexo == 'O' %}O autore requer{% else %}O autor requer{% endif %} que todos os comentários sejam identificados. Não será possível comentar anonimamente neste texto. Seu nome será sempre exibido junto ao comentário.</span>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% if user.is_authenticated %}
+                        <!-- Formulário de Comentário -->
+                        <div class="mb-8">
+                            <form hx-post="{% url 'textos:leitura_texto' texto.pk %}"
+                                  hx-target="#lista-comentarios"
+                                  hx-swap="afterbegin"
+                                  hx-on::after-request="if(event.detail.successful) { this.reset(); }"
+                                  class="flex flex-col gap-4">
+                                {% csrf_token %}
+                                <textarea name="conteudo"
+                                          class="form-textarea w-full rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark focus:ring-primary focus:border-primary text-text-light dark:text-text-dark"
+                                          placeholder="Deixe seu comentário..."
+                                          rows="4"
+                                          required></textarea>
+                                <div class="flex justify-end items-center gap-3">
+                                    {% if texto.permite_comentarios_anonimos %}
+                                    <label class="flex items-center gap-2 text-sm text-text-light dark:text-text-dark/80">
+                                        <input type="checkbox"
+                                               name="publicado_anonimamente"
+                                               class="form-checkbox h-5 w-5 rounded border-2 border-gray-400 dark:border-gray-500 text-primary focus:ring-2 focus:ring-primary/50 bg-white dark:bg-gray-700 cursor-pointer"/>
+                                        Publicar como Anônimo
+                                    </label>
+                                    {% endif %}
+                                    <button type="submit"
+                                            class="min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
+                                        <span class="truncate">Publicar</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    {% else %}
+                        <!-- Mensagem para usuário não logado -->
+                        <div class="text-center p-6 rounded-lg bg-secondary-light/50 dark:bg-secondary-dark/20 mb-8">
+                            <p class="mb-4 text-text-light dark:text-text-dark">Você precisa estar logado para comentar.</p>
+                            <div class="flex justify-center gap-4">
+                                <a href="{% url 'usuarios:login' %}?next={{ request.path }}"
+                                   class="min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center flex overflow-hidden rounded-lg h-10 px-4 bg-transparent border border-primary text-primary text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/10">
+                                    <span class="truncate">Entrar</span>
+                                </a>
+                                <a href="{% url 'usuarios:cadastro_leitor' %}"
+                                   class="min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center flex overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
+                                    <span class="truncate">Cadastrar-se</span>
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Lista de Comentários -->
+                    <div id="lista-comentarios" class="space-y-6">
+                        {% for comentario in comentarios %}
+                            {% include 'comentarios/_comentario.html' with comentario=comentario texto=texto %}
+                        {% empty %}
+                            <p class="text-center text-placeholder-light dark:text-placeholder-dark py-8">
+                                Seja o primeiro a comentar este texto!
+                            </p>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-placeholder-light dark:text-placeholder-dark py-8">
+                        Os comentários estão desabilitados para este texto.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal do Cartão da Biblioteca - Item 3.6 do ROADMAP -->
+    <!-- Modal: Backdrop com overlay escuro -->
+    <div x-show="modalCartaoAberto"
+         @click.self="fecharModalCartao()"
+         class="cartao-modal-backdrop"
+         x-cloak>
+
+        <!-- Container do Cartão -->
+        <div class="flex items-center justify-center min-h-screen p-4" @click.stop>
+            <div id="cartao-biblioteca" class="cartao-biblioteca shadow-2xl">
+
+                <!-- Cabeçalho: Título do Cartão -->
+                <div class="text-center mb-6">
+                    <h2 class="cartao-titulo leading-tight">
+                        Cartão da Biblioteca<br>Livre Dia
+                    </h2>
+                    <!-- Linha divisória pontilhada após o título -->
+                    <div class="mt-4 border-t-2 border-dashed border-gray-400 mx-auto" style="width: 80%;"></div>
+                </div>
+
+                <!-- TELA DE CONFIRMAÇÃO (aparece quando usuário clica em ASSINAR) -->
+                <div x-show="mostrarConfirmacao" x-cloak>
+                    <div class="cartao-mensagem mb-6 p-4 bg-amber-50 rounded-lg border-2 border-amber-200">
+                        <p class="text-lg font-bold text-center mb-3" style="font-family: 'Merriweather', serif; color: #4F4A45;">
+                            💛 Obrigado pelo interesse em assinar o cartão!
+                        </p>
+                        <p class="text-sm leading-relaxed mb-3" style="font-family: 'Merriweather', serif; color: #4F4A45;">
+                            Este processo é autenticado e garante que foi você quem assinou, demonstrando seu apreço genuíno por este texto.
+                        </p>
+                        <p class="text-sm leading-relaxed font-bold" style="font-family: 'Merriweather', serif; color: #4F4A45;">
+                            Por isso, uma vez assinado, não pode ser desfeito.
+                        </p>
+                    </div>
+
+                    <!-- Divisor -->
+                    <div class="cartao-divisor"></div>
+
+                    <!-- Área de Botões -->
+                    <div class="cartao-area-botoes">
+                        <!-- Linha 1: Botão Assinar -->
+                        <div style="width: 100%; text-align: center; margin-bottom: 0.75rem;">
+                            <button @click="confirmarAssinatura()"
+                                    class="cartao-botao cartao-botao-assinar">
+                                <!-- Heroicon: pencil -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13L2.25 21.75l.8-2.685a4.5 4.5 0 011.13-1.897l11.932-11.931zm0 0L19.5 7.125" />
+                                </svg>
+                                Sim, assinar!
+                            </button>
+                        </div>
+
+                        <!-- Linha 2: Outros botões -->
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                            <button @click="cancelarConfirmacao()"
+                                    class="cartao-botao cartao-botao-neutro">
+                                <!-- Heroicon: x-mark -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Não, voltar
+                            </button>
+
+                            <button @click="downloadCartao()"
+                                    class="cartao-botao cartao-botao-neutro"
+                                    title="Baixar cartão como imagem">
+                                <!-- Heroicon: arrow-down-tray -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                </svg>
+                                Baixar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TELA PRINCIPAL DO CARTÃO (aparece quando não está mostrando confirmação) -->
+                <div x-show="!mostrarConfirmacao" x-cloak>
+                    <!-- Contador de Assinaturas -->
+                    <p class="cartao-contador" x-text="getContadorAssinaturas()"></p>
+
+                <!-- Tabela de Assinaturas com Scroll -->
+                <div class="cartao-tabela-container mb-6">
+                    <table class="cartao-tabela">
+                        <thead>
+                            <tr>
+                                <th class="text-left px-2 py-2" style="font-family: 'Special Elite', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                    Nome Completo
+                                </th>
+                                <th class="text-left px-2 py-2" style="font-family: 'Special Elite', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                    ID (@)
+                                </th>
+                                <th class="text-left px-2 py-2" style="font-family: 'Special Elite', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                    Data
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Cada assinatura (com animação typewriter se acabou de assinar) -->
+                            <template x-for="(assinatura, index) in assinaturas" :key="assinatura.id">
+                                <tr :data-assinatura-index="index" class="border-b border-dashed border-gray-400">
+                                    <!-- Coluna: Nome Completo + Localização (cidade/país) -->
+                                    <td class="px-2 py-3"
+                                        :class="assinatura.is_current_user ? 'cartao-assinatura-destaque' : ''"
+                                        style="font-family: 'Caveat', cursive; font-size: 1.05rem; color: #2c2c2c;">
+                                        <div>
+                                            <span x-text="assinatura.nome_completo"></span>
+                                            <span x-show="assinatura.localizacao"
+                                                  x-text="', ' + assinatura.localizacao"
+                                                  class="text-xs opacity-75"></span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Coluna: ID (@username) -->
+                                    <td class="px-2 py-3"
+                                        style="font-family: 'Caveat', cursive; font-size: 1.05rem; color: #2c2c2c;">
+                                        <a :href="`/@${assinatura.username}`"
+                                           x-text="`@${assinatura.username}`"
+                                           class="text-amber-700 hover:text-amber-900 underline"></a>
+                                    </td>
+
+                                    <!-- Coluna: Data -->
+                                    <td class="px-2 py-3"
+                                        style="font-family: 'Caveat', cursive; font-size: 1.05rem; color: #2c2c2c;"
+                                        x-text="formatarData(assinatura.data_assinatura)"></td>
+                                </tr>
+                            </template>
+
+                            <!-- Mensagem se não houver assinaturas -->
+                            <tr x-show="assinaturas.length === 0">
+                                <td colspan="3" class="text-center py-6 text-gray-500" style="font-family: 'Merriweather', serif; font-size: 0.875rem;">
+                                    Este cartão ainda não possui assinaturas. Seja o primeiro!
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                    <!-- Linha de Ação: Botões -->
+                    <!-- Se usuário NÃO está logado: Mensagem de login/cadastro -->
+                    <div x-show="!usuarioLogado">
+                        <div class="cartao-mensagem mb-6 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
+                            <p class="text-lg font-bold text-center mb-3" style="font-family: 'Merriweather', serif; color: #4F4A45;">
+                                💛 Faça login ou cadastre-se para assinar este cartão
+                            </p>
+                            <p class="text-sm leading-relaxed text-center" style="font-family: 'Merriweather', serif; color: #4F4A45;">
+                                Para deixar sua assinatura e demonstrar seu apreço por este texto, você precisa ter uma conta no LIVRE DIA.
+                            </p>
+                        </div>
+
+                        <!-- Divisor -->
+                        <div class="cartao-divisor"></div>
+
+                        <!-- Área de Botões -->
+                        <div class="cartao-area-botoes">
+                            <!-- Linha 1: Botão Fazer login -->
+                            <div style="width: 100%; text-align: center; margin-bottom: 0.75rem;">
+                                <a href="/contas/login/?next={{ request.path }}"
+                                   class="cartao-botao cartao-botao-assinar">
+                                    <!-- Heroicon: arrow-right-on-rectangle -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                                    </svg>
+                                    Fazer login
+                                </a>
+                            </div>
+
+                            <!-- Linha 2: Outros botões -->
+                            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                                <a href="/contas/cadastro/?next={{ request.path }}"
+                                   class="cartao-botao cartao-botao-neutro">
+                                    <!-- Heroicon: user-plus -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+                                    </svg>
+                                    Cadastrar
+                                </a>
+
+                                <button @click="fecharModalCartao()"
+                                        class="cartao-botao cartao-botao-neutro">
+                                    <!-- Heroicon: x-mark -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Fechar
+                                </button>
+
+                                <button @click="downloadCartao()"
+                                        class="cartao-botao cartao-botao-neutro"
+                                        title="Baixar cartão como imagem">
+                                    <!-- Heroicon: arrow-down-tray -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                    </svg>
+                                    Baixar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Se usuário está logado E NÃO assinou: CANCELAR / ASSINAR -->
+                    <div x-show="usuarioLogado && !usuarioAssinou">
+                        <!-- Divisor -->
+                        <div class="cartao-divisor"></div>
+
+                        <!-- Área de Botões -->
+                        <div class="cartao-area-botoes">
+                            <!-- Linha 1: Botão Assinar -->
+                            <div style="width: 100%; text-align: center; margin-bottom: 0.75rem;">
+                                <button @click="mostrarTelaConfirmacao()"
+                                        class="cartao-botao cartao-botao-assinar">
+                                    <!-- Heroicon: pencil -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13L2.25 21.75l.8-2.685a4.5 4.5 0 011.13-1.897l11.932-11.931zm0 0L19.5 7.125" />
+                                    </svg>
+                                    Assinar
+                                </button>
+                            </div>
+
+                            <!-- Linha 2: Outros botões -->
+                            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                                <button @click="fecharModalCartao()"
+                                        class="cartao-botao cartao-botao-neutro">
+                                    <!-- Heroicon: x-mark -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Cancelar
+                                </button>
+
+                                <button @click="downloadCartao()"
+                                        class="cartao-botao cartao-botao-neutro"
+                                        title="Baixar cartão como imagem">
+                                    <!-- Heroicon: arrow-down-tray -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                    </svg>
+                                    Baixar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Se usuário ACABOU DE ASSINAR: Mensagem de agradecimento -->
+                    <div x-show="usuarioAssinou && acabouDeAssinar">
+                        <p class="text-center mb-4 text-lg font-bold" style="font-family: 'Merriweather', serif; color: #3A4D39;">
+                            💛 Muito obrigado! Sua assinatura foi registrada
+                        </p>
+
+                        <!-- Divisor -->
+                        <div class="cartao-divisor"></div>
+
+                        <!-- Área de Botões -->
+                        <div class="cartao-area-botoes">
+                            <button @click="downloadCartao()"
+                                    class="cartao-botao cartao-botao-neutro"
+                                    title="Baixar cartão como imagem">
+                                <!-- Heroicon: arrow-down-tray -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                </svg>
+                                Baixar
+                            </button>
+
+                            <button @click="fecharModalCartao()"
+                                    class="cartao-botao cartao-botao-neutro">
+                                <!-- Heroicon: x-mark -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Se usuário JÁ TINHA ASSINADO: Apenas botão de fechar -->
+                    <div x-show="usuarioAssinou && !acabouDeAssinar">
+                        <!-- Divisor -->
+                        <div class="cartao-divisor"></div>
+
+                        <!-- Área de Botões -->
+                        <div class="cartao-area-botoes">
+                            <button @click="downloadCartao()"
+                                    class="cartao-botao cartao-botao-neutro"
+                                    title="Baixar cartão como imagem">
+                                <!-- Heroicon: arrow-down-tray -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                </svg>
+                                Baixar
+                            </button>
+
+                            <button @click="fecharModalCartao()"
+                                    class="cartao-botao cartao-botao-neutro">
+                                <!-- Heroicon: x-mark -->
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Fim da TELA PRINCIPAL DO CARTÃO -->
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tipo de Sorteio Esgotado (Item 2.2.3, 2.2.4, 2.2.5 do ROADMAP) -->
+    <div x-show="modalTipoEsgotado"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm px-4"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <!-- Container do Modal -->
+        <div @click.stop
+             class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-lg w-full border-4 border-amber-500"
+             x-transition:enter="transition ease-out duration-300 delay-100"
+             x-transition:enter-start="opacity-0 transform scale-90"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-90">
+            <!-- Ícone de Troféu -->
+            <div class="flex justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-20 h-20 text-amber-500">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
+                </svg>
+            </div>
+
+            <!-- Título -->
+            <h2 class="text-2xl font-bold text-center mb-4 text-amber-600 dark:text-amber-400" style="font-family: 'Merriweather', serif;">
+                🎉 Parabéns!
+            </h2>
+
+            <!-- Mensagem Dinâmica -->
+            <p class="text-center text-gray-700 dark:text-gray-300 mb-6 leading-relaxed" style="font-family: 'Merriweather', serif;" x-text="getMensagemTipoEsgotado()">
+            </p>
+
+            <!-- Botões -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <!-- Botão: Sortear qualquer texto -->
+                <a href="{% url 'textos:sorteia_texto_forcado' texto.pk %}"
+                   class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-xl text-center">
+                    Sim, vamos lá!
+                </a>
+
+                <!-- Botão: Fechar modal -->
+                <button @click="fecharModalTipoEsgotado()"
+                        class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-xl">
+                    Não, obrigado
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Login Necessário (teleportado para o body para evitar problemas de stacking context) -->
+    <template x-teleport="body">
+        <div x-show="modalLoginNecessario" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4" @click="fecharModalLoginNecessario()">
+            <div @click.stop class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                <h3 class="text-xl font-bold mb-3 text-text-light dark:text-text-dark">Faça parte da nossa comunidade</h3>
+                <p class="text-gray-600 dark:text-gray-300 mb-6 text-justify">
+                    Para ter acesso a esse e outros recursos incríveis da plataforma Livre Dia você precisa ter uma conta. É rápido, gratuito e incentiva nossos autores a produzir trabalhos cada vez melhores. Faça parte da nossa comunidade!
+                </p>
+                <div class="flex flex-col gap-3">
+                    <a href="{% url 'usuarios:cadastro_leitor' %}?next={{ request.path }}"
+                       class="w-full px-4 py-3 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-opacity-90 transition text-center">
+                        Cadastrar-se Gratuitamente
+                    </a>
+                    <a href="{% url 'usuarios:login' %}?next={{ request.path }}"
+                       class="w-full px-4 py-3 text-sm font-semibold bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition text-center">
+                        Já tenho conta - Fazer Login
+                    </a>
+                    <a href="#" @click.prevent="fecharModalLoginNecessario()"
+                       class="w-full text-center px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition">
+                        Agora não
+                    </a>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Modal: Domínio Público (Item 3 do ROADMAP) -->
+    <div x-show="modalDominioPublico" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+        <div @click.stop class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <!-- Cabeçalho com ícone -->
+            <div class="flex items-center gap-3 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8" style="color: #CD853F;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                </svg>
+                <h3 class="text-2xl font-bold text-text-light dark:text-text-dark">O que é Domínio Público?</h3>
+            </div>
+
+            <!-- Conteúdo explicativo -->
+            <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                <p class="text-justify leading-relaxed">
+                    <strong>Domínio público</strong> refere-se a todas as obras que não estão mais protegidas por direitos autorais patrimoniais,
+                    permitindo que qualquer pessoa as utilize livremente, sem necessidade de autorização ou pagamento ao autor ou seus herdeiros.
+                </p>
+
+                <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 rounded">
+                    <h4 class="font-bold text-amber-800 dark:text-amber-300 mb-2">Legislação Brasileira</h4>
+                    <p class="text-sm text-amber-900 dark:text-amber-200 leading-relaxed text-justify">
+                        De acordo com a <strong>Lei nº 9.610/98 (Lei de Direitos Autorais)</strong>, artigo 41,
+                        os direitos patrimoniais do autor perduram por <strong>70 anos</strong>, contados a partir de 1º de janeiro do ano
+                        seguinte ao seu falecimento. Após esse período, a obra entra em domínio público.
+                    </p>
+                </div>
+
+                <p class="text-justify leading-relaxed">
+                    É importante destacar que mesmo quando uma obra entra em domínio público, os <strong>direitos morais</strong>
+                    do autor são perpetuados, ou seja, a autoria e a integridade da obra devem sempre ser respeitadas e preservadas.
+                </p>
+
+                <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded">
+                    <h4 class="font-bold text-blue-800 dark:text-blue-300 mb-2">Importante</h4>
+                    <p class="text-sm text-blue-900 dark:text-blue-200 leading-relaxed text-justify">
+                        O Estado é responsável por defender a integridade e autoria de obras em domínio público.
+                        Mesmo sendo de livre uso, é fundamental respeitar a autoria original e não modificar a obra
+                        de forma que descaracterize seu conteúdo ou intenção original.
+                    </p>
+                </div>
+
+                <div class="pt-4">
+                    <h4 class="font-bold text-text-light dark:text-text-dark mb-2">Saiba mais:</h4>
+                    <a href="https://www.dominiopublico.gov.br"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="inline-flex items-center gap-2 text-primary hover:text-orange-600 font-medium transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                        Portal Domínio Público do Governo Federal
+                    </a>
+                </div>
+            </div>
+
+            <!-- Botão fechar -->
+            <div class="mt-6 flex justify-end">
+                <button @click="modalDominioPublico = false"
+                        class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Compartilhar Texto (Item 5 do ROADMAP) -->
+    <div x-show="dropdownCompartilhar"
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+        <div @click.stop class="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-sm w-full shadow-2xl">
+            <!-- Campo de Link com Botões Copiar e Fechar -->
+            <div class="mb-4">
+                <div class="flex gap-2">
+                    <input type="text"
+                           :value="window.location.href"
+                           readonly
+                           class="flex-1 px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-xs text-gray-600 dark:text-gray-300 focus:outline-none">
+                    <button @click="copiarLink()"
+                            :class="linkCopiado
+                                ? 'px-3 py-1.5 bg-green-600 text-white rounded text-xs font-semibold transition-colors cursor-default'
+                                : 'px-3 py-1.5 bg-primary hover:bg-orange-600 text-white rounded text-xs font-semibold transition-colors'"
+                            x-text="linkCopiado ? 'Copiado!' : 'Copiar'">
+                    </button>
+                    <button @click="dropdownCompartilhar = false"
+                            class="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs font-semibold transition-colors">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Redes Sociais -->
+            <div>
+                <div class="grid grid-cols-3 gap-2">
+                    <!-- WhatsApp -->
+                    <a :href="'https://wa.me/?text=' + encodeURIComponent('{{ texto.titulo|escapejs }}{% if texto.subtitulo %} - {{ texto.subtitulo|escapejs }}{% endif %} | Livre Dia ' + window.location.href)"
+                       target="_blank"
+                       class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-300">WhatsApp</span>
+                    </a>
+
+                    <!-- Facebook -->
+                    <a :href="'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href)"
+                       target="_blank"
+                       class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-300">Facebook</span>
+                    </a>
+
+                    <!-- Twitter/X -->
+                    <a :href="'https://twitter.com/intent/tweet?text=' + encodeURIComponent('{{ texto.titulo|escapejs }}{% if texto.subtitulo %} - {{ texto.subtitulo|escapejs }}{% endif %}') + '&url=' + encodeURIComponent(window.location.href)"
+                       target="_blank"
+                       class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                        <div class="w-10 h-10 bg-gray-900 dark:bg-white rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-white dark:text-gray-900" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-300">Twitter/X</span>
+                    </a>
+
+                    <!-- Telegram -->
+                    <a :href="'https://t.me/share/url?url=' + encodeURIComponent(window.location.href) + '&text=' + encodeURIComponent('{{ texto.titulo|escapejs }}{% if texto.subtitulo %} - {{ texto.subtitulo|escapejs }}{% endif %}')"
+                       target="_blank"
+                       class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-300">Telegram</span>
+                    </a>
+
+                    <!-- LinkedIn -->
+                    <a :href="'https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(window.location.href) + '&title=' + encodeURIComponent('{{ texto.titulo|escapejs }}{% if texto.subtitulo %} - {{ texto.subtitulo|escapejs }}{% endif %}')"
+                       target="_blank"
+                       class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                        <div class="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-300">LinkedIn</span>
+                    </a>
+
+                    <!-- E-mail -->
+                    <a :href="'mailto:?subject=' + encodeURIComponent('{{ texto.titulo|escapejs }}{% if texto.subtitulo %} - {{ texto.subtitulo|escapejs }}{% endif %}') + '&body=' + encodeURIComponent('Confira este texto no Livre Dia: ' + window.location.href)"
+                       class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                        <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-white">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-300">E-mail</span>
+                    </a>
+
+                    <!-- Reddit -->
+                    <a :href="'https://www.reddit.com/submit?url=' + encodeURIComponent(window.location.href) + '&title=' + encodeURIComponent('{{ texto.titulo|escapejs }}{% if texto.subtitulo %} - {{ texto.subtitulo|escapejs }}{% endif %}')"
+                       target="_blank"
+                       class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                        <div class="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-300">Reddit</span>
+                    </a>
+
+                    <!-- Pinterest -->
+                    <a :href="'https://pinterest.com/pin/create/button/?url=' + encodeURIComponent(window.location.href) + '&description=' + encodeURIComponent('{{ texto.titulo|escapejs }}{% if texto.subtitulo %} - {{ texto.subtitulo|escapejs }}{% endif %}')"
+                       target="_blank"
+                       class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                        <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z"/>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-300">Pinterest</span>
+                    </a>
+
+                    <!-- Google (Busca pelo autor) -->
+                    <a :href="'https://www.google.com/search?q=' + encodeURIComponent('{{ texto.autor.get_display_name|escapejs }}')"
+                       target="_blank"
+                       class="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group">
+                        <div class="w-10 h-10 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform border-2 border-gray-300 dark:border-gray-600">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-medium text-gray-700 dark:text-gray-300 text-center leading-tight">Pesquisar no Google</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+</main>
+
+<script>
+/**
+ * Sistema de Tracking de Tempo de Leitura
+ *
+ * Funcionalidades:
+ * - Envia heartbeat a cada 30 segundos
+ * - Pausa quando usuário muda de aba (Page Visibility API)
+ * - Acumula tempo e reenvia se houver erro
+ * - Envia tempo final ao sair da página
+ */
+(function() {
+    // Configurações
+    const HEARTBEAT_INTERVAL = 30000; // 30 segundos
+    const VISUALIZACAO_ID = {{ visualizacao_id|default:'null' }};
+    const API_URL = "{% url 'textos:atualizar_tempo_leitura' %}";
+
+    // Verificar se temos ID de visualização
+    if (!VISUALIZACAO_ID) {
+        console.log('[Tracking] Visualização ID não disponível. Tracking desabilitado.');
+        return;
+    }
+
+    // Estado do tracker
+    let tempoAcumulado = 0; // Tempo desde último envio bem-sucedido (segundos)
+    let ultimoEnvio = Date.now(); // Timestamp do último envio
+    let intervalo = null; // Referência do setInterval
+    let paginaVisivel = !document.hidden; // Estado da página (visível/oculta)
+
+    /**
+     * Envia tempo acumulado para o servidor
+     */
+    async function enviarTempo() {
+        if (tempoAcumulado <= 0) {
+            return; // Nada a enviar
+        }
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    visualizacao_id: VISUALIZACAO_ID,
+                    tempo_segundos: tempoAcumulado
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`[Tracking] Tempo enviado: ${tempoAcumulado}s | Total acumulado: ${data.tempo_total}s`);
+                tempoAcumulado = 0; // Resetar após envio bem-sucedido
+            } else {
+                console.warn('[Tracking] Erro ao enviar tempo. Será reenviado no próximo heartbeat.');
+                // Mantém tempoAcumulado para reenviar depois
+            }
+        } catch (error) {
+            console.warn('[Tracking] Erro de rede. Tempo será reenviado:', error);
+            // Mantém tempoAcumulado para reenviar depois
+        }
+    }
+
+    /**
+     * Heartbeat periódico (a cada 30 segundos)
+     */
+    function heartbeat() {
+        if (!paginaVisivel) {
+            return; // Não acumular tempo se página não está visível
+        }
+
+        const agora = Date.now();
+        const segundosPassados = Math.floor((agora - ultimoEnvio) / 1000);
+
+        tempoAcumulado += segundosPassados;
+        ultimoEnvio = agora;
+
+        enviarTempo();
+    }
+
+    /**
+     * Iniciar tracking
+     */
+    function iniciarTracking() {
+        console.log('[Tracking] Iniciando tracking de tempo de leitura...');
+        ultimoEnvio = Date.now();
+        intervalo = setInterval(heartbeat, HEARTBEAT_INTERVAL);
+    }
+
+    /**
+     * Parar tracking
+     */
+    function pararTracking() {
+        if (intervalo) {
+            clearInterval(intervalo);
+            intervalo = null;
+        }
+    }
+
+    /**
+     * Lidar com mudança de visibilidade da página
+     */
+    function handleVisibilityChange() {
+        if (document.hidden) {
+            // Página ficou oculta (usuário mudou de aba)
+            paginaVisivel = false;
+
+            // Acumular tempo até agora
+            const agora = Date.now();
+            const segundosPassados = Math.floor((agora - ultimoEnvio) / 1000);
+            tempoAcumulado += segundosPassados;
+
+            console.log('[Tracking] Página oculta. Pausando tracking.');
+        } else {
+            // Página voltou a ficar visível
+            paginaVisivel = true;
+            ultimoEnvio = Date.now(); // Resetar timestamp
+            console.log('[Tracking] Página visível. Retomando tracking.');
+        }
+    }
+
+    /**
+     * Enviar tempo final ao sair da página
+     */
+    function handleBeforeUnload() {
+        // Acumular tempo final
+        const agora = Date.now();
+        const segundosPassados = Math.floor((agora - ultimoEnvio) / 1000);
+        tempoAcumulado += segundosPassados;
+
+        // Enviar usando sendBeacon (assíncrono, não bloqueia saída)
+        if (tempoAcumulado > 0 && navigator.sendBeacon) {
+            const data = JSON.stringify({
+                visualizacao_id: VISUALIZACAO_ID,
+                tempo_segundos: tempoAcumulado
+            });
+
+            navigator.sendBeacon(API_URL, data);
+            console.log(`[Tracking] Tempo final enviado via sendBeacon: ${tempoAcumulado}s`);
+        }
+    }
+
+    // ===== INICIALIZAÇÃO =====
+
+    // Registrar eventos
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Iniciar tracking
+    iniciarTracking();
+
+    console.log('[Tracking] Sistema de tracking inicializado com sucesso!');
+    console.log(`[Tracking] Visualização ID: ${VISUALIZACAO_ID}`);
+    console.log(`[Tracking] Heartbeat: ${HEARTBEAT_INTERVAL / 1000}s`);
+})();
+</script>
+
+<!-- Sistema de Menções (@username) em Comentários - Item 2 do ROADMAP -->
+<script src="{% static 'js/mencoes-comentarios.js' %}"></script>
+{% endblock %}

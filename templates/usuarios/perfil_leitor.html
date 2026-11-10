@@ -1,0 +1,1032 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ perfil_usuario.get_display_name }} (@{{ perfil_usuario.username}}) - LIVRE DIA{% endblock %}
+
+{% block content %}
+<div class="w-full -mt-10 sm:-mt-20">
+    <!-- Banner sempre visível (público) -->
+    <!-- Item 1.1 do ROADMAP: Banner/Capa Personalizado -->
+    <div class="relative w-screen h-[32rem] overflow-hidden" style="margin-left: calc(-50vw + 50%);">
+        <!-- Imagem de Capa -->
+        {% if capa_escolhida %}
+        <div class="absolute inset-0 w-full h-full bg-cover"
+             style="background-image: url('{% load static %}{% static capa_escolhida.caminho_imagem %}'); background-position: center {{ alinhamento_vertical_capa }}; aspect-ratio: 21/9;">
+        </div>
+        {% else %}
+        <!-- Fallback se não tiver capa -->
+        <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-500/20 to-blue-600/40"></div>
+        {% endif %}
+
+        <!-- Botão "Alterar capa" (só aparece se for o próprio usuário) -->
+        {% if user.is_authenticated and user == perfil_usuario %}
+        <div class="absolute top-4 right-4 z-20">
+            <a href="{% url 'usuarios:configuracoes' %}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="flex items-center gap-2 px-4 py-2 bg-white/90 dark:bg-gray-800/90 text-text-light dark:text-text-dark rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg text-sm font-semibold">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
+                Alterar capa
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Conteúdo sobreposto no banner -->
+        <div class="absolute inset-0 flex flex-col items-center justify-end pb-8 z-10">
+            <!-- Foto de Perfil -->
+            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white mb-4 shadow-lg">
+                {% if perfil_usuario.foto %}
+                    <img src="{{ perfil_usuario.foto.url }}" alt="Foto de {{ perfil_usuario.get_display_name }}" class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full flex items-center justify-center bg-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-white">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Painel de Informações com Fundo Transparente -->
+            <div class="bg-white/70 backdrop-blur-sm rounded-2xl px-6 py-5 shadow-xl max-w-[90%] sm:max-w-md">
+                <!-- Nome e Username -->
+                <h1 class="text-2xl font-black font-display text-black mb-1 text-center">
+                    {{ perfil_usuario.get_full_name }}
+                </h1>
+
+                <!-- E-mail (se habilitado pelo usuário) -->
+                {% if exibir_email_perfil and perfil_usuario.email %}
+                <a href="mailto:{{ perfil_usuario.email }}" class="flex items-center justify-center gap-1.5 text-sm text-black/80 hover:text-primary transition-colors mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                    </svg>
+                    {{ perfil_usuario.email }}
+                </a>
+                {% endif %}
+
+                <!-- Badge de Role e Username -->
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="{{ role_badge_class }} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shadow-md">
+                        {{ role_display }}
+                    </span>
+                    <p class="text-sm text-black font-bold">
+                        @{{ perfil_usuario.username }}
+                    </p>
+                </div>
+
+                <!-- Tempo de Cadastro -->
+                <p class="text-xs text-black font-semibold text-center">
+                    Conosco na plataforma desde {{ membro_desde }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo do Perfil (privado se perfil_privado=True) -->
+    {% if perfil_privado and user != perfil_usuario %}
+        <!-- Mensagem de Perfil Privado (apenas para outros usuários) -->
+        <div class="layout-content-container flex flex-col max-w-4xl w-full px-4 py-8 mx-auto">
+            <div class="flex flex-col items-center gap-6 py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-24 h-24 text-text-light/30 dark:text-text-dark/30">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold font-display text-text-light dark:text-text-dark mb-2">Perfil Privado</h2>
+                    <p class="text-base text-text-light/70 dark:text-text-dark/70">Este usuário configurou seu perfil como privado.</p>
+                </div>
+                <a href="{% url 'core:home' %}" class="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                    </svg>
+                    Voltar para Home
+                </a>
+            </div>
+        </div>
+    {% else %}
+        <!-- Conteúdo completo do perfil -->
+        <div class="layout-content-container flex flex-col max-w-4xl w-full px-4 py-8 mx-auto">
+            <div class="flex flex-col gap-8">
+
+                <!-- SEÇÃO a) Visibilidade do perfil (Item 1.1 do ROADMAP) -->
+                <!-- Só aparece se for o próprio usuário -->
+                {% if user.is_authenticated and user == perfil_usuario %}
+                <div class="w-full" x-data="{
+                    perfilPrivado: {{ perfil_usuario.perfil_privado|lower }},
+                    salvando: false,
+                    async toggleVisibilidade() {
+                        this.salvando = true;
+                        this.perfilPrivado = !this.perfilPrivado;
+
+                        try {
+                            const response = await fetch('{% url 'usuarios:toggle_visibilidade_perfil' %}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': '{{ csrf_token }}'
+                                },
+                                body: JSON.stringify({
+                                    perfil_privado: this.perfilPrivado
+                                })
+                            });
+
+                            const data = await response.json();
+
+                            if (!data.success) {
+                                // Reverter em caso de erro
+                                this.perfilPrivado = !this.perfilPrivado;
+                                alert('Erro ao salvar configuração. Tente novamente.');
+                            }
+                        } catch (error) {
+                            // Reverter em caso de erro
+                            this.perfilPrivado = !this.perfilPrivado;
+                            alert('Erro de conexão. Tente novamente.');
+                        } finally {
+                            this.salvando = false;
+                        }
+                    }
+                }">
+                    <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                        <!-- Ícone: eye (Heroicons) -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-blue-600 dark:text-blue-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
+                        <span>Visibilidade do perfil</span>
+                    </h3>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <p class="text-base font-semibold text-text-light dark:text-text-dark mb-1 flex items-center gap-2">
+                                    <!-- Ícone: Cadeado Aberto (Público) -->
+                                    <svg x-show="!perfilPrivado" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-600 dark:text-blue-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.375 21.75h17.25a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.375a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                    </svg>
+                                    <!-- Ícone: Cadeado Fechado (Privado) -->
+                                    <svg x-show="perfilPrivado" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-orange-600 dark:text-orange-400">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                    </svg>
+
+                                    <span x-show="!perfilPrivado">Perfil Público</span>
+                                    <span x-show="perfilPrivado" class="text-orange-600 dark:text-orange-400">Perfil Privado</span>
+                                </p>
+                                <p class="text-sm text-text-light/70 dark:text-text-dark/70">
+                                    <span x-show="!perfilPrivado">Qualquer pessoa pode ver seu perfil</span>
+                                    <span x-show="perfilPrivado">Apenas você pode ver seu perfil</span>
+                                </p>
+                            </div>
+
+                            <!-- Toggle Switch -->
+                            <button
+                                @click="toggleVisibilidade()"
+                                :disabled="salvando"
+                                class="relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                :class="perfilPrivado ? 'bg-orange-600' : 'bg-blue-600'"
+                                role="switch"
+                                :aria-checked="perfilPrivado.toString()"
+                            >
+                                <span class="sr-only">Alternar visibilidade</span>
+                                <span
+                                    class="inline-block h-6 w-6 transform rounded-full bg-white transition-transform"
+                                    :class="perfilPrivado ? 'translate-x-7' : 'translate-x-1'"
+                                ></span>
+                            </button>
+                        </div>
+
+                        <!-- Indicador de salvamento -->
+                        <div x-show="salvando" class="mt-3 text-xs text-text-light/60 dark:text-text-dark/60 flex items-center gap-1">
+                            <svg class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Salvando...
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SEÇÃO b) Suas Listas (Item 1.1 do ROADMAP) -->
+                <div class="w-full">
+                    <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                        <!-- Ícone: folder (Heroicons) -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                        </svg>
+                        <span>Suas Listas</span>
+                    </h3>
+
+                    <!-- Grid de 4 sublistas -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- 1. Textos Favoritos (Melhores) -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                            <h4 class="text-lg font-bold text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-yellow-500">
+                                    <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Melhores</span>
+                                <span class="text-sm text-text-light/60 dark:text-text-dark/60 font-normal">({{ total_favoritos }})</span>
+                            </h4>
+                            {% if textos_favoritos %}
+                                <div class="space-y-3">
+                                    {% for item in textos_favoritos %}
+                                    <a href="{% url 'textos:leitura_texto' item.texto.pk %}" class="block hover:bg-gray-50 dark:hover:bg-gray-700 p-3 rounded transition-colors">
+                                        <p class="font-semibold text-text-light dark:text-text-dark line-clamp-1">{{ item.texto.titulo }}</p>
+                                        <p class="text-sm text-text-light/70 dark:text-text-dark/70">por {{ item.texto.autor.get_display_name }}</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% if total_favoritos > 6 %}
+                                <div class="mt-4 text-center">
+                                    <a href="{% url 'lista_favoritos' perfil_usuario.username %}" class="text-primary hover:text-primary/80 font-semibold text-sm">Ver mais ({{ total_favoritos }} textos)</a>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-4">Nada nesta seção</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- 2. Textos Lidos -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                            <h4 class="text-lg font-bold text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-green-600">
+                                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Lidos</span>
+                                <span class="text-sm text-text-light/60 dark:text-text-dark/60 font-normal">({{ total_lidos }})</span>
+                            </h4>
+                            {% if textos_lidos %}
+                                <div class="space-y-3">
+                                    {% for item in textos_lidos %}
+                                    <a href="{% url 'textos:leitura_texto' item.texto.pk %}" class="block hover:bg-gray-50 dark:hover:bg-gray-700 p-3 rounded transition-colors">
+                                        <p class="font-semibold text-text-light dark:text-text-dark line-clamp-1">{{ item.texto.titulo }}</p>
+                                        <p class="text-sm text-text-light/70 dark:text-text-dark/70">por {{ item.texto.autor.get_display_name }}</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% if total_lidos > 6 %}
+                                <div class="mt-4 text-center">
+                                    <a href="{% url 'lista_lidos' perfil_usuario.username %}" class="text-primary hover:text-primary/80 font-semibold text-sm">Ver mais ({{ total_lidos }} textos)</a>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-4">Nada nesta seção</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- 3. Ler Mais Tarde -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                            <h4 class="text-lg font-bold text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-blue-600">
+                                    <path fill-rule="evenodd" d="M6.32 2.577a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93Z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Ler Mais Tarde</span>
+                                <span class="text-sm text-text-light/60 dark:text-text-dark/60 font-normal">({{ total_ler_depois }})</span>
+                            </h4>
+                            {% if textos_ler_depois %}
+                                <div class="space-y-3">
+                                    {% for item in textos_ler_depois %}
+                                    <a href="{% url 'textos:leitura_texto' item.texto.pk %}" class="block hover:bg-gray-50 dark:hover:bg-gray-700 p-3 rounded transition-colors">
+                                        <p class="font-semibold text-text-light dark:text-text-dark line-clamp-1">{{ item.texto.titulo }}</p>
+                                        <p class="text-sm text-text-light/70 dark:text-text-dark/70">por {{ item.texto.autor.get_display_name }}</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% if total_ler_depois > 6 %}
+                                <div class="mt-4 text-center">
+                                    <a href="{% url 'lista_ler_depois' perfil_usuario.username %}" class="text-primary hover:text-primary/80 font-semibold text-sm">Ver mais ({{ total_ler_depois }} textos)</a>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-4">Nada nesta seção</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- 4. Cartões Assinados -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
+                            <h4 class="text-lg font-bold text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-600">
+                                    <path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625Z" />
+                                    <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+                                </svg>
+                                <span>Cartões Assinados</span>
+                                <span class="text-sm text-text-light/60 dark:text-text-dark/60 font-normal">({{ total_assinaturas }})</span>
+                            </h4>
+                            {% if textos_com_assinatura %}
+                                <div class="space-y-3">
+                                    {% for item in textos_com_assinatura %}
+                                    <a href="{% url 'textos:leitura_texto' item.texto.pk %}" class="block hover:bg-gray-50 dark:hover:bg-gray-700 p-3 rounded transition-colors">
+                                        <p class="font-semibold text-text-light dark:text-text-dark line-clamp-1">{{ item.texto.titulo }}</p>
+                                        <p class="text-sm text-text-light/70 dark:text-text-dark/70">por {{ item.texto.autor.get_display_name }}</p>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                                {% if total_assinaturas > 6 %}
+                                <div class="mt-4 text-center">
+                                    <a href="{% url 'lista_cartoes' perfil_usuario.username %}" class="text-primary hover:text-primary/80 font-semibold text-sm">Ver mais ({{ total_assinaturas }} textos)</a>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-4">Nada nesta seção</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO c) Notificações (Item 1.1 do ROADMAP) -->
+                <!-- Só aparece se for o próprio usuário -->
+                {% if user.is_authenticated and user == perfil_usuario %}
+                <div class="w-full">
+                    <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                        <!-- Ícone: bell (Heroicons) -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-indigo-600 dark:text-indigo-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                        </svg>
+                        <span>Notificações</span>
+                        {% if total_notificacoes > 0 %}
+                        <span class="text-lg text-text-light/60 dark:text-text-dark/60 font-normal">({{ total_notificacoes }})</span>
+                        {% endif %}
+                    </h3>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+                        {% if notificacoes_recentes %}
+                            <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                                {% for notificacao in notificacoes_recentes %}
+                                <div class="p-5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {% if not notificacao.lida %}bg-blue-50/50 dark:bg-blue-900/10{% endif %}" id="notif-{{ notificacao.id }}">
+                                    <div class="flex items-start gap-3">
+                                        <!-- Ícone baseado no motivo (ANTES do texto) -->
+                                        <div class="flex-shrink-0">
+                                            {% if 'comentário' in notificacao.texto|lower or 'comment' in notificacao.motivo.codigo|lower %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-blue-500">
+                                                <path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0 1 12 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 0 1-3.476.383.39.39 0 0 0-.297.17l-2.755 4.133a.75.75 0 0 1-1.248 0l-2.755-4.133a.39.39 0 0 0-.297-.17 48.9 48.9 0 0 1-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97Z" clip-rule="evenodd" />
+                                            </svg>
+                                            {% elif 'texto' in notificacao.texto|lower or 'publicou' in notificacao.texto|lower %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-green-500">
+                                                <path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625Z" />
+                                                <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+                                            </svg>
+                                            {% else %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-gray-400">
+                                                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1 .67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.022ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+                                            </svg>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Indicador visual de não lida -->
+                                        <div class="flex-shrink-0 mt-2">
+                                            {% if not notificacao.lida %}
+                                            <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                            {% else %}
+                                            <div class="w-2 h-2 bg-transparent rounded-full"></div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Conteúdo da notificação (clicável) -->
+                                        <a href="{{ notificacao.link_destino }}" class="flex-1 min-w-0">
+                                            <p class="text-sm text-text-light dark:text-text-dark {% if not notificacao.lida %}font-semibold{% endif %}">
+                                                {{ notificacao.texto }}
+                                            </p>
+                                            <p class="text-xs text-text-light/60 dark:text-text-dark/60 mt-1">
+                                                {{ notificacao.data_criacao|date:"d/m/Y às H:i" }}
+                                            </p>
+                                        </a>
+
+                                        <!-- Botão X vermelho para excluir -->
+                                        <button
+                                            hx-delete="{% url 'usuarios:excluir_notificacao' notificacao.id %}"
+                                            hx-target="#notif-{{ notificacao.id }}"
+                                            hx-swap="outerHTML swap:0.3s"
+                                            class="flex-shrink-0 p-1 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                            title="Excluir notificação"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            {% if total_notificacoes > 6 %}
+                            <div class="p-4 text-center border-t border-gray-200 dark:border-gray-700">
+                                <a href="{% url 'lista_notificacoes' perfil_usuario.username %}" class="text-primary hover:text-primary/80 font-semibold text-sm">Ver mais ({{ total_notificacoes }} notificações)</a>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-12">Nada nesta seção</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SEÇÃO d) Seus comentários (Item 1.1 do ROADMAP) -->
+                <!-- Só aparece se for o próprio usuário -->
+                {% if user.is_authenticated and user == perfil_usuario %}
+                <div class="w-full">
+                    <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-emerald-600 dark:text-emerald-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                        </svg>
+                        <span>Seus comentários</span>
+                        {% if total_comentarios > 0 %}
+                        <span class="text-lg text-text-light/60 dark:text-text-dark/60 font-normal">({{ total_comentarios }})</span>
+                        {% endif %}
+                    </h3>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+                        {% if comentarios_recentes %}
+                            <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                                {% for comentario in comentarios_recentes %}
+                                <div class="p-5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" id="coment-{{ comentario.id }}">
+                                    <div class="flex items-start gap-3">
+                                        <!-- Ícone de comentário (ANTES do texto) -->
+                                        <div class="flex-shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-emerald-600 dark:text-emerald-400">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                                            </svg>
+                                        </div>
+
+                                        <!-- Indicador de comentário anônimo -->
+                                        <div class="flex-shrink-0 mt-2">
+                                            {% if comentario.publicado_anonimamente %}
+                                            <div class="w-2 h-2 bg-gray-400 rounded-full" title="Comentário anônimo"></div>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Conteúdo do comentário (clicável) -->
+                                        <a href="{% url 'textos:leitura_texto' comentario.texto.pk %}" class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-text-light dark:text-text-dark mb-1">
+                                                Em: "{{ comentario.texto.titulo }}"
+                                                {% if comentario.texto.autor %}
+                                                <span class="font-normal text-text-light/60 dark:text-text-dark/60">
+                                                    por @{{ comentario.texto.autor.username }}
+                                                </span>
+                                                {% endif %}
+                                            </p>
+                                            <p class="text-sm text-text-light/80 dark:text-text-dark/80 mb-1">
+                                                {% if comentario.conteudo|length > 100 %}
+                                                    {{ comentario.conteudo|slice:":100" }}...
+                                                {% else %}
+                                                    {{ comentario.conteudo }}
+                                                {% endif %}
+                                            </p>
+                                            <p class="text-xs text-text-light/60 dark:text-text-dark/60">
+                                                {{ comentario.data_publicacao|date:"d/m/Y às H:i" }}
+                                                {% if comentario.publicado_anonimamente %}
+                                                <span class="ml-2 text-gray-500">(anônimo)</span>
+                                                {% endif %}
+                                            </p>
+                                        </a>
+
+                                        <!-- Botão X vermelho para excluir -->
+                                        <button
+                                            hx-delete="{% url 'usuarios:excluir_comentario' comentario.id %}"
+                                            hx-target="#coment-{{ comentario.id }}"
+                                            hx-swap="outerHTML swap:0.3s"
+                                            class="flex-shrink-0 p-1 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                            title="Excluir comentário"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            {% if total_comentarios > 6 %}
+                            <div class="p-4 text-center border-t border-gray-200 dark:border-gray-700">
+                                <a href="{% url 'lista_comentarios' perfil_usuario.username %}" class="text-primary hover:text-primary/80 font-semibold text-sm">Ver mais ({{ total_comentarios }} comentários)</a>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-12">Nada nesta seção</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SEÇÃO e) Autores prediletos (Item 1.1 do ROADMAP) -->
+                <div class="w-full">
+                    <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-purple-600 dark:text-purple-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
+                        </svg>
+                        <span>Autores prediletos</span>
+                    </h3>
+
+                    <!-- Sublista 1: Autores que você segue -->
+                    <div class="mb-8">
+                        <h4 class="font-display text-xl font-semibold text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-blue-600 dark:text-blue-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                            </svg>
+                            Autores que você segue
+                            {% if total_autores_seguidos > 0 %}
+                            <span class="text-base text-text-light/60 dark:text-text-dark/60 font-normal">({{ total_autores_seguidos }})</span>
+                            {% endif %}
+                        </h4>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+                            {% if autores_seguidos %}
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                                    {% for relacao in autores_seguidos %}
+                                    <div id="autor-seguido-{{ relacao.autor.id }}" class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                        <!-- Foto do autor -->
+                                        <a href="{% url 'perfil_publico' relacao.autor.username %}" class="flex-shrink-0">
+                                            <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-300 dark:border-gray-600">
+                                                {% if relacao.autor.foto %}
+                                                    <img src="{{ relacao.autor.foto.url }}" alt="{{ relacao.autor.get_display_name }}" class="w-full h-full object-cover">
+                                                {% else %}
+                                                    <div class="w-full h-full flex items-center justify-center bg-blue-500 text-white font-bold text-lg">
+                                                        {{ relacao.autor.first_name|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </a>
+
+                                        <!-- Nome e username -->
+                                        <a href="{% url 'perfil_publico' relacao.autor.username %}" class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-text-light dark:text-text-dark truncate">
+                                                {{ relacao.autor.get_display_name }}
+                                            </p>
+                                            <p class="text-xs text-text-light/60 dark:text-text-dark/60 truncate">
+                                                @{{ relacao.autor.username }}
+                                            </p>
+                                        </a>
+
+                                        <!-- Botão de seguir/deixar de seguir (apenas para o dono do perfil) -->
+                                        {% if user.is_authenticated and user == perfil_usuario %}
+                                        <button
+                                            hx-post="{% url 'textos:toggle_seguir_autor' relacao.autor.id %}"
+                                            hx-target="#autor-seguido-{{ relacao.autor.id }}"
+                                            hx-swap="outerHTML swap:0.3s"
+                                            class="flex-shrink-0 p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                            title="Deixar de seguir"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                {% if total_autores_seguidos > 6 %}
+                                <div class="p-4 text-center border-t border-gray-200 dark:border-gray-700">
+                                    <a href="{% url 'lista_autores_seguidos' perfil_usuario.username %}" class="text-primary hover:text-primary/80 font-semibold text-sm">Ver mais ({{ total_autores_seguidos }} autores)</a>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-12">Nada nesta seção</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Sublista 2: Selo Leitor Especial -->
+                    <div class="mb-8">
+                        <h4 class="font-display text-xl font-semibold text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-amber-600 dark:text-amber-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />
+                            </svg>
+                            Selo {% if perfil_usuario.sexo == 'M' %}Leitor{% elif perfil_usuario.sexo == 'F' %}Leitora{% elif perfil_usuario.sexo == 'O' %}Leiture{% else %}Leitor{% endif %} Especial
+                            {% if total_autores_com_selo > 0 %}
+                            <span class="text-base text-text-light/60 dark:text-text-dark/60 font-normal">({{ total_autores_com_selo }})</span>
+                            {% endif %}
+                        </h4>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+                            {% if autores_com_selo %}
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                                    {% for relacao in autores_com_selo %}
+                                    <div id="selo-especial-{{ relacao.autor.id }}" class="flex items-center gap-3 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                                        <!-- Foto do autor -->
+                                        <a href="{% url 'perfil_publico' relacao.autor.username %}" class="flex-shrink-0">
+                                            <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-400 dark:border-amber-600">
+                                                {% if relacao.autor.foto %}
+                                                    <img src="{{ relacao.autor.foto.url }}" alt="{{ relacao.autor.get_display_name }}" class="w-full h-full object-cover">
+                                                {% else %}
+                                                    <div class="w-full h-full flex items-center justify-center bg-amber-500 text-white font-bold text-lg">
+                                                        {{ relacao.autor.first_name|first|upper }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </a>
+
+                                        <!-- Nome e username -->
+                                        <a href="{% url 'perfil_publico' relacao.autor.username %}" class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-text-light dark:text-text-dark truncate">
+                                                {{ relacao.autor.get_display_name }}
+                                            </p>
+                                            <p class="text-xs text-text-light/60 dark:text-text-dark/60 truncate">
+                                                @{{ relacao.autor.username }}
+                                            </p>
+                                            <p class="text-xs text-amber-700 dark:text-amber-300 font-medium mt-1 flex items-center gap-1">
+                                                <img src="{% static 'img/selo_ouro.png' %}" alt="Selo" class="w-4 h-4">
+                                                {% if perfil_usuario.sexo == 'M' %}Leitor{% elif perfil_usuario.sexo == 'F' %}Leitora{% elif perfil_usuario.sexo == 'O' %}Leiture{% else %}Leitor{% endif %} Especial
+                                            </p>
+                                        </a>
+
+                                        <!-- Botão remover selo (apenas para o dono do perfil) -->
+                                        {% if user.is_authenticated and user == perfil_usuario %}
+                                        <button
+                                            hx-post="{% url 'usuarios:remover_selo_especial' relacao.autor.id %}"
+                                            hx-target="#selo-especial-{{ relacao.autor.id }}"
+                                            hx-swap="outerHTML swap:0.3s"
+                                            class="flex-shrink-0 p-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                            title="Remover selo especial"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                {% if total_autores_com_selo > 6 %}
+                                <div class="p-4 text-center border-t border-gray-200 dark:border-gray-700">
+                                    <a href="{% url 'lista_selos_especiais' perfil_usuario.username %}" class="text-primary hover:text-primary/80 font-semibold text-sm">Ver mais ({{ total_autores_com_selo }} autores)</a>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-12">Nada nesta seção</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO f) do ROADMAP 1.1: Imersão em leitura -->
+                <div class="w-full mt-8">
+                    <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-green-600 dark:text-green-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        <span>Imersão em leitura</span>
+                    </h3>
+
+                    <!-- Grid com dois gráficos -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Gráfico Diário -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6">
+                            <h4 class="font-semibold text-lg text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-blue-600 dark:text-blue-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                                </svg>
+                                Últimos 30 dias (minutos/dia)
+                            </h4>
+                            {% if dados_diarios %}
+                            <canvas id="graficoDiario" class="w-full" style="max-height: 300px;"></canvas>
+                            {% else %}
+                            <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-16">Nada nesta seção</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Gráfico Mensal -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-6">
+                            <h4 class="font-semibold text-lg text-text-light dark:text-text-dark mb-4 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-purple-600 dark:text-purple-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+                                </svg>
+                                Histórico mensal (horas/mês)
+                            </h4>
+                            {% if dados_mensais %}
+                            <canvas id="graficoMensal" class="w-full" style="max-height: 300px;"></canvas>
+                            {% else %}
+                            <p class="text-sm text-text-light/60 dark:text-text-dark/60 text-center py-16">Nada nesta seção</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item 5 ROADMAP: Seção "Meus Vizinhos" -->
+                <div class="w-full mt-8">
+                    <h3 class="font-display text-2xl font-bold text-text-light dark:text-text-dark mb-6 flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-primary">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
+                        </svg>
+                        <span>Meus Vizinhos</span>
+                    </h3>
+
+                    {% if vizinhos %}
+                    <p class="text-sm text-text-light/70 dark:text-text-dark/70 mb-6">
+                        Leitores com gosto parecido, baseado em autores seguidos, textos favoritos, cartões de biblioteca e leituras.
+                        Para saber como a similaridade dos vizinhos é calculada, acesse a nossa <a href="{% url 'core:pagina_transparencia' %}" target="_blank" class="text-primary hover:underline">página de transparência algorítmica</a>.
+                    </p>
+
+                    <!-- Grid de vizinhos -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% for vizinho in vizinhos %}
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-4">
+                            <!-- Nome real centralizado no topo -->
+                            <p class="font-bold text-text-light dark:text-text-dark text-base text-center mb-3 truncate" title="{{ vizinho.usuario.get_display_name }}">
+                                {{ vizinho.usuario.get_display_name }}
+                            </p>
+
+                            <div class="flex items-stretch gap-3">
+                                <!-- Coluna esquerda: Foto, username e botão -->
+                                <div class="flex flex-col items-center gap-2">
+                                    <!-- Foto do vizinho -->
+                                    <div class="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary/30">
+                                        {% if vizinho.usuario.foto %}
+                                            <img src="{{ vizinho.usuario.foto.url }}" alt="Foto de {{ vizinho.usuario.get_display_name }}" class="w-full h-full object-cover">
+                                        {% else %}
+                                            <div class="w-full h-full flex items-center justify-center bg-primary">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-white">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                                </svg>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <!-- Username -->
+                                    <p class="font-semibold text-text-light dark:text-text-dark text-sm text-center">
+                                        @{{ vizinho.usuario.username }}
+                                    </p>
+                                    <!-- Botão Ver perfil -->
+                                    <a href="{% url 'perfil_publico' username=vizinho.usuario.username %}"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-semibold rounded-lg transition-colors">
+                                        Ver perfil
+                                    </a>
+                                </div>
+
+                                <!-- Coluna direita: Percentual de similaridade em destaque -->
+                                <!-- Mapa de calor: 1º (verde) -> 9º (marrom terroso) -->
+                                <!-- Versão modo claro -->
+                                <div class="flex-1 flex flex-col items-center justify-center rounded-lg p-3 dark:hidden"
+                                     style="background-color: {% if forloop.counter == 1 %}#d1fae5{% elif forloop.counter == 2 %}#dcfce7{% elif forloop.counter == 3 %}#ecfccb{% elif forloop.counter == 4 %}#fef9c3{% elif forloop.counter == 5 %}#fef3c7{% elif forloop.counter == 6 %}#ffedd5{% elif forloop.counter == 7 %}#f5e6d3{% elif forloop.counter == 8 %}#e8d5c4{% else %}#dbc4b0{% endif %};">
+                                    <span class="text-3xl font-bold"
+                                          style="color: {% if forloop.counter == 1 %}#059669{% elif forloop.counter == 2 %}#16a34a{% elif forloop.counter == 3 %}#65a30d{% elif forloop.counter == 4 %}#ca8a04{% elif forloop.counter == 5 %}#b45309{% elif forloop.counter == 6 %}#9a3412{% elif forloop.counter == 7 %}#78350f{% elif forloop.counter == 8 %}#6b4423{% else %}#5c3d2e{% endif %};">{{ vizinho.similaridade }}%</span>
+                                    <span class="text-xs text-gray-600 mt-1">similaridade</span>
+                                </div>
+                                <!-- Versão modo escuro -->
+                                <div class="flex-1 hidden dark:flex flex-col items-center justify-center rounded-lg p-3"
+                                     style="background-color: {% if forloop.counter == 1 %}#064e3b{% elif forloop.counter == 2 %}#14532d{% elif forloop.counter == 3 %}#365314{% elif forloop.counter == 4 %}#422006{% elif forloop.counter == 5 %}#451a03{% elif forloop.counter == 6 %}#431407{% elif forloop.counter == 7 %}#3b1f0d{% elif forloop.counter == 8 %}#2e1a0e{% else %}#1c1410{% endif %};">
+                                    <span class="text-3xl font-bold"
+                                          style="color: {% if forloop.counter == 1 %}#6ee7b7{% elif forloop.counter == 2 %}#86efac{% elif forloop.counter == 3 %}#bef264{% elif forloop.counter == 4 %}#fde047{% elif forloop.counter == 5 %}#fbbf24{% elif forloop.counter == 6 %}#fb923c{% elif forloop.counter == 7 %}#d4a574{% elif forloop.counter == 8 %}#c9a88a{% else %}#b8977a{% endif %};">{{ vizinho.similaridade }}%</span>
+                                    <span class="text-xs text-gray-400 mt-1">similaridade</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Botão Vilarejo Literário (condicional) -->
+                    {% if perfil_usuario == request.user %}
+                    <!-- Próprio perfil: link para meu vilarejo -->
+                    <div class="mt-8">
+                        <a href="{% url 'vilarejo:meu_vilarejo' %}" class="group relative flex items-center justify-center gap-4 w-full px-8 py-5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl shadow-lg hover:shadow-2xl transform hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer">
+                            <!-- Brilho animado -->
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                            <!-- Partículas de brilho -->
+                            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div class="absolute top-2 left-4 w-2 h-2 bg-yellow-300 rounded-full animate-ping"></div>
+                                <div class="absolute bottom-3 right-8 w-1.5 h-1.5 bg-yellow-200 rounded-full animate-ping" style="animation-delay: 0.2s;"></div>
+                                <div class="absolute top-4 right-16 w-1 h-1 bg-white rounded-full animate-ping" style="animation-delay: 0.4s;"></div>
+                            </div>
+                            <!-- Imagem do vilarejo -->
+                            <img src="{% static 'img/village.png' %}" alt="Vilarejo" class="w-12 h-12 object-contain drop-shadow-lg group-hover:rotate-12 transition-transform duration-300 relative z-10">
+                            <!-- Texto -->
+                            <span class="text-white font-bold text-lg tracking-wide relative z-10 drop-shadow-md">
+                                Visitar meu Vilarejo Literário
+                            </span>
+                            <!-- Seta animada -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-white relative z-10 group-hover:translate-x-1 transition-transform duration-300">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </a>
+                    </div>
+                    {% elif perfil_e_vizinho and vilarejo_do_perfil %}
+                    <!-- Perfil de um vizinho: link para o vilarejo dele -->
+                    <div class="mt-8">
+                        <a href="{% url 'vilarejo:vilarejo_detalhe' vilarejo_do_perfil.id %}" class="group relative flex items-center justify-center gap-4 w-full px-8 py-5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl shadow-lg hover:shadow-2xl transform hover:scale-[1.02] transition-all duration-300 overflow-hidden cursor-pointer">
+                            <!-- Brilho animado -->
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                            <!-- Partículas de brilho -->
+                            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div class="absolute top-2 left-4 w-2 h-2 bg-yellow-300 rounded-full animate-ping"></div>
+                                <div class="absolute bottom-3 right-8 w-1.5 h-1.5 bg-yellow-200 rounded-full animate-ping" style="animation-delay: 0.2s;"></div>
+                                <div class="absolute top-4 right-16 w-1 h-1 bg-white rounded-full animate-ping" style="animation-delay: 0.4s;"></div>
+                            </div>
+                            <!-- Imagem do vilarejo -->
+                            <img src="{% static 'img/village.png' %}" alt="Vilarejo" class="w-12 h-12 object-contain drop-shadow-lg group-hover:rotate-12 transition-transform duration-300 relative z-10">
+                            <!-- Texto -->
+                            <span class="text-white font-bold text-lg tracking-wide relative z-10 drop-shadow-md">
+                                Visitar o vilarejo literário de {{ perfil_usuario.get_display_name }}
+                            </span>
+                            <!-- Seta animada -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-white relative z-10 group-hover:translate-x-1 transition-transform duration-300">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                            </svg>
+                        </a>
+                    </div>
+                    {% endif %}
+                    <!-- Se não for o próprio perfil e não for vizinho, não mostra o botão -->
+                </div>
+                {% else %}
+                <!-- Mensagem de incentivo quando não há vizinhos -->
+                <div class="bg-gradient-to-br from-primary/5 to-verde-floresta/5 dark:from-primary/10 dark:to-verde-floresta/10 rounded-xl border border-primary/20 dark:border-primary/30 p-6 text-center">
+                    <div class="flex justify-center mb-4">
+                        <div class="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-primary">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h4 class="font-display text-lg font-semibold text-text-light dark:text-text-dark mb-2">
+                        Desbloqueie sua rede de vizinhos!
+                    </h4>
+                    <p class="text-text-light/70 dark:text-text-dark/70 mb-4 max-w-lg mx-auto">
+                        Seu vilarejo literário está esperando por você! Para descobrir leitores com gostos parecidos, comece a explorar o Livre Dia:
+                    </p>
+                    <ul class="text-sm text-text-light/60 dark:text-text-dark/60 space-y-2 max-w-md mx-auto text-left mb-4">
+                        <li class="flex items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-primary flex-shrink-0 mt-0.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                            <span><strong>Siga autores</strong> que você admira</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-primary flex-shrink-0 mt-0.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                            <span><strong>Favorite textos</strong> que tocaram seu coração</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-primary flex-shrink-0 mt-0.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                            <span><strong>Assine cartões de biblioteca</strong> dos seus autores favoritos</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-primary flex-shrink-0 mt-0.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                            <span><strong>Leia textos</strong> e mergulhe na literatura</span>
+                        </li>
+                    </ul>
+                    <p class="text-xs text-text-light/50 dark:text-text-dark/50">
+                        Quanto mais você interage, mais vizinhos literários você encontra!
+                    </p>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Botão Voltar ao Topo -->
+<button onclick="window.scrollTo({top: 0, behavior: 'smooth'})"
+        class="fixed bottom-6 right-6 z-50 w-12 h-12 bg-primary hover:bg-primary-dark text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center group"
+        title="Voltar ao topo">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 group-hover:-translate-y-1 transition-transform duration-300">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
+    </svg>
+</button>
+
+<!-- Script Chart.js para SEÇÃO f) Imersão em leitura -->
+<script src="{% static 'js/vendor/chart.umd.min.js' %}"></script>
+<script>
+    // Configuração de cores baseado no tema
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const textColor = isDarkMode ? '#E5E7EB' : '#1F2937';
+    const gridColor = isDarkMode ? '#374151' : '#E5E7EB';
+
+    // Gráfico Diário (Últimos 30 dias)
+    {% if dados_diarios %}
+    const ctxDiario = document.getElementById('graficoDiario');
+    if (ctxDiario) {
+        new Chart(ctxDiario, {
+            type: 'bar',
+            data: {
+                labels: {{ labels_diarios|safe }},
+                datasets: [{
+                    label: 'Minutos lidos',
+                    data: {{ dados_diarios|safe }},
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: textColor,
+                            font: {
+                                family: "'Noto Sans', sans-serif"
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' minutos';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: textColor,
+                            callback: function(value) {
+                                return value + ' min';
+                            }
+                        },
+                        grid: {
+                            color: gridColor
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        }
+                    }
+                }
+            }
+        });
+    }
+    {% endif %}
+
+    // Gráfico Mensal (Histórico completo)
+    {% if dados_mensais %}
+    const ctxMensal = document.getElementById('graficoMensal');
+    if (ctxMensal) {
+        new Chart(ctxMensal, {
+            type: 'line',
+            data: {
+                labels: {{ labels_mensais|safe }},
+                datasets: [{
+                    label: 'Horas lidas',
+                    data: {{ dados_mensais|safe }},
+                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                    borderColor: 'rgba(168, 85, 247, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: textColor,
+                            font: {
+                                family: "'Noto Sans', sans-serif"
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toFixed(2) + ' horas';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: textColor,
+                            callback: function(value) {
+                                return value + ' h';
+                            }
+                        },
+                        grid: {
+                            color: gridColor
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: textColor
+                        },
+                        grid: {
+                            color: gridColor
+                        }
+                    }
+                }
+            }
+        });
+    }
+    {% endif %}
+</script>
+
+{% endblock %}
